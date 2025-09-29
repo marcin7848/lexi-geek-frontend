@@ -7,5 +7,5 @@ RUN npx vite build
 
 FROM nginx:1.29.1
 
-COPY --from=builder /dist /usr/share/nginx/html
+COPY --from=builder dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/nginx.conf
