@@ -1,0 +1,77 @@
+name: Build and deploy
+
+on:
+  push:
+    branches:
+      - 'main'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  DOCKER_IMAGE_NAME: ${{ github.event.repository.name }}
+
+jobs:
+  build-push-deploy-image:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        id: check
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        id: login
+        if: steps.check.outcome == 'success'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        if: steps.login.outcome == 'success'
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Setup node
+        id: setup-node
+        if: steps.meta.outcome == 'success'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        id: install-dependencies
+        if: steps.setup-node.outcome == 'success'
+        run: npm install
+
+      - name: Build and push Docker image
+        id: build
+        if: steps.install-dependencies.outcome == 'success'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Deploy image on the server
+        id: deploy
+        if: steps.build.outcome == 'success'
+        uses: appleboy/ssh-action@v1.0.2
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          port: ${{ secrets.SERVER_PORT }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          script: |
+            docker pull ${{ steps.meta.outputs.tags }}
+            docker stop ${{ env.DOCKER_IMAGE_NAME }} || true
+            docker rm ${{ env.DOCKER_IMAGE_NAME }} || true
+            docker run -d --name ${{ env.DOCKER_IMAGE_NAME }} -p 4200:80 ${{ steps.meta.outputs.tags }}
