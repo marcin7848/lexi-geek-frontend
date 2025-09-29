@@ -36,10 +36,10 @@ export const Sidebar = () => {
       <aside 
         className={cn(
           "fixed left-0 top-0 h-full bg-sidebar-background border-r border-sidebar-border z-40 transition-transform duration-300",
-          isOpen ? "translate-x-0 w-64" : "-translate-x-full w-0"
+          isOpen ? "translate-x-0 w-64" : "-translate-x-full w-64"
         )}
       >
-        <div className="pt-24 px-4">
+        <div className={cn("pt-24 px-4", !isOpen && "hidden")}>
           {/* Home Link */}
           <Link
             to="/"
