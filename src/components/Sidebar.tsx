@@ -39,7 +39,7 @@ export const Sidebar = () => {
           isOpen ? "translate-x-0 w-64" : "-translate-x-full w-64"
         )}
       >
-        <div className={cn("pt-24 px-4", !isOpen && "hidden")}>
+        <div className={cn("pt-32 px-4", !isOpen && "hidden")}>
           {/* Home Link */}
           <Link
             to="/"
@@ -94,10 +94,10 @@ export const Sidebar = () => {
         </div>
       </aside>
 
-      {/* Overlay for mobile */}
+      {/* Overlay for click outside */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-30"
           onClick={toggleSidebar}
         />
       )}
