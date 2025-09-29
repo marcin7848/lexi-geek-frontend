@@ -1,11 +1,11 @@
-FROM node:20 AS builder
+FROM node:24.9.0 AS builder
 
-COPY . /app/
-WORKDIR /app
+COPY package*.json ./
 RUN npm install
-RUN npm run build --prod
+COPY . .
+RUN npx vite build
 
-FROM nginx:1.27.0-alpine
+FROM nginx:1.29.1
 
-COPY --from=builder /app/dist/lexigeek-frontend/browser /usr/share/nginx/html
+COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/nginx.conf

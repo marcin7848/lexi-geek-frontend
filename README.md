@@ -1,3 +1,5 @@
+[![Build and deploy](https://github.com/marcin7848/lexi-geek-frontend/actions/workflows/deploy.yml/badge.svg)](https://github.com/marcin7848/lexi-geek-frontend/actions?query=workflow%3Adeploy)
+
 # Welcome to your Lovable project
 
 ## Project info

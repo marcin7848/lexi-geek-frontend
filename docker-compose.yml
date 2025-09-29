@@ -1,15 +1,15 @@
-version: "3.8"
-
 services:
-  lexigeek-frontend:
+  lexi-geek-frontend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: lexigeek-frontend
+    container_name: lexi-geek-frontend
     ports:
-      - 4200:80
+      - "80:80"
     networks:
-      - main
+      - shared-network
 
 networks:
-  main:
+  shared-network:
+    external: true
+    name: shared-network

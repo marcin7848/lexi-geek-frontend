@@ -21,7 +21,7 @@ jobs:
     steps:
       - name: Checkout repository
         id: check
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Log in to the Container registry
         id: login
@@ -42,9 +42,9 @@ jobs:
       - name: Setup node
         id: setup-node
         if: steps.meta.outcome == 'success'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Install dependencies
         id: install-dependencies
@@ -54,7 +54,7 @@ jobs:
       - name: Build and push Docker image
         id: build
         if: steps.install-dependencies.outcome == 'success'
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
@@ -64,7 +64,7 @@ jobs:
       - name: Deploy image on the server
         id: deploy
         if: steps.build.outcome == 'success'
-        uses: appleboy/ssh-action@v1.0.2
+        uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.SERVER_HOST }}
           port: ${{ secrets.SERVER_PORT }}
