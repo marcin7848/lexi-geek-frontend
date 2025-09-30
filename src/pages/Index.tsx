@@ -27,7 +27,19 @@ const Index = () => {
       return false;
     };
 
-    if (checkMockedSession()) return;
+    // Listen for storage changes (logout events)
+    const handleStorageChange = () => {
+      if (!checkMockedSession()) {
+        setUser(null);
+        setLoading(false);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    if (checkMockedSession()) {
+      return () => window.removeEventListener('storage', handleStorageChange);
+    }
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -43,7 +55,10 @@ const Index = () => {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   return (

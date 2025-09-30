@@ -55,6 +55,10 @@ export const Header = () => {
       
       await supabase.auth.signOut();
       setUser(null);
+      
+      // Trigger storage event to notify other components
+      window.dispatchEvent(new Event('storage'));
+      
       toast({
         title: "Logged out successfully",
         description: "You have been logged out of your account.",
