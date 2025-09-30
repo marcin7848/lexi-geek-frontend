@@ -74,7 +74,7 @@ export default function Login() {
         
         toast({
           title: "Welcome back!",
-          description: "You have successfully logged in with test credentials.",
+          description: "You have successfully logged in.",
         });
         
         navigate("/");
