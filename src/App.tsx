@@ -7,6 +7,8 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Groups from "./pages/Groups";
+import AddLanguage from "./pages/AddLanguage";
+import LanguageSettings from "./pages/LanguageSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +24,8 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/groups/:groupId" element={<Groups />} />
+          <Route path="/add-language" element={<AddLanguage />} />
+          <Route path="/language/:languageId" element={<LanguageSettings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

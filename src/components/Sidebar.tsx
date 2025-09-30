@@ -1,24 +1,74 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Menu, Home, ChevronDown, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Menu, Home, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+type Language = {
+  id: string;
+  name: string;
+  shortcut: string;
+  hidden: boolean;
+  codeForTranslator: string;
+  codeForSpeech: string;
+};
+
 export const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isGroupsExpanded, setIsGroupsExpanded] = useState(false);
+  const [languages, setLanguages] = useState<Language[]>([]);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const toggleSidebar = () => setIsOpen(!isOpen);
-  const toggleGroups = () => setIsGroupsExpanded(!isGroupsExpanded);
-
   const isActive = (path: string) => location.pathname === path;
 
-  const groupItems = [
-    { name: "Test1", path: "/groups/test1" },
-    { name: "Test2", path: "/groups/test2" },
-    { name: "Test3", path: "/groups/test3" },
-  ];
+  useEffect(() => {
+    // Initialize with mock data if localStorage is empty
+    const storedLanguages = localStorage.getItem("languages");
+    if (!storedLanguages) {
+      const mockLanguages: Language[] = [
+        {
+          id: "1",
+          name: "English",
+          shortcut: "ENG",
+          hidden: false,
+          codeForTranslator: "en-US",
+          codeForSpeech: "en-US",
+        },
+        {
+          id: "2",
+          name: "Deutsch",
+          shortcut: "DEU",
+          hidden: false,
+          codeForTranslator: "de",
+          codeForSpeech: "de",
+        },
+        {
+          id: "3",
+          name: "Java",
+          shortcut: "JAVA",
+          hidden: false,
+          codeForTranslator: "",
+          codeForSpeech: "",
+        },
+      ];
+      localStorage.setItem("languages", JSON.stringify(mockLanguages));
+      setLanguages(mockLanguages);
+    } else {
+      setLanguages(JSON.parse(storedLanguages));
+    }
+
+    // Listen for storage changes to update the list
+    const handleStorageChange = () => {
+      const updated = localStorage.getItem("languages");
+      if (updated) {
+        setLanguages(JSON.parse(updated));
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   return (
     <>
@@ -54,42 +104,38 @@ export const Sidebar = () => {
             <span>Home</span>
           </Link>
 
-          {/* Groups Section */}
-          <div>
-            <button
-              onClick={toggleGroups}
-              className={cn(
-                "flex items-center justify-between w-full px-3 py-2 rounded-md transition-colors",
-                "text-sidebar-foreground hover:bg-sidebar-accent/50"
-              )}
-            >
-              <span>Groups</span>
-              {isGroupsExpanded ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
-              )}
-            </button>
+          {/* Languages Section */}
+          <div className="mt-6">
+            <div className="flex items-center justify-between px-3 py-2">
+              <span className="text-sidebar-foreground font-medium">Languages</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/add-language")}
+                className="h-6 w-6"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="h-px bg-sidebar-border mx-3 mb-2" />
 
-            {/* Groups Submenu */}
-            {isGroupsExpanded && (
-              <div className="ml-4 mt-1 space-y-1">
-                {groupItems.map((item) => (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={cn(
-                      "block px-3 py-2 rounded-md transition-colors text-sm",
-                      isActive(item.path)
-                        ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent/30"
-                    )}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-              </div>
-            )}
+            {/* Languages List */}
+            <div className="space-y-1">
+              {languages.map((language) => (
+                <Link
+                  key={language.id}
+                  to={`/language/${language.id}`}
+                  className={cn(
+                    "block px-3 py-2 rounded-md transition-colors text-sm",
+                    isActive(`/language/${language.id}`)
+                      ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent/30"
+                  )}
+                >
+                  {language.shortcut}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </aside>
