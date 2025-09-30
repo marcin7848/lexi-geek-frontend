@@ -50,7 +50,7 @@ export default function Login() {
     
     try {
       // Check for mocked credentials
-      if (email === "test@test.com" && password === "test") {
+      if (email === "test@test.com" && password === "test12") {
         // Create a mocked user session
         const mockedUser = {
           id: "mock-user-123",
