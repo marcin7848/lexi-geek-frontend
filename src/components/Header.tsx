@@ -57,7 +57,7 @@ export const Header = () => {
 
   return (
     <header className="bg-gradient-header border-b border-border/20 px-6 py-4">
-      <div className="flex items-center justify-between max-w-7xl mx-auto">
+      <div className="flex items-center justify-between">
         {/* Logo */}
         <Link 
           to="/" 
