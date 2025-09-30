@@ -11,6 +11,26 @@ export const Header = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Check for mocked session first
+    const checkMockedSession = () => {
+      const mockedSession = localStorage.getItem('supabase.auth.token');
+      if (mockedSession) {
+        try {
+          const parsed = JSON.parse(mockedSession);
+          if (parsed.currentSession?.user) {
+            setUser(parsed.currentSession.user as AuthUser);
+            setLoading(false);
+            return true;
+          }
+        } catch (e) {
+          // Invalid mocked session, continue to real auth
+        }
+      }
+      return false;
+    };
+
+    if (checkMockedSession()) return;
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -30,7 +50,11 @@ export const Header = () => {
 
   const handleLogout = async () => {
     try {
+      // Clear mocked session if exists
+      localStorage.removeItem('supabase.auth.token');
+      
       await supabase.auth.signOut();
+      setUser(null);
       toast({
         title: "Logged out successfully",
         description: "You have been logged out of your account.",
@@ -73,7 +97,7 @@ export const Header = () => {
           ) : user ? (
             <>
               <span className="text-foreground/80">
-                Welcome, {getDisplayName()}
+                Hi, {getDisplayName()}!
               </span>
               <Button variant="header" size="sm" onClick={handleLogout}>
                 Log out

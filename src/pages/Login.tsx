@@ -49,6 +49,39 @@ export default function Login() {
     setLoading(true);
     
     try {
+      // Check for mocked credentials
+      if (email === "test@test.com" && password === "test") {
+        // Create a mocked user session
+        const mockedUser = {
+          id: "mock-user-123",
+          email: "test@test.com",
+          user_metadata: {
+            username: "TestUser",
+            full_name: "Test User"
+          }
+        };
+        
+        // Store mocked session in localStorage
+        localStorage.setItem('supabase.auth.token', JSON.stringify({
+          currentSession: {
+            user: mockedUser,
+            access_token: 'mock-token'
+          }
+        }));
+        
+        // Trigger auth state change manually
+        window.dispatchEvent(new Event('storage'));
+        
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully logged in with test credentials.",
+        });
+        
+        navigate("/");
+        setLoading(false);
+        return;
+      }
+      
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
