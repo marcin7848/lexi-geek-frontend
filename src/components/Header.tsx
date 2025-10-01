@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Lightbulb } from "lucide-react";
 import { supabase, type AuthUser } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/components/ThemeProvider";
+import bulbLight from "@/assets/bulb-light.png";
+import bulbDark from "@/assets/bulb-dark.png";
 
 export const Header = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -99,14 +100,16 @@ export const Header = () => {
 
         {/* Theme Toggle & Auth Buttons */}
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
+          <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="hover:bg-accent/10"
+            className="p-2 rounded-md hover:bg-accent/10 transition-colors"
           >
-            <Lightbulb className="h-5 w-5" />
-          </Button>
+            <img 
+              src={theme === "light" ? bulbLight : bulbDark}
+              alt="Theme toggle"
+              className="h-6 w-6"
+            />
+          </button>
 
           {loading ? (
             <div className="h-10 w-32 bg-muted animate-pulse rounded-md" />
