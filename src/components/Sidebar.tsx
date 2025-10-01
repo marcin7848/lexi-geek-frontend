@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, Home, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import type { AuthUser } from "@/lib/supabase";
 
 type Language = {
   id: string;
@@ -16,11 +18,59 @@ type Language = {
 export const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [languages, setLanguages] = useState<Language[]>([]);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
   const toggleSidebar = () => setIsOpen(!isOpen);
   const isActive = (path: string) => location.pathname === path;
+
+  useEffect(() => {
+    // Check for mocked session first
+    const checkMockedSession = () => {
+      const mockedSession = localStorage.getItem('supabase.auth.token');
+      if (mockedSession) {
+        try {
+          const parsed = JSON.parse(mockedSession);
+          setUser(parsed as AuthUser);
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+      return false;
+    };
+
+    // Listen for storage changes (logout events)
+    const handleAuthStorageChange = () => {
+      if (!checkMockedSession()) {
+        setUser(null);
+      }
+    };
+
+    window.addEventListener('storage', handleAuthStorageChange);
+
+    if (checkMockedSession()) {
+      return () => window.removeEventListener('storage', handleAuthStorageChange);
+    }
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user as AuthUser | null);
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user as AuthUser | null);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('storage', handleAuthStorageChange);
+    };
+  }, []);
 
   useEffect(() => {
     // Initialize with mock data if localStorage is empty
@@ -104,39 +154,41 @@ export const Sidebar = () => {
             <span>Home</span>
           </Link>
 
-          {/* Languages Section */}
-          <div className="mt-6">
-            <div className="flex items-center justify-between px-3 py-2">
-              <span className="text-sidebar-foreground font-medium">Languages</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate("/add-language")}
-                className="h-6 w-6"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="h-px bg-sidebar-border mx-3 mb-2" />
-
-            {/* Languages List */}
-            <div className="space-y-1">
-              {languages.map((language) => (
-                <Link
-                  key={language.id}
-                  to={`/language/${language.id}`}
-                  className={cn(
-                    "block px-3 py-2 rounded-md transition-colors text-sm",
-                    isActive(`/language/${language.id}`)
-                      ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent/30"
-                  )}
+          {/* Languages Section - Only visible for logged-in users */}
+          {user && (
+            <div className="mt-6">
+              <div className="flex items-center justify-between px-3 py-2">
+                <span className="text-sidebar-foreground font-medium">Languages</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate("/add-language")}
+                  className="h-6 w-6"
                 >
-                  {language.shortcut}
-                </Link>
-              ))}
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="h-px bg-sidebar-border mx-3 mb-2" />
+
+              {/* Languages List */}
+              <div className="space-y-1">
+                {languages.map((language) => (
+                  <Link
+                    key={language.id}
+                    to={`/language/${language.id}`}
+                    className={cn(
+                      "block px-3 py-2 rounded-md transition-colors text-sm",
+                      isActive(`/language/${language.id}`)
+                        ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent/30"
+                    )}
+                  >
+                    {language.shortcut}
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </aside>
 
