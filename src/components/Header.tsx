@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { supabase, type AuthUser } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "@/components/ThemeProvider";
 
 export const Header = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     // Check for mocked session first
@@ -94,8 +97,17 @@ export const Header = () => {
           LexiGeek
         </Link>
 
-        {/* Auth Buttons */}
-        <div className="flex items-center gap-3">
+        {/* Theme Switch & Auth Buttons */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-foreground/60">Light</span>
+            <Switch
+              checked={theme === "dark"}
+              onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+            />
+            <span className="text-sm text-foreground/60">Dark</span>
+          </div>
+
           {loading ? (
             <div className="h-10 w-32 bg-muted animate-pulse rounded-md" />
           ) : user ? (
