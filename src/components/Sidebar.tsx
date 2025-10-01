@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, Home, Plus } from "lucide-react";
+import { Menu, Home, Plus, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,7 @@ type Language = {
   hidden: boolean;
   codeForTranslator: string;
   codeForSpeech: string;
+  specialLetters?: string;
 };
 
 export const Sidebar = () => {
@@ -84,6 +85,7 @@ export const Sidebar = () => {
           hidden: false,
           codeForTranslator: "en-US",
           codeForSpeech: "en-US",
+          specialLetters: "",
         },
         {
           id: "2",
@@ -92,6 +94,7 @@ export const Sidebar = () => {
           hidden: false,
           codeForTranslator: "de",
           codeForSpeech: "de",
+          specialLetters: "ä,Ä,ö,Ö,ü,Ü,ß",
         },
         {
           id: "3",
@@ -100,6 +103,7 @@ export const Sidebar = () => {
           hidden: false,
           codeForTranslator: "",
           codeForSpeech: "",
+          specialLetters: "",
         },
       ];
       localStorage.setItem("languages", JSON.stringify(mockLanguages));
@@ -173,19 +177,35 @@ export const Sidebar = () => {
               {/* Languages List */}
               <div className="space-y-1">
                 {languages.map((language) => (
-                  <Link
+                  <div
                     key={language.id}
-                    to={`/language/${language.id}`}
-                    onClick={() => setIsOpen(false)}
                     className={cn(
-                      "block px-3 py-2 rounded-md transition-colors text-sm",
+                      "flex items-center justify-between px-3 py-2 rounded-md transition-colors text-sm group",
                       isActive(`/language/${language.id}`)
                         ? "bg-sidebar-accent text-sidebar-primary font-medium"
                         : "text-sidebar-foreground/80 hover:bg-sidebar-accent/30"
                     )}
                   >
-                    {language.shortcut}
-                  </Link>
+                    <Link
+                      to={`/language/${language.id}`}
+                      onClick={() => setIsOpen(false)}
+                      className="flex-1"
+                    >
+                      {language.shortcut}
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate(`/language/${language.id}/edit`);
+                        setIsOpen(false);
+                      }}
+                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Settings className="h-3 w-3" />
+                    </Button>
+                  </div>
                 ))}
               </div>
             </div>

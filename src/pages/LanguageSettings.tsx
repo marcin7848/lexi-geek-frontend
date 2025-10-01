@@ -7,6 +7,17 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type Language = {
   id: string;
@@ -15,6 +26,7 @@ type Language = {
   hidden: boolean;
   codeForTranslator: string;
   codeForSpeech: string;
+  specialLetters?: string;
 };
 
 export default function LanguageSettings() {
@@ -166,14 +178,41 @@ export default function LanguageSettings() {
               )}
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="specialLetters">Special Letters</Label>
+              <Input
+                id="specialLetters"
+                value={language.specialLetters || ""}
+                onChange={(e) => setLanguage({ ...language, specialLetters: e.target.value })}
+                placeholder="e.g., ä,Ä,ö,Ö,ü,Ü,ß"
+              />
+              <p className="text-sm text-muted-foreground">Separate letters with commas</p>
+            </div>
+
             <div className="flex gap-4">
               <Button type="submit">Save Changes</Button>
               <Button type="button" variant="outline" onClick={() => navigate("/")}>
                 Cancel
               </Button>
-              <Button type="button" variant="destructive" onClick={handleDelete}>
-                Delete Language
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button type="button" variant="destructive">
+                    Delete Language
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete the language "{language.name}". This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </form>
         </div>

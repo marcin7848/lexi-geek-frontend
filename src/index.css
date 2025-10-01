@@ -68,13 +68,13 @@
   .light {
     /* Light theme base colors */
     --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+    --foreground: 222 47% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 222 47% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 222 47% 8%;
 
     /* Brand colors - Teal/cyan accent */
     --primary: 180 100% 35%;
@@ -82,10 +82,10 @@
     --primary-glow: 180 100% 45%;
 
     --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary-foreground: 222 47% 8%;
 
     --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted-foreground: 215 16% 35%;
 
     --accent: 180 100% 35%;
     --accent-foreground: 0 0% 100%;
@@ -99,15 +99,15 @@
 
     /* Header colors */
     --header-background: 0 0% 98%;
-    --header-foreground: 222 47% 11%;
+    --header-foreground: 222 47% 8%;
 
     /* Sidebar colors */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 47% 11%;
+    --sidebar-foreground: 222 47% 8%;
     --sidebar-primary: 180 100% 35%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 40% 96%;
-    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-accent-foreground: 222 47% 8%;
     --sidebar-border: 214 32% 91%;
     --sidebar-ring: 180 100% 35%;
 

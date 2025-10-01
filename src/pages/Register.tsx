@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Header } from "@/components/Header";
+import { Sidebar } from "@/components/Sidebar";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -139,8 +141,12 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-card">
+    <div className="min-h-screen bg-background">
+      <Header />
+      <Sidebar />
+      
+      <main className="pt-8 pl-6 pr-6 flex justify-center">
+        <Card className="w-full max-w-md shadow-card">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-primary">Join LexiGeek</CardTitle>
           <CardDescription>Create your account to get started</CardDescription>
@@ -248,6 +254,7 @@ export default function Register() {
           </p>
         </CardContent>
       </Card>
+      </main>
     </div>
   );
 }

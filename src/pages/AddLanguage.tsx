@@ -16,6 +16,7 @@ export default function AddLanguage() {
     hidden: false,
     codeForTranslator: "",
     codeForSpeech: "",
+    specialLetters: "",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -141,6 +142,17 @@ export default function AddLanguage() {
               {errors.codeForSpeech && (
                 <p className="text-sm text-destructive">{errors.codeForSpeech}</p>
               )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="specialLetters">Special Letters</Label>
+              <Input
+                id="specialLetters"
+                value={formData.specialLetters}
+                onChange={(e) => setFormData({ ...formData, specialLetters: e.target.value })}
+                placeholder="e.g., ä,Ä,ö,Ö,ü,Ü,ß"
+              />
+              <p className="text-sm text-muted-foreground">Separate letters with commas</p>
             </div>
 
             <div className="flex gap-4">
