@@ -113,16 +113,24 @@ export const CategoryTree = ({ categories, onUpdate }: CategoryTreeProps) => {
 
     if (isDescendant(draggedId, targetId)) return;
 
-    // If dropping on same parent, reorder
-    if (draggedCategory.id_parent === targetCategory.id_parent) {
-      const siblings = categories.filter(c => c.id_parent === draggedCategory.id_parent && c.id !== draggedId);
-      const overIndex = siblings.findIndex(c => c.id === targetId);
+    // Determine if we should make it a sibling or child
+    // If target is expanded and has children, or if same parent, treat as sibling
+    const targetHasChildren = categories.some(c => c.id_parent === targetId);
+    const targetIsExpanded = expandedIds.has(targetId);
+    const shouldMakeSibling = !targetIsExpanded || !targetHasChildren || draggedCategory.id_parent === targetCategory.id_parent;
+
+    if (shouldMakeSibling) {
+      // Make it a sibling - same parent as target
+      const newParentId = targetCategory.id_parent;
+      const siblings = categories.filter(c => c.id_parent === newParentId && c.id !== draggedId);
+      const targetIndex = siblings.findIndex(c => c.id === targetId);
       
-      const reordered = siblings
-        .slice(0, overIndex + 1)
-        .concat(draggedCategory)
-        .concat(siblings.slice(overIndex + 1))
-        .map((cat, idx) => ({ ...cat, order: idx + 1 }));
+      // Insert after target
+      const reordered = [
+        ...siblings.slice(0, targetIndex + 1),
+        { ...draggedCategory, id_parent: newParentId, order: 0 },
+        ...siblings.slice(targetIndex + 1)
+      ].map((cat, idx) => ({ ...cat, order: idx + 1 }));
       
       const updated = categories.map(cat => {
         const reorderedCat = reordered.find(r => r.id === cat.id);
@@ -131,7 +139,7 @@ export const CategoryTree = ({ categories, onUpdate }: CategoryTreeProps) => {
       
       onUpdate(updated);
     } else {
-      // Change parent - make it a child of the target
+      // Make it a child of the target
       const newSiblings = categories.filter(c => c.id_parent === targetId);
       const maxOrder = newSiblings.length > 0 ? Math.max(...newSiblings.map(c => c.order)) : 0;
       
