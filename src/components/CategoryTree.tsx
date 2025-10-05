@@ -11,8 +11,9 @@ import {
   DialogTrigger,
 } from "./ui/dialog";
 import { CategoryForm } from "./CategoryForm";
-import { DndContext, DragEndEvent, DragOverEvent, DragOverlay, closestCenter, pointerWithin } from "@dnd-kit/core";
+import { DndContext, DragStartEvent, DragEndEvent, DragOverEvent, DragOverlay, pointerWithin } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { DropZone } from "./dnd/DropZone";
 
 type CategoryTreeProps = {
   categories: Category[];
@@ -79,13 +80,18 @@ export const CategoryTree = ({ categories, onUpdate }: CategoryTreeProps) => {
     setIsAddDialogOpen(false);
   };
 
-  const handleDragStart = (event: DragEndEvent) => {
+  const handleDragStart = (event: DragStartEvent) => {
     setActiveId(Number(event.active.id));
   };
 
   const handleDragOver = (event: DragOverEvent) => {
     const { over } = event;
-    setOverId(over ? Number(over.id) : null);
+    if (over) {
+      const n = Number(over.id);
+      setOverId(Number.isFinite(n) ? n : null);
+    } else {
+      setOverId(null);
+    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -97,8 +103,28 @@ export const CategoryTree = ({ categories, onUpdate }: CategoryTreeProps) => {
     if (!over || active.id === over.id) return;
 
     const draggedId = Number(active.id);
+
+    // Handle explicit dropzones (e.g., end of a list or root)
+    if (typeof over.id === "string" && (over.id as string).startsWith("dropzone-parent-")) {
+      const key = (over.id as string).replace("dropzone-parent-", "");
+      const newParentId = key === "null" ? null : Number(key);
+      const siblings = categories.filter(c => c.id_parent === newParentId);
+      const maxOrder = siblings.length > 0 ? Math.max(...siblings.map(c => c.order)) : 0;
+
+      const updated = categories.map(cat =>
+        cat.id === draggedId
+          ? { ...cat, id_parent: newParentId, order: maxOrder + 1 }
+          : cat
+      );
+
+      onUpdate(updated);
+      if (newParentId !== null) {
+        setExpandedIds(prev => new Set([...prev, newParentId]));
+      }
+      return;
+    }
+
     const targetId = Number(over.id);
-    
     const draggedCategory = categories.find(c => c.id === draggedId);
     const targetCategory = categories.find(c => c.id === targetId);
     
@@ -187,7 +213,7 @@ export const CategoryTree = ({ categories, onUpdate }: CategoryTreeProps) => {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext items={categories.map(c => c.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext items={rootCategories.map(c => c.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-1">
             {rootCategories.map(category => (
               <CategoryNode
@@ -203,6 +229,7 @@ export const CategoryTree = ({ categories, onUpdate }: CategoryTreeProps) => {
                 isDragging={activeId === category.id}
               />
             ))}
+            <DropZone id="dropzone-parent-null" />
           </div>
         </SortableContext>
         <DragOverlay>

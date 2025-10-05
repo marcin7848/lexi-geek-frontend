@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Category } from "@/types/category";
 import { ChevronDown, ChevronRight, Book, Dumbbell, ArrowRight, ArrowLeft, ArrowLeftRight, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useSortable } from "@dnd-kit/sortable";
+import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { CategoryEditForm } from "./CategoryEditForm";
+import { DropZone } from "@/components/dnd/DropZone";
 
 type CategoryNodeProps = {
   category: Category;
@@ -158,26 +159,29 @@ export const CategoryNode = ({
         )}
       </div>
 
-      {hasChildren && isExpanded && (
-        <div>
-          {children.map(child => {
-            const childIsOver = isOver && !isSortableDragging;
-            return (
-              <CategoryNode
-                key={child.id}
-                category={child}
-                categories={categories}
-                isExpanded={expandedIds ? expandedIds.has(child.id) : true}
-                expandedIds={expandedIds}
-                onToggleExpand={onToggleExpand}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                depth={depth + 1}
-                isOver={childIsOver}
-              />
-            );
-          })}
-        </div>
+      {isExpanded && (
+        <SortableContext items={children.map(c => c.id)} strategy={verticalListSortingStrategy}>
+          <div>
+            {children.map(child => {
+              const childIsOver = isOver && !isSortableDragging;
+              return (
+                <CategoryNode
+                  key={child.id}
+                  category={child}
+                  categories={categories}
+                  isExpanded={expandedIds ? expandedIds.has(child.id) : true}
+                  expandedIds={expandedIds}
+                  onToggleExpand={onToggleExpand}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  depth={depth + 1}
+                  isOver={childIsOver}
+                />
+              );
+            })}
+            <DropZone id={`dropzone-parent-${category.id}`} />
+          </div>
+        </SortableContext>
       )}
     </div>
   );
