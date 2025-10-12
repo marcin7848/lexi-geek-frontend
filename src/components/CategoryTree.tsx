@@ -22,7 +22,7 @@ type CategoryTreeProps = {
 
 export const CategoryTree = ({ categories, onUpdate }: CategoryTreeProps) => {
   const [expandedIds, setExpandedIds] = useState<Set<number>>(
-    new Set(categories.map(c => c.id))
+    new Set()
   );
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [activeId, setActiveId] = useState<number | null>(null);
