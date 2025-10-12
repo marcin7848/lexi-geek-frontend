@@ -58,7 +58,7 @@ export const CategoryNode = ({
       </span>
     ) : (
       <span title="Exercise">
-        <Dumbbell className="h-4 w-4 text-secondary" />
+        <Dumbbell className="h-4 w-4 fill-orange-500 text-orange-500" />
       </span>
     );
   };
