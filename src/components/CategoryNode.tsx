@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Category } from "@/types/category";
 import { ChevronDown, ChevronRight, Book, Dumbbell, ArrowRight, ArrowLeft, ArrowLeftRight, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,7 @@ export const CategoryNode = ({
 }: CategoryNodeProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [clickTimeout, setClickTimeout] = useState<NodeJS.Timeout | null>(null);
+  const navigate = useNavigate();
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging: isSortableDragging, setActivatorNodeRef } = useSortable({
     id: category.id,
@@ -74,19 +76,17 @@ export const CategoryNode = ({
     }
   };
 
-  const handleClick = () => {
+  const handleCategoryClick = () => {
     if (clickTimeout) {
-      // Double click
+      // Double click - open edit
       clearTimeout(clickTimeout);
       setClickTimeout(null);
       setIsEditing(true);
     } else {
-      // Single click
+      // Single click - navigate to category page
       const timeout = setTimeout(() => {
         setClickTimeout(null);
-        if (hasChildren) {
-          onToggleExpand(category.id);
-        }
+        navigate(`/category/${category.id}`);
       }, 250);
       setClickTimeout(timeout);
     }
@@ -139,7 +139,7 @@ export const CategoryNode = ({
         {!isEditing ? (
           <>
             <span
-              onClick={handleClick}
+              onClick={handleCategoryClick}
               className="flex-1 cursor-pointer select-none"
             >
               {category.name}
