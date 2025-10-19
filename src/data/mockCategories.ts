@@ -5,6 +5,9 @@ const englishCategories: Category[] = [
   { id: 1, id_parent: null, name: "Basic Vocabulary", mode: "Dictionary", method: "BothSides", order: 1 },
   { id: 2, id_parent: null, name: "Grammar", mode: "Exercise", method: "FirstToSecond", order: 2 },
   { id: 3, id_parent: null, name: "Phrases", mode: "Dictionary", method: "SecondToFirst", order: 3 },
+  
+  // Child of Basic Vocabulary
+  { id: 4, id_parent: 1, name: "Animals", mode: "Dictionary", method: "BothSides", order: 1 },
 ];
 
 // Deutsch categories (Language ID: "2")
