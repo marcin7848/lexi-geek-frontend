@@ -11,6 +11,7 @@ import Groups from "./pages/Groups";
 import AddLanguage from "./pages/AddLanguage";
 import LanguageView from "./pages/LanguageView";
 import LanguageSettings from "./pages/LanguageSettings";
+import CategoryView from "./pages/CategoryView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/add-language" element={<AddLanguage />} />
             <Route path="/language/:languageId" element={<LanguageView />} />
             <Route path="/language/:languageId/edit" element={<LanguageSettings />} />
+            <Route path="/category/:categoryId" element={<CategoryView />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

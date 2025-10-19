@@ -1,0 +1,250 @@
+import { Word } from "@/types/word";
+
+// Mock words for category 1 (Basic Vocabulary)
+const category1Words: Word[] = [
+  {
+    id: 1,
+    accepted: true,
+    comment: "Common greeting",
+    resetTimestamp: null,
+    mechanism: "BASIC",
+    chosen: true,
+    toRepeat: false,
+    repeated: 5,
+    lastTimestampRepeated: Date.now() - 86400000,
+    wordParts: [
+      { answer: false, basicWord: "", position: 1, toSpeech: true, word: "Hello" },
+      { answer: true, basicWord: "greet", position: 2, toSpeech: true, word: "Hola" },
+    ],
+    wordStats: [
+      { timestampRepeated: Date.now() - 86400000, toAnswer: 10, answered: 8, method: "FirstToSecond" },
+    ],
+  },
+  {
+    id: 2,
+    accepted: false,
+    comment: "Basic farewell",
+    resetTimestamp: Date.now(),
+    mechanism: "TABLE",
+    chosen: false,
+    toRepeat: true,
+    repeated: 2,
+    lastTimestampRepeated: Date.now() - 172800000,
+    wordParts: [
+      { answer: false, basicWord: "", position: 1, toSpeech: true, word: "Goodbye" },
+      { answer: true, basicWord: "say", position: 2, toSpeech: true, word: "Adiós" },
+    ],
+    wordStats: [
+      { timestampRepeated: Date.now() - 172800000, toAnswer: 5, answered: 3, method: "SecondToFirst" },
+    ],
+  },
+];
+
+// Mock words for category 2 (Grammar)
+const category2Words: Word[] = [
+  {
+    id: 3,
+    accepted: true,
+    comment: "Present tense verb",
+    resetTimestamp: null,
+    mechanism: "BASIC",
+    chosen: true,
+    toRepeat: false,
+    repeated: 8,
+    lastTimestampRepeated: Date.now() - 43200000,
+    wordParts: [
+      { answer: false, basicWord: "be", position: 1, toSpeech: true, word: "I am" },
+      { answer: true, basicWord: "ser", position: 2, toSpeech: true, word: "Yo soy" },
+    ],
+    wordStats: [
+      { timestampRepeated: Date.now() - 43200000, toAnswer: 12, answered: 11, method: "FirstToSecond" },
+    ],
+  },
+  {
+    id: 4,
+    accepted: true,
+    comment: "Past tense example",
+    resetTimestamp: null,
+    mechanism: "TABLE",
+    chosen: true,
+    toRepeat: false,
+    repeated: 3,
+    lastTimestampRepeated: Date.now() - 259200000,
+    wordParts: [
+      { answer: false, basicWord: "have", position: 1, toSpeech: true, word: "I had" },
+      { answer: true, basicWord: "tener", position: 2, toSpeech: true, word: "Yo tenía" },
+    ],
+    wordStats: [
+      { timestampRepeated: Date.now() - 259200000, toAnswer: 6, answered: 5, method: "FirstToSecond" },
+    ],
+  },
+];
+
+// Mock words for category 3 (Phrases)
+const category3Words: Word[] = [
+  {
+    id: 5,
+    accepted: true,
+    comment: "Polite question",
+    resetTimestamp: null,
+    mechanism: "BASIC",
+    chosen: false,
+    toRepeat: true,
+    repeated: 1,
+    lastTimestampRepeated: Date.now() - 604800000,
+    wordParts: [
+      { answer: false, basicWord: "", position: 1, toSpeech: true, word: "How" },
+      { answer: false, basicWord: "be", position: 2, toSpeech: true, word: "are" },
+      { answer: false, basicWord: "", position: 3, toSpeech: true, word: "you?" },
+      { answer: true, basicWord: "", position: 4, toSpeech: true, word: "¿Cómo estás?" },
+    ],
+    wordStats: [
+      { timestampRepeated: Date.now() - 604800000, toAnswer: 3, answered: 2, method: "SecondToFirst" },
+    ],
+  },
+  {
+    id: 6,
+    accepted: false,
+    comment: "Time expression",
+    resetTimestamp: Date.now(),
+    mechanism: "BASIC",
+    chosen: true,
+    toRepeat: false,
+    repeated: 0,
+    lastTimestampRepeated: null,
+    wordParts: [
+      { answer: false, basicWord: "", position: 1, toSpeech: true, word: "See you later" },
+      { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Hasta luego" },
+    ],
+    wordStats: [],
+  },
+];
+
+// Mock words for category 4 (Animals - child of Basic Vocabulary)
+const category4Words: Word[] = [
+  {
+    id: 7,
+    accepted: true,
+    comment: "Domestic animal",
+    resetTimestamp: null,
+    mechanism: "BASIC",
+    chosen: true,
+    toRepeat: false,
+    repeated: 4,
+    lastTimestampRepeated: Date.now() - 86400000,
+    wordParts: [
+      { answer: false, basicWord: "", position: 1, toSpeech: true, word: "Dog" },
+      { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Perro" },
+    ],
+    wordStats: [
+      { timestampRepeated: Date.now() - 86400000, toAnswer: 8, answered: 7, method: "FirstToSecond" },
+    ],
+  },
+  {
+    id: 8,
+    accepted: true,
+    comment: "Common pet",
+    resetTimestamp: null,
+    mechanism: "TABLE",
+    chosen: false,
+    toRepeat: true,
+    repeated: 6,
+    lastTimestampRepeated: Date.now() - 172800000,
+    wordParts: [
+      { answer: false, basicWord: "", position: 1, toSpeech: true, word: "Cat" },
+      { answer: true, basicWord: "feline", position: 2, toSpeech: true, word: "Gato" },
+    ],
+    wordStats: [
+      { timestampRepeated: Date.now() - 172800000, toAnswer: 9, answered: 8, method: "SecondToFirst" },
+    ],
+  },
+];
+
+// Mock words for category 101 (Grundwortschatz - Deutsch)
+const category101Words: Word[] = [
+  {
+    id: 9,
+    accepted: true,
+    comment: "Greeting in German",
+    resetTimestamp: null,
+    mechanism: "BASIC",
+    chosen: true,
+    toRepeat: false,
+    repeated: 3,
+    lastTimestampRepeated: Date.now() - 86400000,
+    wordParts: [
+      { answer: false, basicWord: "", position: 1, toSpeech: true, word: "Hallo" },
+      { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Hello" },
+    ],
+    wordStats: [
+      { timestampRepeated: Date.now() - 86400000, toAnswer: 5, answered: 5, method: "FirstToSecond" },
+    ],
+  },
+  {
+    id: 10,
+    accepted: true,
+    comment: "Thank you",
+    resetTimestamp: null,
+    mechanism: "BASIC",
+    chosen: true,
+    toRepeat: false,
+    repeated: 7,
+    lastTimestampRepeated: Date.now() - 43200000,
+    wordParts: [
+      { answer: false, basicWord: "danken", position: 1, toSpeech: true, word: "Danke" },
+      { answer: true, basicWord: "thank", position: 2, toSpeech: true, word: "Thanks" },
+    ],
+    wordStats: [
+      { timestampRepeated: Date.now() - 43200000, toAnswer: 10, answered: 9, method: "FirstToSecond" },
+    ],
+  },
+];
+
+// Mock words for category 201 (Basics - Java)
+const category201Words: Word[] = [
+  {
+    id: 11,
+    accepted: true,
+    comment: "Main class structure",
+    resetTimestamp: null,
+    mechanism: "TABLE",
+    chosen: true,
+    toRepeat: false,
+    repeated: 10,
+    lastTimestampRepeated: Date.now() - 86400000,
+    wordParts: [
+      { answer: false, basicWord: "", position: 1, toSpeech: false, word: "public class" },
+      { answer: true, basicWord: "", position: 2, toSpeech: false, word: "classe publique" },
+    ],
+    wordStats: [
+      { timestampRepeated: Date.now() - 86400000, toAnswer: 15, answered: 14, method: "FirstToSecond" },
+    ],
+  },
+  {
+    id: 12,
+    accepted: true,
+    comment: "Loop structure",
+    resetTimestamp: null,
+    mechanism: "BASIC",
+    chosen: false,
+    toRepeat: true,
+    repeated: 5,
+    lastTimestampRepeated: Date.now() - 172800000,
+    wordParts: [
+      { answer: false, basicWord: "", position: 1, toSpeech: false, word: "for loop" },
+      { answer: true, basicWord: "", position: 2, toSpeech: false, word: "boucle for" },
+    ],
+    wordStats: [
+      { timestampRepeated: Date.now() - 172800000, toAnswer: 8, answered: 6, method: "SecondToFirst" },
+    ],
+  },
+];
+
+export const mockWordsByCategory: Record<number, Word[]> = {
+  1: category1Words,
+  2: category2Words,
+  3: category3Words,
+  4: category4Words,
+  101: category101Words,
+  201: category201Words,
+};
