@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { Category } from "@/types/category";
-import { Word } from "@/types/word";
+import { Word, Mechanism } from "@/types/word";
 import { mockWordsByCategory } from "@/data/mockWords";
 import { toast } from "sonner";
 import {
@@ -16,13 +16,27 @@ import {
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
+
+type SortColumn = "word" | "comment" | "mechanism" | "chosen" | "repeated" | "lastTimestampRepeated";
+type SortDirection = "asc" | "desc";
 
 export default function CategoryView() {
   const { categoryId } = useParams();
   const navigate = useNavigate();
   const [category, setCategory] = useState<Category | null>(null);
   const [words, setWords] = useState<Word[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [customPageSize, setCustomPageSize] = useState("");
+  const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [textFilter, setTextFilter] = useState("");
+  const [mechanismFilter, setMechanismFilter] = useState<Mechanism | "ALL">("ALL");
 
   useEffect(() => {
     // Find category from all languages
@@ -76,6 +90,106 @@ export default function CategoryView() {
     localStorage.setItem(storageKey, JSON.stringify(updatedWords));
   };
 
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  const getWordText = (wordParts: Word["wordParts"]) => {
+    const sortedParts = [...wordParts].sort((a, b) => a.position - b.position);
+    return sortedParts.map((part) => part.word).join(" ");
+  };
+
+  const filteredAndSortedWords = () => {
+    let filtered = [...words];
+
+    // Apply text filter
+    if (textFilter) {
+      filtered = filtered.filter((word) => {
+        const wordText = getWordText(word.wordParts).toLowerCase();
+        const commentText = word.comment.toLowerCase();
+        const filterText = textFilter.toLowerCase();
+        return wordText.includes(filterText) || commentText.includes(filterText);
+      });
+    }
+
+    // Apply mechanism filter
+    if (mechanismFilter !== "ALL") {
+      filtered = filtered.filter((word) => word.mechanism === mechanismFilter);
+    }
+
+    // Apply sorting
+    if (sortColumn) {
+      filtered.sort((a, b) => {
+        let aValue: any;
+        let bValue: any;
+
+        switch (sortColumn) {
+          case "word":
+            aValue = getWordText(a.wordParts).toLowerCase();
+            bValue = getWordText(b.wordParts).toLowerCase();
+            break;
+          case "comment":
+            aValue = a.comment.toLowerCase();
+            bValue = b.comment.toLowerCase();
+            break;
+          case "mechanism":
+            aValue = a.mechanism;
+            bValue = b.mechanism;
+            break;
+          case "chosen":
+            aValue = a.chosen ? 1 : 0;
+            bValue = b.chosen ? 1 : 0;
+            break;
+          case "repeated":
+            aValue = a.repeated;
+            bValue = b.repeated;
+            break;
+          case "lastTimestampRepeated":
+            aValue = a.lastTimestampRepeated || 0;
+            bValue = b.lastTimestampRepeated || 0;
+            break;
+        }
+
+        if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+        if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return filtered;
+  };
+
+  const paginatedWords = () => {
+    const filtered = filteredAndSortedWords();
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return filtered.slice(startIndex, endIndex);
+  };
+
+  const totalPages = Math.ceil(filteredAndSortedWords().length / pageSize);
+
+  const handlePageSizeChange = (value: string) => {
+    if (value === "custom") {
+      return;
+    }
+    setPageSize(Number(value));
+    setCurrentPage(1);
+  };
+
+  const handleCustomPageSize = () => {
+    const size = Number(customPageSize);
+    if (size > 0) {
+      setPageSize(size);
+      setCurrentPage(1);
+      setCustomPageSize("");
+    }
+  };
+
   const renderWordParts = (wordParts: Word["wordParts"]) => {
     const sortedParts = [...wordParts].sort((a, b) => a.position - b.position);
     
@@ -121,44 +235,200 @@ export default function CategoryView() {
             </div>
           </div>
 
-          <div className="border rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Word</TableHead>
-                  <TableHead>Comment</TableHead>
-                  <TableHead>Mechanism</TableHead>
-                  <TableHead>Chosen</TableHead>
-                  <TableHead>Repeated</TableHead>
-                  <TableHead>Last Repeated</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {words.map((word) => (
-                  <TableRow key={word.id}>
-                    <TableCell>{renderWordParts(word.wordParts)}</TableCell>
-                    <TableCell>{word.comment}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{word.mechanism}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Checkbox
-                        checked={word.chosen}
-                        onCheckedChange={(checked) =>
-                          handleChosenChange(word.id, checked as boolean)
-                        }
-                      />
-                    </TableCell>
-                    <TableCell>{word.repeated}</TableCell>
-                    <TableCell>
-                      {word.lastTimestampRepeated
-                        ? format(new Date(word.lastTimestampRepeated), "PPp")
-                        : "-"}
-                    </TableCell>
+          <div className="space-y-4">
+            {/* Filters */}
+            <div className="flex gap-4 items-end">
+              <div className="flex-1">
+                <label className="text-sm font-medium mb-2 block">Search</label>
+                <Input
+                  placeholder="Filter by word or comment..."
+                  value={textFilter}
+                  onChange={(e) => {
+                    setTextFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                />
+              </div>
+              <div className="w-48">
+                <label className="text-sm font-medium mb-2 block">Mechanism</label>
+                <Select
+                  value={mechanismFilter}
+                  onValueChange={(value: Mechanism | "ALL") => {
+                    setMechanismFilter(value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All</SelectItem>
+                    <SelectItem value="BASIC">BASIC</SelectItem>
+                    <SelectItem value="TABLE">TABLE</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleSort("word")}
+                        className="flex items-center gap-1"
+                      >
+                        Word
+                        <ArrowUpDown className="h-4 w-4" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleSort("comment")}
+                        className="flex items-center gap-1"
+                      >
+                        Comment
+                        <ArrowUpDown className="h-4 w-4" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleSort("mechanism")}
+                        className="flex items-center gap-1"
+                      >
+                        Mechanism
+                        <ArrowUpDown className="h-4 w-4" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleSort("chosen")}
+                        className="flex items-center gap-1"
+                      >
+                        Chosen
+                        <ArrowUpDown className="h-4 w-4" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleSort("repeated")}
+                        className="flex items-center gap-1"
+                      >
+                        Repeated
+                        <ArrowUpDown className="h-4 w-4" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleSort("lastTimestampRepeated")}
+                        className="flex items-center gap-1"
+                      >
+                        Last Repeated
+                        <ArrowUpDown className="h-4 w-4" />
+                      </Button>
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {paginatedWords().map((word) => (
+                    <TableRow key={word.id}>
+                      <TableCell>{renderWordParts(word.wordParts)}</TableCell>
+                      <TableCell>{word.comment}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{word.mechanism}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Checkbox
+                          checked={word.chosen}
+                          onCheckedChange={(checked) =>
+                            handleChosenChange(word.id, checked as boolean)
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>{word.repeated}</TableCell>
+                      <TableCell>
+                        {word.lastTimestampRepeated
+                          ? format(new Date(word.lastTimestampRepeated), "PPp")
+                          : "-"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Items per page:</span>
+                <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                  <SelectTrigger className="w-24">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                    <SelectItem value="1000">1000</SelectItem>
+                    <SelectItem value="5000">5000</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Custom"
+                    className="w-24"
+                    value={customPageSize}
+                    onChange={(e) => setCustomPageSize(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleCustomPageSize();
+                      }
+                    }}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCustomPageSize}
+                    disabled={!customPageSize}
+                  >
+                    Apply
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  Page {currentPage} of {totalPages || 1} ({filteredAndSortedWords().length} total items)
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </main>
