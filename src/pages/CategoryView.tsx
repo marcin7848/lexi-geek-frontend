@@ -19,10 +19,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowUpDown, ChevronLeft, ChevronRight, Check, X } from "lucide-react";
 import { format } from "date-fns";
 
-type SortColumn = "word" | "comment" | "mechanism" | "chosen" | "repeated" | "lastTimestampRepeated";
+type SortColumn = "word" | "comment" | "mechanism" | "chosen" | "repeated" | "lastTimestampRepeated" | "created";
 type SortDirection = "asc" | "desc";
 
 export default function CategoryView() {
@@ -37,6 +37,15 @@ export default function CategoryView() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [textFilter, setTextFilter] = useState("");
   const [mechanismFilter, setMechanismFilter] = useState<Mechanism | "ALL">("ALL");
+
+  // Unaccepted words states
+  const [unacceptedCurrentPage, setUnacceptedCurrentPage] = useState(1);
+  const [unacceptedPageSize, setUnacceptedPageSize] = useState(20);
+  const [unacceptedCustomPageSize, setUnacceptedCustomPageSize] = useState("");
+  const [unacceptedSortColumn, setUnacceptedSortColumn] = useState<SortColumn | null>(null);
+  const [unacceptedSortDirection, setUnacceptedSortDirection] = useState<SortDirection>("asc");
+  const [unacceptedTextFilter, setUnacceptedTextFilter] = useState("");
+  const [unacceptedMechanismFilter, setUnacceptedMechanismFilter] = useState<Mechanism | "ALL">("ALL");
 
   useEffect(() => {
     // Find category from all languages
@@ -90,6 +99,26 @@ export default function CategoryView() {
     localStorage.setItem(storageKey, JSON.stringify(updatedWords));
   };
 
+  const handleAcceptWord = (wordId: number) => {
+    const updatedWords = words.map((word) =>
+      word.id === wordId ? { ...word, accepted: true } : word
+    );
+    setWords(updatedWords);
+    
+    const storageKey = `words_${categoryId}`;
+    localStorage.setItem(storageKey, JSON.stringify(updatedWords));
+    toast.success("Word accepted");
+  };
+
+  const handleRejectWord = (wordId: number) => {
+    const updatedWords = words.filter((word) => word.id !== wordId);
+    setWords(updatedWords);
+    
+    const storageKey = `words_${categoryId}`;
+    localStorage.setItem(storageKey, JSON.stringify(updatedWords));
+    toast.success("Word removed");
+  };
+
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -104,31 +133,35 @@ export default function CategoryView() {
     return sortedParts.map((part) => part.word).join(" ");
   };
 
-  const filteredAndSortedWords = () => {
-    let filtered = [...words];
+  const filteredAndSortedWords = (accepted: boolean = true) => {
+    let filtered = words.filter((word) => word.accepted === accepted);
 
     // Apply text filter
-    if (textFilter) {
+    const currentTextFilter = accepted ? textFilter : unacceptedTextFilter;
+    if (currentTextFilter) {
       filtered = filtered.filter((word) => {
         const wordText = getWordText(word.wordParts).toLowerCase();
         const commentText = word.comment.toLowerCase();
-        const filterText = textFilter.toLowerCase();
+        const filterText = currentTextFilter.toLowerCase();
         return wordText.includes(filterText) || commentText.includes(filterText);
       });
     }
 
     // Apply mechanism filter
-    if (mechanismFilter !== "ALL") {
-      filtered = filtered.filter((word) => word.mechanism === mechanismFilter);
+    const currentMechanismFilter = accepted ? mechanismFilter : unacceptedMechanismFilter;
+    if (currentMechanismFilter !== "ALL") {
+      filtered = filtered.filter((word) => word.mechanism === currentMechanismFilter);
     }
 
     // Apply sorting
-    if (sortColumn) {
+    const currentSortColumn = accepted ? sortColumn : unacceptedSortColumn;
+    if (currentSortColumn) {
+      const currentSortDirection = accepted ? sortDirection : unacceptedSortDirection;
       filtered.sort((a, b) => {
         let aValue: any;
         let bValue: any;
 
-        switch (sortColumn) {
+        switch (currentSortColumn) {
           case "word":
             aValue = getWordText(a.wordParts).toLowerCase();
             bValue = getWordText(b.wordParts).toLowerCase();
@@ -153,10 +186,14 @@ export default function CategoryView() {
             aValue = a.lastTimestampRepeated || 0;
             bValue = b.lastTimestampRepeated || 0;
             break;
+          case "created":
+            aValue = a.created;
+            bValue = b.created;
+            break;
         }
 
-        if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
-        if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+        if (aValue < bValue) return currentSortDirection === "asc" ? -1 : 1;
+        if (aValue > bValue) return currentSortDirection === "asc" ? 1 : -1;
         return 0;
       });
     }
@@ -164,14 +201,17 @@ export default function CategoryView() {
     return filtered;
   };
 
-  const paginatedWords = () => {
-    const filtered = filteredAndSortedWords();
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
+  const paginatedWords = (accepted: boolean = true) => {
+    const filtered = filteredAndSortedWords(accepted);
+    const currentPg = accepted ? currentPage : unacceptedCurrentPage;
+    const currentPgSize = accepted ? pageSize : unacceptedPageSize;
+    const startIndex = (currentPg - 1) * currentPgSize;
+    const endIndex = startIndex + currentPgSize;
     return filtered.slice(startIndex, endIndex);
   };
 
-  const totalPages = Math.ceil(filteredAndSortedWords().length / pageSize);
+  const totalPages = Math.ceil(filteredAndSortedWords(true).length / pageSize);
+  const unacceptedTotalPages = Math.ceil(filteredAndSortedWords(false).length / unacceptedPageSize);
 
   const handlePageSizeChange = (value: string) => {
     if (value === "custom") {
@@ -325,20 +365,30 @@ export default function CategoryView() {
                         <ArrowUpDown className="h-4 w-4" />
                       </Button>
                     </TableHead>
-                    <TableHead>
-                      <Button
-                        variant="ghost"
-                        onClick={() => handleSort("lastTimestampRepeated")}
-                        className="flex items-center gap-1"
-                      >
-                        Last Repeated
-                        <ArrowUpDown className="h-4 w-4" />
-                      </Button>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedWords().map((word) => (
+                     <TableHead>
+                       <Button
+                         variant="ghost"
+                         onClick={() => handleSort("created")}
+                         className="flex items-center gap-1"
+                       >
+                         Created
+                         <ArrowUpDown className="h-4 w-4" />
+                       </Button>
+                     </TableHead>
+                     <TableHead>
+                       <Button
+                         variant="ghost"
+                         onClick={() => handleSort("lastTimestampRepeated")}
+                         className="flex items-center gap-1"
+                       >
+                         Last Repeated
+                         <ArrowUpDown className="h-4 w-4" />
+                       </Button>
+                     </TableHead>
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {paginatedWords(true).map((word) => (
                     <TableRow key={word.id}>
                       <TableCell>{renderWordParts(word.wordParts)}</TableCell>
                       <TableCell>{word.comment}</TableCell>
@@ -353,20 +403,23 @@ export default function CategoryView() {
                           }
                         />
                       </TableCell>
-                      <TableCell>{word.repeated}</TableCell>
-                      <TableCell>
-                        {word.lastTimestampRepeated
-                          ? format(new Date(word.lastTimestampRepeated), "PPp")
-                          : "-"}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                       <TableCell>{word.repeated}</TableCell>
+                       <TableCell>
+                         {format(new Date(word.created), "PPp")}
+                       </TableCell>
+                       <TableCell>
+                         {word.lastTimestampRepeated
+                           ? format(new Date(word.lastTimestampRepeated), "PPp")
+                           : "-"}
+                       </TableCell>
+                     </TableRow>
+                   ))}
+                 </TableBody>
+               </Table>
+             </div>
 
-            {/* Pagination */}
-            <div className="flex items-center justify-between">
+             {/* Pagination */}
+             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Items per page:</span>
                 <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
@@ -407,31 +460,268 @@ export default function CategoryView() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">
-                  Page {currentPage} of {totalPages || 1} ({filteredAndSortedWords().length} total items)
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages || totalPages === 0}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-}
+               <div className="flex items-center gap-2">
+                 <span className="text-sm text-muted-foreground">
+                   Page {currentPage} of {totalPages || 1} ({filteredAndSortedWords(true).length} total items)
+                 </span>
+                 <Button
+                   variant="outline"
+                   size="sm"
+                   onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                   disabled={currentPage === 1}
+                 >
+                   <ChevronLeft className="h-4 w-4" />
+                 </Button>
+                 <Button
+                   variant="outline"
+                   size="sm"
+                   onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                   disabled={currentPage === totalPages || totalPages === 0}
+                 >
+                   <ChevronRight className="h-4 w-4" />
+                 </Button>
+               </div>
+             </div>
+
+             {/* Unaccepted Words Section */}
+             <div className="space-y-4 mt-12">
+               <h2 className="text-2xl font-bold">Pending Words</h2>
+
+               {/* Filters */}
+               <div className="flex gap-4 items-end">
+                 <div className="flex-1">
+                   <label className="text-sm font-medium mb-2 block">Search</label>
+                   <Input
+                     placeholder="Filter by word or comment..."
+                     value={unacceptedTextFilter}
+                     onChange={(e) => {
+                       setUnacceptedTextFilter(e.target.value);
+                       setUnacceptedCurrentPage(1);
+                     }}
+                   />
+                 </div>
+                 <div className="w-48">
+                   <label className="text-sm font-medium mb-2 block">Mechanism</label>
+                   <Select
+                     value={unacceptedMechanismFilter}
+                     onValueChange={(value: Mechanism | "ALL") => {
+                       setUnacceptedMechanismFilter(value);
+                       setUnacceptedCurrentPage(1);
+                     }}
+                   >
+                     <SelectTrigger>
+                       <SelectValue />
+                     </SelectTrigger>
+                     <SelectContent>
+                       <SelectItem value="ALL">All</SelectItem>
+                       <SelectItem value="BASIC">BASIC</SelectItem>
+                       <SelectItem value="TABLE">TABLE</SelectItem>
+                     </SelectContent>
+                   </Select>
+                 </div>
+               </div>
+
+               {/* Table */}
+               <div className="border rounded-lg">
+                 <Table>
+                   <TableHeader>
+                     <TableRow>
+                       <TableHead>
+                         <Button
+                           variant="ghost"
+                           onClick={() => {
+                             if (unacceptedSortColumn === "word") {
+                               setUnacceptedSortDirection(unacceptedSortDirection === "asc" ? "desc" : "asc");
+                             } else {
+                               setUnacceptedSortColumn("word");
+                               setUnacceptedSortDirection("asc");
+                             }
+                           }}
+                           className="flex items-center gap-1"
+                         >
+                           Word
+                           <ArrowUpDown className="h-4 w-4" />
+                         </Button>
+                       </TableHead>
+                       <TableHead>
+                         <Button
+                           variant="ghost"
+                           onClick={() => {
+                             if (unacceptedSortColumn === "comment") {
+                               setUnacceptedSortDirection(unacceptedSortDirection === "asc" ? "desc" : "asc");
+                             } else {
+                               setUnacceptedSortColumn("comment");
+                               setUnacceptedSortDirection("asc");
+                             }
+                           }}
+                           className="flex items-center gap-1"
+                         >
+                           Comment
+                           <ArrowUpDown className="h-4 w-4" />
+                         </Button>
+                       </TableHead>
+                       <TableHead>
+                         <Button
+                           variant="ghost"
+                           onClick={() => {
+                             if (unacceptedSortColumn === "mechanism") {
+                               setUnacceptedSortDirection(unacceptedSortDirection === "asc" ? "desc" : "asc");
+                             } else {
+                               setUnacceptedSortColumn("mechanism");
+                               setUnacceptedSortDirection("asc");
+                             }
+                           }}
+                           className="flex items-center gap-1"
+                         >
+                           Mechanism
+                           <ArrowUpDown className="h-4 w-4" />
+                         </Button>
+                       </TableHead>
+                       <TableHead>
+                         <Button
+                           variant="ghost"
+                           onClick={() => {
+                             if (unacceptedSortColumn === "created") {
+                               setUnacceptedSortDirection(unacceptedSortDirection === "asc" ? "desc" : "asc");
+                             } else {
+                               setUnacceptedSortColumn("created");
+                               setUnacceptedSortDirection("asc");
+                             }
+                           }}
+                           className="flex items-center gap-1"
+                         >
+                           Created
+                           <ArrowUpDown className="h-4 w-4" />
+                         </Button>
+                       </TableHead>
+                       <TableHead>Actions</TableHead>
+                     </TableRow>
+                   </TableHeader>
+                   <TableBody>
+                     {paginatedWords(false).map((word) => (
+                       <TableRow key={word.id}>
+                         <TableCell>{renderWordParts(word.wordParts)}</TableCell>
+                         <TableCell>{word.comment}</TableCell>
+                         <TableCell>
+                           <Badge variant="secondary">{word.mechanism}</Badge>
+                         </TableCell>
+                         <TableCell>
+                           {format(new Date(word.created), "PPp")}
+                         </TableCell>
+                         <TableCell>
+                           <div className="flex gap-2">
+                             <Button
+                               variant="ghost"
+                               size="sm"
+                               onClick={() => handleAcceptWord(word.id)}
+                               className="h-8 w-8 p-0"
+                             >
+                               <Check className="h-4 w-4 text-green-600" />
+                             </Button>
+                             <Button
+                               variant="ghost"
+                               size="sm"
+                               onClick={() => handleRejectWord(word.id)}
+                               className="h-8 w-8 p-0"
+                             >
+                               <X className="h-4 w-4 text-red-600" />
+                             </Button>
+                           </div>
+                         </TableCell>
+                       </TableRow>
+                     ))}
+                   </TableBody>
+                 </Table>
+               </div>
+
+               {/* Pagination */}
+               <div className="flex items-center justify-between">
+                 <div className="flex items-center gap-2">
+                   <span className="text-sm text-muted-foreground">Items per page:</span>
+                   <Select 
+                     value={unacceptedPageSize.toString()} 
+                     onValueChange={(value) => {
+                       if (value !== "custom") {
+                         setUnacceptedPageSize(Number(value));
+                         setUnacceptedCurrentPage(1);
+                       }
+                     }}
+                   >
+                     <SelectTrigger className="w-24">
+                       <SelectValue />
+                     </SelectTrigger>
+                     <SelectContent>
+                       <SelectItem value="5">5</SelectItem>
+                       <SelectItem value="10">10</SelectItem>
+                       <SelectItem value="20">20</SelectItem>
+                       <SelectItem value="50">50</SelectItem>
+                       <SelectItem value="100">100</SelectItem>
+                       <SelectItem value="1000">1000</SelectItem>
+                       <SelectItem value="5000">5000</SelectItem>
+                     </SelectContent>
+                   </Select>
+                   <div className="flex items-center gap-2">
+                     <Input
+                       type="number"
+                       placeholder="Custom"
+                       className="w-24"
+                       value={unacceptedCustomPageSize}
+                       onChange={(e) => setUnacceptedCustomPageSize(e.target.value)}
+                       onKeyDown={(e) => {
+                         if (e.key === "Enter") {
+                           const size = Number(unacceptedCustomPageSize);
+                           if (size > 0) {
+                             setUnacceptedPageSize(size);
+                             setUnacceptedCurrentPage(1);
+                             setUnacceptedCustomPageSize("");
+                           }
+                         }
+                       }}
+                     />
+                     <Button
+                       variant="outline"
+                       size="sm"
+                       onClick={() => {
+                         const size = Number(unacceptedCustomPageSize);
+                         if (size > 0) {
+                           setUnacceptedPageSize(size);
+                           setUnacceptedCurrentPage(1);
+                           setUnacceptedCustomPageSize("");
+                         }
+                       }}
+                       disabled={!unacceptedCustomPageSize}
+                     >
+                       Apply
+                     </Button>
+                   </div>
+                 </div>
+
+                 <div className="flex items-center gap-2">
+                   <span className="text-sm text-muted-foreground">
+                     Page {unacceptedCurrentPage} of {unacceptedTotalPages || 1} ({filteredAndSortedWords(false).length} total items)
+                   </span>
+                   <Button
+                     variant="outline"
+                     size="sm"
+                     onClick={() => setUnacceptedCurrentPage((prev) => Math.max(1, prev - 1))}
+                     disabled={unacceptedCurrentPage === 1}
+                   >
+                     <ChevronLeft className="h-4 w-4" />
+                   </Button>
+                   <Button
+                     variant="outline"
+                     size="sm"
+                     onClick={() => setUnacceptedCurrentPage((prev) => Math.min(unacceptedTotalPages, prev + 1))}
+                     disabled={unacceptedCurrentPage === unacceptedTotalPages || unacceptedTotalPages === 0}
+                   >
+                     <ChevronRight className="h-4 w-4" />
+                   </Button>
+                 </div>
+               </div>
+             </div>
+           </div>
+         </div>
+       </main>
+     </div>
+   );
+ }

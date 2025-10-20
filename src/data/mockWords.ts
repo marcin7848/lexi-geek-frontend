@@ -12,6 +12,7 @@ const category1Words: Word[] = [
     toRepeat: false,
     repeated: 5,
     lastTimestampRepeated: Date.now() - 86400000,
+    created: Date.now() - 604800000,
     wordParts: [
       { answer: false, basicWord: "", position: 1, toSpeech: true, word: "Hello" },
       { answer: true, basicWord: "greet", position: 2, toSpeech: true, word: "Hola" },
@@ -30,6 +31,7 @@ const category1Words: Word[] = [
     toRepeat: true,
     repeated: 2,
     lastTimestampRepeated: Date.now() - 172800000,
+    created: Date.now() - 3600000,
     wordParts: [
       { answer: false, basicWord: "", position: 1, toSpeech: true, word: "Goodbye" },
       { answer: true, basicWord: "say", position: 2, toSpeech: true, word: "Adiós" },
@@ -48,6 +50,7 @@ const category1Words: Word[] = [
     toRepeat: false,
     repeated: 8,
     lastTimestampRepeated: Date.now() - 43200000,
+    created: Date.now() - 518400000,
     wordParts: [
       { answer: false, basicWord: "", position: 1, toSpeech: true, word: "Please" },
       { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Por favor" },
@@ -66,6 +69,7 @@ const category1Words: Word[] = [
     toRepeat: false,
     repeated: 12,
     lastTimestampRepeated: Date.now() - 21600000,
+    created: Date.now() - 432000000,
     wordParts: [
       { answer: false, basicWord: "thank", position: 1, toSpeech: true, word: "Thank you" },
       { answer: true, basicWord: "agradecer", position: 2, toSpeech: true, word: "Gracias" },
@@ -84,6 +88,7 @@ const category1Words: Word[] = [
     toRepeat: true,
     repeated: 1,
     lastTimestampRepeated: Date.now() - 604800000,
+    created: Date.now() - 7200000,
     wordParts: [
       { answer: false, basicWord: "", position: 1, toSpeech: true, word: "Sorry" },
       { answer: true, basicWord: "disculpar", position: 2, toSpeech: true, word: "Lo siento" },
@@ -102,6 +107,7 @@ const category1Words: Word[] = [
     toRepeat: false,
     repeated: 15,
     lastTimestampRepeated: Date.now() - 10800000,
+    created: Date.now() - 345600000,
     wordParts: [
       { answer: false, basicWord: "", position: 1, toSpeech: true, word: "Yes" },
       { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Sí" },
@@ -120,6 +126,7 @@ const category1Words: Word[] = [
     toRepeat: true,
     repeated: 11,
     lastTimestampRepeated: Date.now() - 129600000,
+    created: Date.now() - 259200000,
     wordParts: [
       { answer: false, basicWord: "", position: 1, toSpeech: true, word: "No" },
       { answer: true, basicWord: "", position: 2, toSpeech: true, word: "No" },
@@ -138,6 +145,7 @@ const category1Words: Word[] = [
     toRepeat: false,
     repeated: 6,
     lastTimestampRepeated: Date.now() - 259200000,
+    created: Date.now() - 172800000,
     wordParts: [
       { answer: false, basicWord: "", position: 1, toSpeech: true, word: "Good morning" },
       { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Buenos días" },
@@ -156,6 +164,7 @@ const category1Words: Word[] = [
     toRepeat: false,
     repeated: 3,
     lastTimestampRepeated: Date.now() - 345600000,
+    created: Date.now() - 10800000,
     wordParts: [
       { answer: false, basicWord: "", position: 1, toSpeech: true, word: "Good night" },
       { answer: true, basicWord: "noche", position: 2, toSpeech: true, word: "Buenas noches" },
@@ -174,6 +183,7 @@ const category1Words: Word[] = [
     toRepeat: true,
     repeated: 4,
     lastTimestampRepeated: Date.now() - 432000000,
+    created: Date.now() - 86400000,
     wordParts: [
       { answer: false, basicWord: "welcome", position: 1, toSpeech: true, word: "You're welcome" },
       { answer: true, basicWord: "", position: 2, toSpeech: true, word: "De nada" },
@@ -196,6 +206,7 @@ const category2Words: Word[] = [
     toRepeat: false,
     repeated: 8,
     lastTimestampRepeated: Date.now() - 43200000,
+    created: Date.now() - 302400000,
     wordParts: [
       { answer: false, basicWord: "be", position: 1, toSpeech: true, word: "I am" },
       { answer: true, basicWord: "ser", position: 2, toSpeech: true, word: "Yo soy" },
@@ -214,6 +225,7 @@ const category2Words: Word[] = [
     toRepeat: false,
     repeated: 3,
     lastTimestampRepeated: Date.now() - 259200000,
+    created: Date.now() - 216000000,
     wordParts: [
       { answer: false, basicWord: "have", position: 1, toSpeech: true, word: "I had" },
       { answer: true, basicWord: "tener", position: 2, toSpeech: true, word: "Yo tenía" },
@@ -221,6 +233,40 @@ const category2Words: Word[] = [
     wordStats: [
       { timestampRepeated: Date.now() - 259200000, toAnswer: 6, answered: 5, method: "FirstToSecond" },
     ],
+  },
+  {
+    id: 103,
+    accepted: false,
+    comment: "Future tense",
+    resetTimestamp: null,
+    mechanism: "BASIC",
+    chosen: false,
+    toRepeat: false,
+    repeated: 0,
+    lastTimestampRepeated: null,
+    created: Date.now() - 5400000,
+    wordParts: [
+      { answer: false, basicWord: "", position: 1, toSpeech: true, word: "I will" },
+      { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Yo seré" },
+    ],
+    wordStats: [],
+  },
+  {
+    id: 104,
+    accepted: false,
+    comment: "Conditional",
+    resetTimestamp: null,
+    mechanism: "TABLE",
+    chosen: false,
+    toRepeat: false,
+    repeated: 0,
+    lastTimestampRepeated: null,
+    created: Date.now() - 1800000,
+    wordParts: [
+      { answer: false, basicWord: "", position: 1, toSpeech: true, word: "I would" },
+      { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Yo sería" },
+    ],
+    wordStats: [],
   },
 ];
 
@@ -236,6 +282,7 @@ const category3Words: Word[] = [
     toRepeat: true,
     repeated: 1,
     lastTimestampRepeated: Date.now() - 604800000,
+    created: Date.now() - 388800000,
     wordParts: [
       { answer: false, basicWord: "", position: 1, toSpeech: true, word: "How" },
       { answer: false, basicWord: "be", position: 2, toSpeech: true, word: "are" },
@@ -256,9 +303,27 @@ const category3Words: Word[] = [
     toRepeat: false,
     repeated: 0,
     lastTimestampRepeated: null,
+    created: Date.now() - 14400000,
     wordParts: [
       { answer: false, basicWord: "", position: 1, toSpeech: true, word: "See you later" },
       { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Hasta luego" },
+    ],
+    wordStats: [],
+  },
+  {
+    id: 105,
+    accepted: false,
+    comment: "Direction question",
+    resetTimestamp: null,
+    mechanism: "TABLE",
+    chosen: false,
+    toRepeat: false,
+    repeated: 0,
+    lastTimestampRepeated: null,
+    created: Date.now() - 9000000,
+    wordParts: [
+      { answer: false, basicWord: "", position: 1, toSpeech: true, word: "Where is" },
+      { answer: true, basicWord: "", position: 2, toSpeech: true, word: "¿Dónde está?" },
     ],
     wordStats: [],
   },
@@ -276,6 +341,7 @@ const category4Words: Word[] = [
     toRepeat: false,
     repeated: 4,
     lastTimestampRepeated: Date.now() - 86400000,
+    created: Date.now() - 475200000,
     wordParts: [
       { answer: false, basicWord: "", position: 1, toSpeech: true, word: "Dog" },
       { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Perro" },
@@ -294,6 +360,7 @@ const category4Words: Word[] = [
     toRepeat: true,
     repeated: 6,
     lastTimestampRepeated: Date.now() - 172800000,
+    created: Date.now() - 561600000,
     wordParts: [
       { answer: false, basicWord: "", position: 1, toSpeech: true, word: "Cat" },
       { answer: true, basicWord: "feline", position: 2, toSpeech: true, word: "Gato" },
@@ -301,6 +368,40 @@ const category4Words: Word[] = [
     wordStats: [
       { timestampRepeated: Date.now() - 172800000, toAnswer: 9, answered: 8, method: "SecondToFirst" },
     ],
+  },
+  {
+    id: 106,
+    accepted: false,
+    comment: "Farm animal",
+    resetTimestamp: null,
+    mechanism: "BASIC",
+    chosen: false,
+    toRepeat: false,
+    repeated: 0,
+    lastTimestampRepeated: null,
+    created: Date.now() - 18000000,
+    wordParts: [
+      { answer: false, basicWord: "", position: 1, toSpeech: true, word: "Cow" },
+      { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Vaca" },
+    ],
+    wordStats: [],
+  },
+  {
+    id: 107,
+    accepted: false,
+    comment: "Wild animal",
+    resetTimestamp: null,
+    mechanism: "TABLE",
+    chosen: false,
+    toRepeat: false,
+    repeated: 0,
+    lastTimestampRepeated: null,
+    created: Date.now() - 7200000,
+    wordParts: [
+      { answer: false, basicWord: "", position: 1, toSpeech: true, word: "Lion" },
+      { answer: true, basicWord: "", position: 2, toSpeech: true, word: "León" },
+    ],
+    wordStats: [],
   },
 ];
 
@@ -316,6 +417,7 @@ const category101Words: Word[] = [
     toRepeat: false,
     repeated: 3,
     lastTimestampRepeated: Date.now() - 86400000,
+    created: Date.now() - 648000000,
     wordParts: [
       { answer: false, basicWord: "", position: 1, toSpeech: true, word: "Hallo" },
       { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Hello" },
@@ -334,6 +436,7 @@ const category101Words: Word[] = [
     toRepeat: false,
     repeated: 7,
     lastTimestampRepeated: Date.now() - 43200000,
+    created: Date.now() - 734400000,
     wordParts: [
       { answer: false, basicWord: "danken", position: 1, toSpeech: true, word: "Danke" },
       { answer: true, basicWord: "thank", position: 2, toSpeech: true, word: "Thanks" },
@@ -341,6 +444,40 @@ const category101Words: Word[] = [
     wordStats: [
       { timestampRepeated: Date.now() - 43200000, toAnswer: 10, answered: 9, method: "FirstToSecond" },
     ],
+  },
+  {
+    id: 108,
+    accepted: false,
+    comment: "Goodbye in German",
+    resetTimestamp: null,
+    mechanism: "TABLE",
+    chosen: false,
+    toRepeat: false,
+    repeated: 0,
+    lastTimestampRepeated: null,
+    created: Date.now() - 25200000,
+    wordParts: [
+      { answer: false, basicWord: "", position: 1, toSpeech: true, word: "Tschüss" },
+      { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Goodbye" },
+    ],
+    wordStats: [],
+  },
+  {
+    id: 109,
+    accepted: false,
+    comment: "Please in German",
+    resetTimestamp: null,
+    mechanism: "BASIC",
+    chosen: false,
+    toRepeat: false,
+    repeated: 0,
+    lastTimestampRepeated: null,
+    created: Date.now() - 12600000,
+    wordParts: [
+      { answer: false, basicWord: "", position: 1, toSpeech: true, word: "Bitte" },
+      { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Please" },
+    ],
+    wordStats: [],
   },
 ];
 
@@ -356,6 +493,7 @@ const category201Words: Word[] = [
     toRepeat: false,
     repeated: 10,
     lastTimestampRepeated: Date.now() - 86400000,
+    created: Date.now() - 820800000,
     wordParts: [
       { answer: false, basicWord: "", position: 1, toSpeech: false, word: "public class" },
       { answer: true, basicWord: "", position: 2, toSpeech: false, word: "classe publique" },
@@ -374,6 +512,7 @@ const category201Words: Word[] = [
     toRepeat: true,
     repeated: 5,
     lastTimestampRepeated: Date.now() - 172800000,
+    created: Date.now() - 907200000,
     wordParts: [
       { answer: false, basicWord: "", position: 1, toSpeech: false, word: "for loop" },
       { answer: true, basicWord: "", position: 2, toSpeech: false, word: "boucle for" },
@@ -381,6 +520,40 @@ const category201Words: Word[] = [
     wordStats: [
       { timestampRepeated: Date.now() - 172800000, toAnswer: 8, answered: 6, method: "SecondToFirst" },
     ],
+  },
+  {
+    id: 110,
+    accepted: false,
+    comment: "Method declaration",
+    resetTimestamp: null,
+    mechanism: "TABLE",
+    chosen: false,
+    toRepeat: false,
+    repeated: 0,
+    lastTimestampRepeated: null,
+    created: Date.now() - 32400000,
+    wordParts: [
+      { answer: false, basicWord: "", position: 1, toSpeech: false, word: "public void" },
+      { answer: true, basicWord: "", position: 2, toSpeech: false, word: "public vide" },
+    ],
+    wordStats: [],
+  },
+  {
+    id: 111,
+    accepted: false,
+    comment: "Variable declaration",
+    resetTimestamp: null,
+    mechanism: "BASIC",
+    chosen: false,
+    toRepeat: false,
+    repeated: 0,
+    lastTimestampRepeated: null,
+    created: Date.now() - 19800000,
+    wordParts: [
+      { answer: false, basicWord: "", position: 1, toSpeech: false, word: "int variable" },
+      { answer: true, basicWord: "", position: 2, toSpeech: false, word: "variable entière" },
+    ],
+    wordStats: [],
   },
 ];
 

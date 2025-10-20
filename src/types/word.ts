@@ -26,6 +26,7 @@ export interface Word {
   toRepeat: boolean;
   repeated: number;
   lastTimestampRepeated: number | null;
+  created: number;
   wordParts: WordPart[];
   wordStats: WordStat[];
 }
