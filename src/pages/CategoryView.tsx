@@ -6,6 +6,7 @@ import { Category } from "@/types/category";
 import { Word, Mechanism } from "@/types/word";
 import { mockWordsByCategory } from "@/data/mockWords";
 import { toast } from "sonner";
+import AddWordForm from "@/components/AddWordForm";
 import {
   Table,
   TableBody,
@@ -117,6 +118,14 @@ export default function CategoryView() {
     const storageKey = `words_${categoryId}`;
     localStorage.setItem(storageKey, JSON.stringify(updatedWords));
     toast.success("Word removed");
+  };
+
+  const handleWordAdded = (newWord: Word) => {
+    const updatedWords = [...words, newWord];
+    setWords(updatedWords);
+    
+    const storageKey = `words_${categoryId}`;
+    localStorage.setItem(storageKey, JSON.stringify(updatedWords));
   };
 
   const handleSort = (column: SortColumn) => {
@@ -274,6 +283,8 @@ export default function CategoryView() {
               <span>Method: <Badge variant="outline">{category.method}</Badge></span>
             </div>
           </div>
+
+          <AddWordForm categoryId={categoryId!} onWordAdded={handleWordAdded} />
 
           <div className="space-y-4">
             {/* Filters */}
