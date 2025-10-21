@@ -114,6 +114,9 @@ function SortableWordPartRow({
               );
               if (currentIndex < allParts.length - 1) {
                 (allParts[currentIndex + 1] as HTMLInputElement).focus();
+              } else {
+                // Cycle back to first input
+                (allParts[0] as HTMLInputElement).focus();
               }
             }
           }}
@@ -217,6 +220,10 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
       const inputId = activeElement.id;
       if (inputId.startsWith("comment")) {
         setComment(newValue);
+        activeElement.focus();
+        setTimeout(() => {
+          activeElement.setSelectionRange(start + 1, start + 1);
+        }, 0);
       } else {
         const [, partId, field] = inputId.split("-");
         setWordParts((parts) =>
@@ -224,13 +231,11 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
             part.id === partId ? { ...part, [field]: newValue } : part
           )
         );
+        activeElement.focus();
+        setTimeout(() => {
+          activeElement.setSelectionRange(start + 1, start + 1);
+        }, 0);
       }
-      
-      // Set cursor position after inserted letter
-      setTimeout(() => {
-        activeElement.value = newValue;
-        activeElement.setSelectionRange(start + 1, start + 1);
-      }, 0);
     }
   };
 
@@ -277,11 +282,6 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
     e.preventDefault();
 
     // Validation
-    if (!comment.trim()) {
-      toast.error("Comment is required");
-      return;
-    }
-
     if (wordParts.some((part) => !part.word.trim())) {
       toast.error("All word parts must have a word value");
       return;
