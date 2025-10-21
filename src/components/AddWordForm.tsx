@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Plus, GripVertical } from "lucide-react";
-import { Word, WordPart } from "@/types/word";
+import { Word, Mechanism } from "@/types/word";
 import { toast } from "sonner";
 import {
   DndContext,
@@ -26,6 +27,9 @@ import { CSS } from "@dnd-kit/utilities";
 interface AddWordFormProps {
   categoryId: string;
   onWordAdded: (word: Word) => void;
+  editWord?: Word | null;
+  onClose?: () => void;
+  specialLetters?: string;
 }
 
 interface WordPartInput {
@@ -41,11 +45,13 @@ function SortableWordPartRow({
   index,
   onUpdate,
   onDelete,
+  firstInputRef,
 }: {
   part: WordPartInput;
   index: number;
   onUpdate: (id: string, field: keyof WordPartInput, value: any) => void;
   onDelete: (id: string) => void;
+  firstInputRef?: React.RefObject<HTMLInputElement>;
 }) {
   const {
     attributes,
@@ -80,14 +86,37 @@ function SortableWordPartRow({
 
       <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
         <Input
+          id={`word-${part.id}-word`}
+          ref={index === 0 && !part.answer ? firstInputRef : undefined}
           placeholder={part.answer ? "Answer word" : "Question word"}
           value={part.word}
           onChange={(e) => onUpdate(part.id, "word", e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Tab") {
+              e.preventDefault();
+              const nextInput = document.getElementById(`word-${part.id}-basicWord`);
+              nextInput?.focus();
+            }
+          }}
         />
         <Input
+          id={`word-${part.id}-basicWord`}
           placeholder="Basic word (optional)"
           value={part.basicWord}
           onChange={(e) => onUpdate(part.id, "basicWord", e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Tab") {
+              e.preventDefault();
+              // Focus next word part's word input
+              const allParts = document.querySelectorAll('[id^="word-"][id$="-word"]');
+              const currentIndex = Array.from(allParts).findIndex(
+                (el) => el.id === `word-${part.id}-word`
+              );
+              if (currentIndex < allParts.length - 1) {
+                (allParts[currentIndex + 1] as HTMLInputElement).focus();
+              }
+            }
+          }}
         />
         <div className="flex items-center gap-2">
           <Checkbox
@@ -116,24 +145,37 @@ function SortableWordPartRow({
   );
 }
 
-export default function AddWordForm({ categoryId, onWordAdded }: AddWordFormProps) {
-  const [comment, setComment] = useState("");
-  const [wordParts, setWordParts] = useState<WordPartInput[]>([
-    {
-      id: crypto.randomUUID(),
-      word: "",
-      basicWord: "",
-      answer: false,
-      toSpeech: false,
-    },
-    {
-      id: crypto.randomUUID(),
-      word: "",
-      basicWord: "",
-      answer: true,
-      toSpeech: true,
-    },
-  ]);
+export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose, specialLetters }: AddWordFormProps) {
+  const [comment, setComment] = useState(editWord?.comment || "");
+  const [mechanism, setMechanism] = useState<Mechanism>(editWord?.mechanism || "BASIC");
+  const [wordParts, setWordParts] = useState<WordPartInput[]>(
+    editWord
+      ? editWord.wordParts.map((part) => ({
+          id: crypto.randomUUID(),
+          word: part.word,
+          basicWord: part.basicWord,
+          answer: part.answer,
+          toSpeech: part.toSpeech,
+        }))
+      : [
+          {
+            id: crypto.randomUUID(),
+            word: "",
+            basicWord: "",
+            answer: false,
+            toSpeech: false,
+          },
+          {
+            id: crypto.randomUUID(),
+            word: "",
+            basicWord: "",
+            answer: true,
+            toSpeech: true,
+          },
+        ]
+  );
+  const firstInputRef = useRef<HTMLInputElement>(null);
+  const inputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -141,6 +183,56 @@ export default function AddWordForm({ categoryId, onWordAdded }: AddWordFormProp
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  useEffect(() => {
+    // Focus first input when modal opens
+    firstInputRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    // Handle keyboard shortcuts
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === ";") {
+        e.preventDefault();
+        addWordPart(false);
+      } else if (e.ctrlKey && e.key === "'") {
+        e.preventDefault();
+        addWordPart(true);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const insertSpecialLetter = (letter: string) => {
+    const activeElement = document.activeElement as HTMLInputElement;
+    if (activeElement && activeElement.tagName === "INPUT") {
+      const start = activeElement.selectionStart || 0;
+      const end = activeElement.selectionEnd || 0;
+      const currentValue = activeElement.value;
+      const newValue = currentValue.slice(0, start) + letter + currentValue.slice(end);
+      
+      // Find which word part this input belongs to
+      const inputId = activeElement.id;
+      if (inputId.startsWith("comment")) {
+        setComment(newValue);
+      } else {
+        const [, partId, field] = inputId.split("-");
+        setWordParts((parts) =>
+          parts.map((part) =>
+            part.id === partId ? { ...part, [field]: newValue } : part
+          )
+        );
+      }
+      
+      // Set cursor position after inserted letter
+      setTimeout(() => {
+        activeElement.value = newValue;
+        activeElement.setSelectionRange(start + 1, start + 1);
+      }, 0);
+    }
+  };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -195,18 +287,18 @@ export default function AddWordForm({ categoryId, onWordAdded }: AddWordFormProp
       return;
     }
 
-    // Create the word object
-    const newWord: Word = {
-      id: Date.now(),
-      accepted: false,
+    // Create or update the word object
+    const wordData: Word = {
+      id: editWord?.id || Date.now(),
+      accepted: editWord?.accepted ?? false,
       comment: comment.trim(),
-      resetTimestamp: null,
-      mechanism: "BASIC",
-      chosen: false,
-      toRepeat: false,
-      repeated: 0,
-      lastTimestampRepeated: null,
-      created: Date.now(),
+      resetTimestamp: editWord?.resetTimestamp || null,
+      mechanism,
+      chosen: editWord?.chosen || false,
+      toRepeat: editWord?.toRepeat || false,
+      repeated: editWord?.repeated || 0,
+      lastTimestampRepeated: editWord?.lastTimestampRepeated || null,
+      created: editWord?.created || Date.now(),
       wordParts: wordParts.map((part, index) => ({
         answer: part.answer,
         basicWord: part.basicWord.trim(),
@@ -214,44 +306,91 @@ export default function AddWordForm({ categoryId, onWordAdded }: AddWordFormProp
         toSpeech: part.toSpeech,
         word: part.word.trim(),
       })),
-      wordStats: [],
+      wordStats: editWord?.wordStats || [],
     };
 
-    onWordAdded(newWord);
+    onWordAdded(wordData);
 
-    // Reset form
-    setComment("");
-    setWordParts([
-      {
-        id: crypto.randomUUID(),
-        word: "",
-        basicWord: "",
-        answer: false,
-        toSpeech: false,
-      },
-      {
-        id: crypto.randomUUID(),
-        word: "",
-        basicWord: "",
-        answer: true,
-        toSpeech: true,
-      },
-    ]);
-
-    toast.success("Word added successfully");
+    if (editWord) {
+      // Close modal after editing
+      onClose?.();
+      toast.success("Word updated successfully");
+    } else {
+      // Reset form for adding new words
+      setComment("");
+      setMechanism("BASIC");
+      setWordParts([
+        {
+          id: crypto.randomUUID(),
+          word: "",
+          basicWord: "",
+          answer: false,
+          toSpeech: false,
+        },
+        {
+          id: crypto.randomUUID(),
+          word: "",
+          basicWord: "",
+          answer: true,
+          toSpeech: true,
+        },
+      ]);
+      firstInputRef.current?.focus();
+      toast.success("Word added successfully");
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 border rounded-lg p-6 bg-card">
-      <h3 className="text-lg font-semibold">Add New Word</h3>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <h3 className="text-lg font-semibold">{editWord ? "Edit Word" : "Add New Word"}</h3>
+
+      {/* Keyboard shortcuts info */}
+      <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+        <strong>Shortcuts:</strong> Ctrl+; (add question part), Ctrl+' (add answer part), Enter (submit)
+      </div>
+
+      {/* Special Letters */}
+      {specialLetters && specialLetters.length > 0 && (
+        <div className="border rounded-lg p-3">
+          <label className="text-sm font-medium block mb-2">Special Letters</label>
+          <div className="flex flex-wrap gap-2">
+            {specialLetters.split(",").map((letter, index) => (
+              <Button
+                key={index}
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => insertSpecialLetter(letter)}
+                className="h-8 w-8 p-0"
+              >
+                {letter}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div>
         <label className="text-sm font-medium mb-2 block">Comment</label>
         <Input
+          id="comment-input"
           placeholder="Enter comment for this word..."
           value={comment}
           onChange={(e) => setComment(e.target.value)}
         />
+      </div>
+
+      <div>
+        <label className="text-sm font-medium mb-2 block">Mechanism</label>
+        <Select value={mechanism} onValueChange={(value: Mechanism) => setMechanism(value)}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="BASIC">Basic</SelectItem>
+            <SelectItem value="TABLE">Table</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-3">
@@ -272,6 +411,7 @@ export default function AddWordForm({ categoryId, onWordAdded }: AddWordFormProp
                 index={index}
                 onUpdate={updateWordPart}
                 onDelete={deleteWordPart}
+                firstInputRef={index === 0 && !part.answer ? firstInputRef : undefined}
               />
             ))}
           </SortableContext>
@@ -300,7 +440,7 @@ export default function AddWordForm({ categoryId, onWordAdded }: AddWordFormProp
       </div>
 
       <Button type="submit" className="w-full">
-        Add Word
+        {editWord ? "Update Word" : "Add Word"}
       </Button>
     </form>
   );

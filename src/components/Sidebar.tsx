@@ -85,7 +85,7 @@ export const Sidebar = () => {
           hidden: false,
           codeForTranslator: "en-US",
           codeForSpeech: "en-US",
-          specialLetters: "",
+          specialLetters: "€,-,$",
         },
         {
           id: "2",
@@ -94,7 +94,7 @@ export const Sidebar = () => {
           hidden: false,
           codeForTranslator: "de",
           codeForSpeech: "de",
-          specialLetters: "ä,Ä,ö,Ö,ü,Ü,ß",
+          specialLetters: "Ä,ä,Ö,ö,Ü,ü,ß",
         },
         {
           id: "3",

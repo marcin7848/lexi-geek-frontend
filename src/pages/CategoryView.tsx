@@ -6,7 +6,7 @@ import { Category } from "@/types/category";
 import { Word, Mechanism } from "@/types/word";
 import { mockWordsByCategory } from "@/data/mockWords";
 import { toast } from "sonner";
-import AddWordForm from "@/components/AddWordForm";
+import WordFormModal from "@/components/WordFormModal";
 import {
   Table,
   TableBody,
@@ -48,10 +48,17 @@ export default function CategoryView() {
   const [unacceptedTextFilter, setUnacceptedTextFilter] = useState("");
   const [unacceptedMechanismFilter, setUnacceptedMechanismFilter] = useState<Mechanism | "ALL">("ALL");
 
+  // Modal states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingWord, setEditingWord] = useState<Word | null>(null);
+  const [languageId, setLanguageId] = useState<string | null>(null);
+  const [specialLetters, setSpecialLetters] = useState<string>("");
+
   useEffect(() => {
     // Find category from all languages
     const languages = JSON.parse(localStorage.getItem("languages") || "[]");
     let foundCategory: Category | null = null;
+    let foundLanguageId: string | null = null;
 
     for (const language of languages) {
       const storageKey = `categories_${language.id}`;
@@ -63,6 +70,8 @@ export default function CategoryView() {
         
         if (found) {
           foundCategory = found;
+          foundLanguageId = language.id;
+          setSpecialLetters(language.specialLetters || "");
           break;
         }
       }
@@ -70,6 +79,7 @@ export default function CategoryView() {
 
     if (foundCategory) {
       setCategory(foundCategory);
+      setLanguageId(foundLanguageId);
       
       // Load words from localStorage or initialize with mock data
       const storageKey = `words_${categoryId}`;
@@ -120,12 +130,30 @@ export default function CategoryView() {
     toast.success("Word removed");
   };
 
-  const handleWordAdded = (newWord: Word) => {
-    const updatedWords = [...words, newWord];
-    setWords(updatedWords);
+  const handleWordAdded = (word: Word) => {
+    let updatedWords: Word[];
     
+    if (editingWord) {
+      // Update existing word
+      updatedWords = words.map((w) => (w.id === word.id ? word : w));
+    } else {
+      // Add new word
+      updatedWords = [...words, word];
+    }
+    
+    setWords(updatedWords);
     const storageKey = `words_${categoryId}`;
     localStorage.setItem(storageKey, JSON.stringify(updatedWords));
+  };
+
+  const handleOpenAddModal = () => {
+    setEditingWord(null);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (word: Word) => {
+    setEditingWord(word);
+    setIsModalOpen(true);
   };
 
   const handleSort = (column: SortColumn) => {
@@ -284,7 +312,18 @@ export default function CategoryView() {
             </div>
           </div>
 
-          <AddWordForm categoryId={categoryId!} onWordAdded={handleWordAdded} />
+          <Button onClick={handleOpenAddModal} size="lg">
+            Add New Word
+          </Button>
+
+          <WordFormModal
+            open={isModalOpen}
+            onOpenChange={setIsModalOpen}
+            categoryId={categoryId!}
+            onWordAdded={handleWordAdded}
+            editWord={editingWord}
+            specialLetters={specialLetters}
+          />
 
           <div className="space-y-4">
             {/* Filters */}
@@ -398,10 +437,14 @@ export default function CategoryView() {
                      </TableHead>
                    </TableRow>
                  </TableHeader>
-                 <TableBody>
-                   {paginatedWords(true).map((word) => (
-                    <TableRow key={word.id}>
-                      <TableCell>{renderWordParts(word.wordParts)}</TableCell>
+                  <TableBody>
+                    {paginatedWords(true).map((word) => (
+                     <TableRow 
+                       key={word.id}
+                       onDoubleClick={() => handleOpenEditModal(word)}
+                       className="cursor-pointer"
+                     >
+                       <TableCell>{renderWordParts(word.wordParts)}</TableCell>
                       <TableCell>{word.comment}</TableCell>
                       <TableCell>
                         <Badge variant="secondary">{word.mechanism}</Badge>
@@ -608,10 +651,14 @@ export default function CategoryView() {
                        <TableHead>Actions</TableHead>
                      </TableRow>
                    </TableHeader>
-                   <TableBody>
-                     {paginatedWords(false).map((word) => (
-                       <TableRow key={word.id}>
-                         <TableCell>{renderWordParts(word.wordParts)}</TableCell>
+                    <TableBody>
+                      {paginatedWords(false).map((word) => (
+                        <TableRow 
+                          key={word.id}
+                          onDoubleClick={() => handleOpenEditModal(word)}
+                          className="cursor-pointer"
+                        >
+                          <TableCell>{renderWordParts(word.wordParts)}</TableCell>
                          <TableCell>{word.comment}</TableCell>
                          <TableCell>
                            <Badge variant="secondary">{word.mechanism}</Badge>
