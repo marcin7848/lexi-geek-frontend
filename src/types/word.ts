@@ -29,4 +29,5 @@ export interface Word {
   created: number;
   wordParts: WordPart[];
   wordStats: WordStat[];
+  inCategories: string[];
 }

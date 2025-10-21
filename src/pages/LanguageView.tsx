@@ -64,7 +64,7 @@ export default function LanguageView() {
     <div className="min-h-screen bg-background">
       <Header />
       <Sidebar />
-      <main className="pt-16 px-4 md:px-8 max-w-6xl mx-auto">
+      <main className="pt-16 px-4 md:px-8 max-w-[95%] mx-auto">
         <div className="py-8 space-y-6">
           <h1 className="text-3xl font-bold">{language.name}</h1>
           <CategoryTree categories={categories} onUpdate={handleCategoriesUpdate} />

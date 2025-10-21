@@ -22,6 +22,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowUpDown, ChevronLeft, ChevronRight, Check, X } from "lucide-react";
 import { format } from "date-fns";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type SortColumn = "word" | "comment" | "mechanism" | "chosen" | "repeated" | "lastTimestampRepeated" | "created";
 type SortDirection = "asc" | "desc";
@@ -302,7 +308,7 @@ export default function CategoryView() {
     <div className="min-h-screen bg-background">
       <Header />
       <Sidebar />
-      <main className="pt-16 px-4 md:px-8 max-w-7xl mx-auto">
+      <main className="pt-16 px-4 md:px-8 max-w-[95%] mx-auto">
         <div className="py-8 space-y-6">
           <div>
             <h1 className="text-3xl font-bold">{category.name}</h1>
@@ -312,9 +318,25 @@ export default function CategoryView() {
             </div>
           </div>
 
-          <Button onClick={handleOpenAddModal} size="lg">
-            Add New Word
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleOpenAddModal} size="lg">
+              Add New Word
+            </Button>
+            <Button 
+              onClick={() => navigate(`/category/${categoryId}/auto-translate`)} 
+              variant="secondary"
+              size="lg"
+            >
+              Automatic translation
+            </Button>
+            <Button 
+              onClick={() => navigate(`/category/${categoryId}/other-users-words`)} 
+              variant="secondary"
+              size="lg"
+            >
+              Other users words
+            </Button>
+          </div>
 
           <WordFormModal
             open={isModalOpen}
@@ -365,7 +387,7 @@ export default function CategoryView() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>
+                    <TableHead className="w-auto">
                       <Button
                         variant="ghost"
                         onClick={() => handleSort("word")}
@@ -375,7 +397,7 @@ export default function CategoryView() {
                         <ArrowUpDown className="h-4 w-4" />
                       </Button>
                     </TableHead>
-                    <TableHead>
+                    <TableHead className="w-48">
                       <Button
                         variant="ghost"
                         onClick={() => handleSort("comment")}
@@ -385,51 +407,52 @@ export default function CategoryView() {
                         <ArrowUpDown className="h-4 w-4" />
                       </Button>
                     </TableHead>
-                    <TableHead>
+                    <TableHead className="w-32 text-center">
                       <Button
                         variant="ghost"
                         onClick={() => handleSort("mechanism")}
-                        className="flex items-center gap-1"
+                        className="flex items-center gap-1 w-full justify-center"
                       >
                         Mechanism
                         <ArrowUpDown className="h-4 w-4" />
                       </Button>
                     </TableHead>
-                    <TableHead>
+                    <TableHead className="w-24 text-center">
                       <Button
                         variant="ghost"
                         onClick={() => handleSort("chosen")}
-                        className="flex items-center gap-1"
+                        className="flex items-center gap-1 w-full justify-center"
                       >
                         Chosen
                         <ArrowUpDown className="h-4 w-4" />
                       </Button>
                     </TableHead>
-                    <TableHead>
-                      <Button
-                        variant="ghost"
-                        onClick={() => handleSort("repeated")}
-                        className="flex items-center gap-1"
-                      >
-                        Repeated
-                        <ArrowUpDown className="h-4 w-4" />
-                      </Button>
-                    </TableHead>
-                     <TableHead>
+                     <TableHead className="w-28 text-center">
                        <Button
                          variant="ghost"
-                         onClick={() => handleSort("created")}
-                         className="flex items-center gap-1"
+                         onClick={() => handleSort("repeated")}
+                         className="flex items-center gap-1 w-full justify-center"
                        >
-                         Created
+                         Repeated
                          <ArrowUpDown className="h-4 w-4" />
                        </Button>
                      </TableHead>
-                     <TableHead>
+                     <TableHead className="w-40 text-center">In Categories</TableHead>
+                      <TableHead className="w-52 text-center">
+                        <Button
+                          variant="ghost"
+                          onClick={() => handleSort("created")}
+                          className="flex items-center gap-1 w-full justify-center"
+                        >
+                          Created
+                          <ArrowUpDown className="h-4 w-4" />
+                        </Button>
+                      </TableHead>
+                     <TableHead className="w-52 text-center">
                        <Button
                          variant="ghost"
                          onClick={() => handleSort("lastTimestampRepeated")}
-                         className="flex items-center gap-1"
+                         className="flex items-center gap-1 w-full justify-center"
                        >
                          Last Repeated
                          <ArrowUpDown className="h-4 w-4" />
@@ -446,22 +469,46 @@ export default function CategoryView() {
                      >
                        <TableCell>{renderWordParts(word.wordParts)}</TableCell>
                       <TableCell>{word.comment}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{word.mechanism}</Badge>
+                      <TableCell className="text-center">
+                        <div className="flex justify-center">
+                          <Badge variant="secondary">{word.mechanism}</Badge>
+                        </div>
                       </TableCell>
-                      <TableCell>
-                        <Checkbox
-                          checked={word.chosen}
-                          onCheckedChange={(checked) =>
-                            handleChosenChange(word.id, checked as boolean)
-                          }
-                        />
-                      </TableCell>
-                       <TableCell>{word.repeated}</TableCell>
-                       <TableCell>
-                         {format(new Date(word.created), "PPp")}
+                      <TableCell className="text-center">
+                        <div className="flex justify-center">
+                          <Checkbox
+                            checked={word.chosen}
+                            onCheckedChange={(checked) =>
+                              handleChosenChange(word.id, checked as boolean)
+                            }
+                          />
+                        </div>
                        </TableCell>
-                       <TableCell>
+                        <TableCell className="text-center">{word.repeated}</TableCell>
+                        <TableCell className="text-center">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-help truncate block max-w-[150px] mx-auto">
+                                  {word.inCategories.length > 0 
+                                    ? word.inCategories.join(", ")
+                                    : "-"}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="max-w-xs">
+                                  {word.inCategories.length > 0 
+                                    ? word.inCategories.join(", ")
+                                    : "No categories"}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {format(new Date(word.created), "PPp")}
+                       </TableCell>
+                       <TableCell className="text-center">
                          {word.lastTimestampRepeated
                            ? format(new Date(word.lastTimestampRepeated), "PPp")
                            : "-"}
@@ -576,98 +623,121 @@ export default function CategoryView() {
                </div>
 
                {/* Table */}
-               <div className="border rounded-lg">
-                 <Table>
-                   <TableHeader>
-                     <TableRow>
-                       <TableHead>
-                         <Button
-                           variant="ghost"
-                           onClick={() => {
-                             if (unacceptedSortColumn === "word") {
-                               setUnacceptedSortDirection(unacceptedSortDirection === "asc" ? "desc" : "asc");
-                             } else {
-                               setUnacceptedSortColumn("word");
-                               setUnacceptedSortDirection("asc");
-                             }
-                           }}
-                           className="flex items-center gap-1"
-                         >
-                           Word
-                           <ArrowUpDown className="h-4 w-4" />
-                         </Button>
-                       </TableHead>
-                       <TableHead>
-                         <Button
-                           variant="ghost"
-                           onClick={() => {
-                             if (unacceptedSortColumn === "comment") {
-                               setUnacceptedSortDirection(unacceptedSortDirection === "asc" ? "desc" : "asc");
-                             } else {
-                               setUnacceptedSortColumn("comment");
-                               setUnacceptedSortDirection("asc");
-                             }
-                           }}
-                           className="flex items-center gap-1"
-                         >
-                           Comment
-                           <ArrowUpDown className="h-4 w-4" />
-                         </Button>
-                       </TableHead>
-                       <TableHead>
-                         <Button
-                           variant="ghost"
-                           onClick={() => {
-                             if (unacceptedSortColumn === "mechanism") {
-                               setUnacceptedSortDirection(unacceptedSortDirection === "asc" ? "desc" : "asc");
-                             } else {
-                               setUnacceptedSortColumn("mechanism");
-                               setUnacceptedSortDirection("asc");
-                             }
-                           }}
-                           className="flex items-center gap-1"
-                         >
-                           Mechanism
-                           <ArrowUpDown className="h-4 w-4" />
-                         </Button>
-                       </TableHead>
-                       <TableHead>
-                         <Button
-                           variant="ghost"
-                           onClick={() => {
-                             if (unacceptedSortColumn === "created") {
-                               setUnacceptedSortDirection(unacceptedSortDirection === "asc" ? "desc" : "asc");
-                             } else {
-                               setUnacceptedSortColumn("created");
-                               setUnacceptedSortDirection("asc");
-                             }
-                           }}
-                           className="flex items-center gap-1"
-                         >
-                           Created
-                           <ArrowUpDown className="h-4 w-4" />
-                         </Button>
-                       </TableHead>
-                       <TableHead>Actions</TableHead>
-                     </TableRow>
-                   </TableHeader>
+                <div className="border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-auto">
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              if (unacceptedSortColumn === "word") {
+                                setUnacceptedSortDirection(unacceptedSortDirection === "asc" ? "desc" : "asc");
+                              } else {
+                                setUnacceptedSortColumn("word");
+                                setUnacceptedSortDirection("asc");
+                              }
+                            }}
+                            className="flex items-center gap-1"
+                          >
+                            Word
+                            <ArrowUpDown className="h-4 w-4" />
+                          </Button>
+                        </TableHead>
+                        <TableHead className="w-48">
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              if (unacceptedSortColumn === "comment") {
+                                setUnacceptedSortDirection(unacceptedSortDirection === "asc" ? "desc" : "asc");
+                              } else {
+                                setUnacceptedSortColumn("comment");
+                                setUnacceptedSortDirection("asc");
+                              }
+                            }}
+                            className="flex items-center gap-1"
+                          >
+                            Comment
+                            <ArrowUpDown className="h-4 w-4" />
+                          </Button>
+                        </TableHead>
+                        <TableHead className="w-32 text-center">
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              if (unacceptedSortColumn === "mechanism") {
+                                setUnacceptedSortDirection(unacceptedSortDirection === "asc" ? "desc" : "asc");
+                              } else {
+                                setUnacceptedSortColumn("mechanism");
+                                setUnacceptedSortDirection("asc");
+                              }
+                            }}
+                            className="flex items-center gap-1 w-full justify-center"
+                          >
+                            Mechanism
+                            <ArrowUpDown className="h-4 w-4" />
+                          </Button>
+                         </TableHead>
+                         <TableHead className="w-40 text-center">In Categories</TableHead>
+                         <TableHead className="w-52 text-center">
+                           <Button
+                             variant="ghost"
+                             onClick={() => {
+                               if (unacceptedSortColumn === "created") {
+                                 setUnacceptedSortDirection(unacceptedSortDirection === "asc" ? "desc" : "asc");
+                               } else {
+                                 setUnacceptedSortColumn("created");
+                                 setUnacceptedSortDirection("asc");
+                               }
+                             }}
+                             className="flex items-center gap-1 w-full justify-center"
+                           >
+                             Created
+                             <ArrowUpDown className="h-4 w-4" />
+                           </Button>
+                         </TableHead>
+                        <TableHead className="w-32 text-center">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
                     <TableBody>
-                      {paginatedWords(false).map((word) => (
-                        <TableRow 
-                          key={word.id}
-                          onDoubleClick={() => handleOpenEditModal(word)}
-                          className="cursor-pointer"
-                        >
-                          <TableCell>{renderWordParts(word.wordParts)}</TableCell>
-                         <TableCell>{word.comment}</TableCell>
-                         <TableCell>
-                           <Badge variant="secondary">{word.mechanism}</Badge>
+                       {paginatedWords(false).map((word) => (
+                         <TableRow 
+                           key={word.id}
+                           onDoubleClick={() => handleOpenEditModal(word)}
+                           className={`cursor-pointer ${word.inCategories.length > 0 ? 'bg-primary/5' : ''}`}
+                         >
+                           <TableCell>{renderWordParts(word.wordParts)}</TableCell>
+                          <TableCell>{word.comment}</TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex justify-center">
+                              <Badge variant="secondary">{word.mechanism}</Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="cursor-help truncate block max-w-[150px] mx-auto">
+                                    {word.inCategories.length > 0 
+                                      ? word.inCategories.join(", ")
+                                      : "-"}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="max-w-xs">
+                                    {word.inCategories.length > 0 
+                                      ? word.inCategories.join(", ")
+                                      : "No categories"}
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {format(new Date(word.created), "PPp")}
                          </TableCell>
-                         <TableCell>
-                           {format(new Date(word.created), "PPp")}
-                         </TableCell>
-                         <TableCell>
-                           <div className="flex gap-2">
+                         <TableCell className="text-center">
+                           <div className="flex gap-2 justify-center">
                              <Button
                                variant="ghost"
                                size="sm"

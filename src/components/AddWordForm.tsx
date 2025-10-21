@@ -46,12 +46,14 @@ function SortableWordPartRow({
   onUpdate,
   onDelete,
   firstInputRef,
+  onInputFocus,
 }: {
   part: WordPartInput;
   index: number;
   onUpdate: (id: string, field: keyof WordPartInput, value: any) => void;
   onDelete: (id: string) => void;
   firstInputRef?: React.RefObject<HTMLInputElement>;
+  onInputFocus?: (input: HTMLInputElement) => void;
 }) {
   const {
     attributes,
@@ -91,6 +93,7 @@ function SortableWordPartRow({
           placeholder={part.answer ? "Answer word" : "Question word"}
           value={part.word}
           onChange={(e) => onUpdate(part.id, "word", e.target.value)}
+          onFocus={(e) => onInputFocus?.(e.target)}
           onKeyDown={(e) => {
             if (e.key === "Tab") {
               e.preventDefault();
@@ -104,6 +107,7 @@ function SortableWordPartRow({
           placeholder="Basic word (optional)"
           value={part.basicWord}
           onChange={(e) => onUpdate(part.id, "basicWord", e.target.value)}
+          onFocus={(e) => onInputFocus?.(e.target)}
           onKeyDown={(e) => {
             if (e.key === "Tab") {
               e.preventDefault();
@@ -179,7 +183,7 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
         ]
   );
   const firstInputRef = useRef<HTMLInputElement>(null);
-  const inputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+  const lastFocusedInputRef = useRef<HTMLInputElement | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -210,33 +214,47 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
   }, []);
 
   const insertSpecialLetter = (letter: string) => {
-    const activeElement = document.activeElement as HTMLInputElement;
-    if (activeElement && activeElement.tagName === "INPUT") {
-      const start = activeElement.selectionStart || 0;
-      const end = activeElement.selectionEnd || 0;
-      const currentValue = activeElement.value;
-      const newValue = currentValue.slice(0, start) + letter + currentValue.slice(end);
+    const targetInput = lastFocusedInputRef.current;
+    if (!targetInput) return;
+
+    const start = targetInput.selectionStart || 0;
+    const end = targetInput.selectionEnd || 0;
+    const currentValue = targetInput.value;
+    const newValue = currentValue.slice(0, start) + letter + currentValue.slice(end);
+    const inputId = targetInput.id;
+
+    if (inputId.startsWith("comment")) {
+      setComment(newValue);
+      setTimeout(() => {
+        const input = document.getElementById(inputId) as HTMLInputElement;
+        if (input) {
+          input.focus();
+          input.setSelectionRange(start + 1, start + 1);
+        }
+      }, 0);
+    } else if (inputId.startsWith("word-")) {
+      // Parse format: word-{uuid}-{field}
+      // Find the last dash to get the field name
+      const lastDashIndex = inputId.lastIndexOf("-");
+      const field = inputId.substring(lastDashIndex + 1); // "word" or "basicWord"
+      const partId = inputId.substring(5, lastDashIndex); // Remove "word-" prefix and "-field" suffix
       
-      // Find which word part this input belongs to
-      const inputId = activeElement.id;
-      if (inputId.startsWith("comment")) {
-        setComment(newValue);
-        activeElement.focus();
+      setWordParts((parts) =>
+        parts.map((part) =>
+          part.id === partId ? { ...part, [field]: newValue } : part
+        )
+      );
+      
+      // Wait for React to re-render before refocusing
+      requestAnimationFrame(() => {
         setTimeout(() => {
-          activeElement.setSelectionRange(start + 1, start + 1);
-        }, 0);
-      } else {
-        const [, partId, field] = inputId.split("-");
-        setWordParts((parts) =>
-          parts.map((part) =>
-            part.id === partId ? { ...part, [field]: newValue } : part
-          )
-        );
-        activeElement.focus();
-        setTimeout(() => {
-          activeElement.setSelectionRange(start + 1, start + 1);
-        }, 0);
-      }
+          const input = document.getElementById(inputId) as HTMLInputElement;
+          if (input) {
+            input.focus();
+            input.setSelectionRange(start + 1, start + 1);
+          }
+        }, 50);
+      });
     }
   };
 
@@ -308,6 +326,7 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
         word: part.word.trim(),
       })),
       wordStats: editWord?.wordStats || [],
+      inCategories: editWord?.inCategories || [],
     };
 
     onWordAdded(wordData);
@@ -358,6 +377,7 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
           placeholder="Enter comment for this word..."
           value={comment}
           onChange={(e) => setComment(e.target.value)}
+          onFocus={(e) => lastFocusedInputRef.current = e.target}
         />
       </div>
 
@@ -415,6 +435,7 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
                 onUpdate={updateWordPart}
                 onDelete={deleteWordPart}
                 firstInputRef={index === 0 && !part.answer ? firstInputRef : undefined}
+                onInputFocus={(input) => lastFocusedInputRef.current = input}
               />
             ))}
           </SortableContext>

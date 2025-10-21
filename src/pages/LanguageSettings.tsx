@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
@@ -18,6 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { ShortcutHints } from "@/components/ShortcutHints";
 
 type Language = {
   id: string;
@@ -33,6 +34,8 @@ export default function LanguageSettings() {
   const { languageId } = useParams();
   const navigate = useNavigate();
   const [language, setLanguage] = useState<Language | null>(null);
+  const [showShortcutHints, setShowShortcutHints] = useState(false);
+  const shortcutInputRef = useRef<HTMLInputElement>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -129,15 +132,28 @@ export default function LanguageSettings() {
               {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 relative">
               <Label htmlFor="shortcut">Shortcut *</Label>
               <Input
                 id="shortcut"
+                ref={shortcutInputRef}
                 value={language.shortcut}
                 onChange={(e) => setLanguage({ ...language, shortcut: e.target.value })}
+                onFocus={() => setShowShortcutHints(true)}
                 placeholder="Enter shortcut"
                 required
               />
+              {showShortcutHints && (
+                <ShortcutHints
+                  value={language.shortcut}
+                  onSelect={(shortcut) => {
+                    setLanguage({ ...language, shortcut });
+                    setShowShortcutHints(false);
+                  }}
+                  onHide={() => setShowShortcutHints(false)}
+                  inputRef={shortcutInputRef}
+                />
+              )}
               {errors.shortcut && <p className="text-sm text-destructive">{errors.shortcut}</p>}
             </div>
 

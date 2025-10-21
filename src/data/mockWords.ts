@@ -20,6 +20,7 @@ const category1Words: Word[] = [
     wordStats: [
       { timestampRepeated: Date.now() - 86400000, toAnswer: 10, answered: 8, method: "FirstToSecond" },
     ],
+    inCategories: ["Test1", "the best item", "OOOtest2", "very long category XXX the best could be haha"],
   },
   {
     id: 2,
@@ -39,6 +40,7 @@ const category1Words: Word[] = [
     wordStats: [
       { timestampRepeated: Date.now() - 172800000, toAnswer: 5, answered: 3, method: "SecondToFirst" },
     ],
+    inCategories: ["Test1", "the best item", "OOOtest2", "very long category XXX the best could be haha"],
   },
   {
     id: 13,
@@ -58,6 +60,7 @@ const category1Words: Word[] = [
     wordStats: [
       { timestampRepeated: Date.now() - 43200000, toAnswer: 12, answered: 10, method: "FirstToSecond" },
     ],
+    inCategories: [],
   },
   {
     id: 14,
@@ -77,6 +80,7 @@ const category1Words: Word[] = [
     wordStats: [
       { timestampRepeated: Date.now() - 21600000, toAnswer: 15, answered: 14, method: "FirstToSecond" },
     ],
+    inCategories: [],
   },
   {
     id: 15,
@@ -96,6 +100,7 @@ const category1Words: Word[] = [
     wordStats: [
       { timestampRepeated: Date.now() - 604800000, toAnswer: 3, answered: 2, method: "SecondToFirst" },
     ],
+    inCategories: [],
   },
   {
     id: 16,
@@ -115,6 +120,7 @@ const category1Words: Word[] = [
     wordStats: [
       { timestampRepeated: Date.now() - 10800000, toAnswer: 20, answered: 19, method: "FirstToSecond" },
     ],
+    inCategories: [],
   },
   {
     id: 17,
@@ -134,6 +140,7 @@ const category1Words: Word[] = [
     wordStats: [
       { timestampRepeated: Date.now() - 129600000, toAnswer: 14, answered: 13, method: "SecondToFirst" },
     ],
+    inCategories: [],
   },
   {
     id: 18,
@@ -153,6 +160,7 @@ const category1Words: Word[] = [
     wordStats: [
       { timestampRepeated: Date.now() - 259200000, toAnswer: 8, answered: 7, method: "FirstToSecond" },
     ],
+    inCategories: [],
   },
   {
     id: 19,
@@ -172,6 +180,7 @@ const category1Words: Word[] = [
     wordStats: [
       { timestampRepeated: Date.now() - 345600000, toAnswer: 5, answered: 4, method: "FirstToSecond" },
     ],
+    inCategories: [],
   },
   {
     id: 20,
@@ -191,6 +200,7 @@ const category1Words: Word[] = [
     wordStats: [
       { timestampRepeated: Date.now() - 432000000, toAnswer: 6, answered: 5, method: "SecondToFirst" },
     ],
+    inCategories: [],
   },
 ];
 
@@ -214,6 +224,7 @@ const category2Words: Word[] = [
     wordStats: [
       { timestampRepeated: Date.now() - 43200000, toAnswer: 12, answered: 11, method: "FirstToSecond" },
     ],
+    inCategories: [],
   },
   {
     id: 4,
@@ -233,6 +244,7 @@ const category2Words: Word[] = [
     wordStats: [
       { timestampRepeated: Date.now() - 259200000, toAnswer: 6, answered: 5, method: "FirstToSecond" },
     ],
+    inCategories: [],
   },
   {
     id: 103,
@@ -250,6 +262,7 @@ const category2Words: Word[] = [
       { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Yo seré" },
     ],
     wordStats: [],
+    inCategories: [],
   },
   {
     id: 104,
@@ -267,6 +280,7 @@ const category2Words: Word[] = [
       { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Yo sería" },
     ],
     wordStats: [],
+    inCategories: [],
   },
 ];
 
@@ -292,6 +306,7 @@ const category3Words: Word[] = [
     wordStats: [
       { timestampRepeated: Date.now() - 604800000, toAnswer: 3, answered: 2, method: "SecondToFirst" },
     ],
+    inCategories: [],
   },
   {
     id: 6,
@@ -309,6 +324,7 @@ const category3Words: Word[] = [
       { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Hasta luego" },
     ],
     wordStats: [],
+    inCategories: [],
   },
   {
     id: 105,
@@ -326,6 +342,7 @@ const category3Words: Word[] = [
       { answer: true, basicWord: "", position: 2, toSpeech: true, word: "¿Dónde está?" },
     ],
     wordStats: [],
+    inCategories: [],
   },
 ];
 
@@ -349,6 +366,7 @@ const category4Words: Word[] = [
     wordStats: [
       { timestampRepeated: Date.now() - 86400000, toAnswer: 8, answered: 7, method: "FirstToSecond" },
     ],
+    inCategories: [],
   },
   {
     id: 8,
@@ -368,6 +386,7 @@ const category4Words: Word[] = [
     wordStats: [
       { timestampRepeated: Date.now() - 172800000, toAnswer: 9, answered: 8, method: "SecondToFirst" },
     ],
+    inCategories: [],
   },
   {
     id: 106,
@@ -385,6 +404,7 @@ const category4Words: Word[] = [
       { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Vaca" },
     ],
     wordStats: [],
+    inCategories: [],
   },
   {
     id: 107,
@@ -402,6 +422,7 @@ const category4Words: Word[] = [
       { answer: true, basicWord: "", position: 2, toSpeech: true, word: "León" },
     ],
     wordStats: [],
+    inCategories: [],
   },
 ];
 
@@ -425,6 +446,7 @@ const category101Words: Word[] = [
     wordStats: [
       { timestampRepeated: Date.now() - 86400000, toAnswer: 5, answered: 5, method: "FirstToSecond" },
     ],
+    inCategories: [],
   },
   {
     id: 10,
@@ -444,6 +466,7 @@ const category101Words: Word[] = [
     wordStats: [
       { timestampRepeated: Date.now() - 43200000, toAnswer: 10, answered: 9, method: "FirstToSecond" },
     ],
+    inCategories: [],
   },
   {
     id: 108,
@@ -461,6 +484,7 @@ const category101Words: Word[] = [
       { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Goodbye" },
     ],
     wordStats: [],
+    inCategories: [],
   },
   {
     id: 109,
@@ -478,6 +502,7 @@ const category101Words: Word[] = [
       { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Please" },
     ],
     wordStats: [],
+    inCategories: [],
   },
 ];
 
@@ -501,6 +526,7 @@ const category201Words: Word[] = [
     wordStats: [
       { timestampRepeated: Date.now() - 86400000, toAnswer: 15, answered: 14, method: "FirstToSecond" },
     ],
+    inCategories: [],
   },
   {
     id: 12,
@@ -520,6 +546,7 @@ const category201Words: Word[] = [
     wordStats: [
       { timestampRepeated: Date.now() - 172800000, toAnswer: 8, answered: 6, method: "SecondToFirst" },
     ],
+    inCategories: [],
   },
   {
     id: 110,
@@ -537,6 +564,7 @@ const category201Words: Word[] = [
       { answer: true, basicWord: "", position: 2, toSpeech: false, word: "public vide" },
     ],
     wordStats: [],
+    inCategories: [],
   },
   {
     id: 111,
@@ -554,6 +582,7 @@ const category201Words: Word[] = [
       { answer: true, basicWord: "", position: 2, toSpeech: false, word: "variable entière" },
     ],
     wordStats: [],
+    inCategories: [],
   },
 ];
 

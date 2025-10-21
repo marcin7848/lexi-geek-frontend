@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import AddWordForm from "@/components/AddWordForm";
 import { Word } from "@/types/word";
 
@@ -24,6 +24,9 @@ export default function WordFormModal({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{editWord ? "Edit Word" : "Add New Word"}</DialogTitle>
+          <DialogDescription>
+            {editWord ? "Update the word details below" : "Fill in the details to add a new word"}
+          </DialogDescription>
         </DialogHeader>
         <AddWordForm
           categoryId={categoryId}

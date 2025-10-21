@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { ShortcutHints } from "@/components/ShortcutHints";
 
 export default function AddLanguage() {
   const navigate = useNavigate();
@@ -18,6 +19,8 @@ export default function AddLanguage() {
     codeForSpeech: "",
     specialLetters: "",
   });
+  const [showShortcutHints, setShowShortcutHints] = useState(false);
+  const shortcutInputRef = useRef<HTMLInputElement>(null);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -95,15 +98,28 @@ export default function AddLanguage() {
               {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 relative">
               <Label htmlFor="shortcut">Shortcut *</Label>
               <Input
                 id="shortcut"
+                ref={shortcutInputRef}
                 value={formData.shortcut}
                 onChange={(e) => setFormData({ ...formData, shortcut: e.target.value })}
+                onFocus={() => setShowShortcutHints(true)}
                 placeholder="Enter shortcut"
                 required
               />
+              {showShortcutHints && (
+                <ShortcutHints
+                  value={formData.shortcut}
+                  onSelect={(shortcut) => {
+                    setFormData({ ...formData, shortcut });
+                    setShowShortcutHints(false);
+                  }}
+                  onHide={() => setShowShortcutHints(false)}
+                  inputRef={shortcutInputRef}
+                />
+              )}
               {errors.shortcut && <p className="text-sm text-destructive">{errors.shortcut}</p>}
             </div>
 
