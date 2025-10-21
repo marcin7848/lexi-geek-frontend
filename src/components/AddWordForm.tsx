@@ -137,13 +137,14 @@ function SortableWordPartRow({
       </div>
 
       <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => onDelete(part.id)}
-        className="text-destructive hover:text-destructive"
-      >
-        <X className="h-4 w-4" />
-      </Button>
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={() => onDelete(part.id)}
+          className="text-destructive hover:text-destructive"
+        >
+          <X className="h-4 w-4" />
+        </Button>
     </div>
   );
 }
@@ -349,26 +350,6 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
         <strong>Shortcuts:</strong> Ctrl+; (add question part), Ctrl+' (add answer part), Enter (submit)
       </div>
 
-      {/* Special Letters */}
-      {specialLetters && specialLetters.length > 0 && (
-        <div className="border rounded-lg p-3">
-          <label className="text-sm font-medium block mb-2">Special Letters</label>
-          <div className="flex flex-wrap gap-2">
-            {specialLetters.split(",").map((letter, index) => (
-              <Button
-                key={index}
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => insertSpecialLetter(letter)}
-                className="h-8 w-8 p-0"
-              >
-                {letter}
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div>
         <label className="text-sm font-medium mb-2 block">Comment</label>
@@ -393,6 +374,28 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
         </Select>
       </div>
 
+      {/* Special Letters */}
+      {specialLetters && specialLetters.length > 0 && (
+        <div className="border rounded-lg p-3">
+          <label className="text-sm font-medium block mb-2">Special Letters</label>
+          <div className="flex flex-wrap gap-2">
+            {specialLetters.split(",").map((letter, index) => (
+              <Button
+                key={index}
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => insertSpecialLetter(letter)}
+                onMouseDown={(e) => e.preventDefault()}
+                className="h-8 w-8 p-0"
+              >
+                {letter}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+      
       <div className="space-y-3">
         <label className="text-sm font-medium block">Word Parts</label>
         <DndContext
