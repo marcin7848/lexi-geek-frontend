@@ -67,7 +67,7 @@ const AutomaticTranslate = () => {
               />
             </div>
 
-            <Button onClick={handleAutoTranslate} className="w-full">
+            <Button onClick={handleAutoTranslate}>
               Auto Translate
             </Button>
           </div>

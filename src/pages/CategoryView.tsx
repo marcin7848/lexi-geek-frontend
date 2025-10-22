@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUpDown, ChevronLeft, ChevronRight, Check, X } from "lucide-react";
+import { ArrowUpDown, ChevronLeft, ChevronRight, Check, X, ArrowLeft, Book, Dumbbell, ArrowRight, ArrowLeftRight } from "lucide-react";
 import { format } from "date-fns";
 import {
   Tooltip,
@@ -310,11 +310,38 @@ export default function CategoryView() {
       <Sidebar />
       <main className="pt-16 px-4 md:px-8 max-w-[95%] mx-auto">
         <div className="py-8 space-y-6">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate(`/language/${languageId}`)}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Language
+          </Button>
+
           <div>
             <h1 className="text-3xl font-bold">{category.name}</h1>
-            <div className="flex gap-4 mt-2 text-muted-foreground">
-              <span>Mode: <Badge variant="outline">{category.mode}</Badge></span>
-              <span>Method: <Badge variant="outline">{category.method}</Badge></span>
+            <div className="flex gap-4 mt-2 text-muted-foreground items-center">
+              <span className="flex items-center gap-2">
+                Mode: 
+                <Badge variant="outline" className="flex items-center gap-1">
+                  {category.mode === "Dictionary" ? (
+                    <Book className="h-4 w-4 text-primary" />
+                  ) : (
+                    <Dumbbell className="h-4 w-4 fill-orange-500 text-orange-500" />
+                  )}
+                  {category.mode}
+                </Badge>
+              </span>
+              <span className="flex items-center gap-2">
+                Method: 
+                <Badge variant="outline" className="flex items-center gap-1">
+                  {category.method === "FirstToSecond" && <ArrowRight className="h-4 w-4" />}
+                  {category.method === "SecondToFirst" && <ArrowLeft className="h-4 w-4" />}
+                  {category.method === "BothSides" && <ArrowLeftRight className="h-4 w-4" />}
+                  {category.method}
+                </Badge>
+              </span>
             </div>
           </div>
 

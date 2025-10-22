@@ -250,6 +250,7 @@ const OtherUsersWords = () => {
 
   const handlePageSizeChange = (value: string) => {
     if (value === "custom") {
+      // Don't change pageSize yet, wait for user to input custom value
       return;
     }
     setPageSize(Number(value));
@@ -339,6 +340,17 @@ const OtherUsersWords = () => {
                 />
               </div>
               <div className="w-48">
+                <label className="text-sm font-medium mb-2 block">Category</label>
+                <Input
+                  placeholder="Filter by category..."
+                  value={categoryFilter}
+                  onChange={(e) => {
+                    setCategoryFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                />
+              </div>
+              <div className="w-48">
                 <label className="text-sm font-medium mb-2 block">Mechanism</label>
                 <Select
                   value={mechanismFilter}
@@ -356,17 +368,6 @@ const OtherUsersWords = () => {
                     <SelectItem value="TABLE">TABLE</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="w-48">
-                <label className="text-sm font-medium mb-2 block">Category</label>
-                <Input
-                  placeholder="Filter by category..."
-                  value={categoryFilter}
-                  onChange={(e) => {
-                    setCategoryFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                />
               </div>
             </div>
 
@@ -398,20 +399,20 @@ const OtherUsersWords = () => {
                     <TableHead className="w-32 text-center">
                       <Button
                         variant="ghost"
-                        onClick={() => handleSort("mechanism")}
+                        onClick={() => handleSort("category")}
                         className="flex items-center gap-1 w-full justify-center"
                       >
-                        Mechanism
+                        Category
                         <ArrowUpDown className="h-4 w-4" />
                       </Button>
                     </TableHead>
                     <TableHead className="w-32 text-center">
                       <Button
                         variant="ghost"
-                        onClick={() => handleSort("category")}
+                        onClick={() => handleSort("mechanism")}
                         className="flex items-center gap-1 w-full justify-center"
                       >
-                        Category
+                        Mechanism
                         <ArrowUpDown className="h-4 w-4" />
                       </Button>
                     </TableHead>
@@ -430,12 +431,12 @@ const OtherUsersWords = () => {
                       <TableRow key={word.id}>
                         <TableCell>{renderWordParts(word.wordParts)}</TableCell>
                         <TableCell>{word.comment}</TableCell>
+                        <TableCell className="text-center">{word.categoryName}</TableCell>
                         <TableCell className="text-center">
                           <div className="flex justify-center">
                             <Badge variant="secondary">{word.mechanism}</Badge>
                           </div>
                         </TableCell>
-                        <TableCell className="text-center">{word.categoryName}</TableCell>
                         <TableCell>
                           <div className="flex gap-2 justify-center">
                             <Button
@@ -481,20 +482,18 @@ const OtherUsersWords = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                {pageSize === 0 && (
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      placeholder="Custom size"
-                      value={customPageSize}
-                      onChange={(e) => setCustomPageSize(e.target.value)}
-                      className="w-32"
-                    />
-                    <Button onClick={handleCustomPageSize} size="sm">
-                      Apply
-                    </Button>
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Custom size"
+                    value={customPageSize}
+                    onChange={(e) => setCustomPageSize(e.target.value)}
+                    className="w-32"
+                  />
+                  <Button onClick={handleCustomPageSize} size="sm">
+                    Apply
+                  </Button>
+                </div>
               </div>
 
               <div className="flex items-center gap-4">
