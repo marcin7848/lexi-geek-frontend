@@ -269,7 +269,6 @@ export default function CategoryView() {
     if (size > 0) {
       setPageSize(size);
       setCurrentPage(1);
-      setCustomPageSize("");
     }
   };
 
@@ -822,32 +821,30 @@ export default function CategoryView() {
                        className="w-24"
                        value={unacceptedCustomPageSize}
                        onChange={(e) => setUnacceptedCustomPageSize(e.target.value)}
-                       onKeyDown={(e) => {
-                         if (e.key === "Enter") {
-                           const size = Number(unacceptedCustomPageSize);
-                           if (size > 0) {
-                             setUnacceptedPageSize(size);
-                             setUnacceptedCurrentPage(1);
-                             setUnacceptedCustomPageSize("");
-                           }
-                         }
-                       }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const size = Number(unacceptedCustomPageSize);
+                            if (size > 0) {
+                              setUnacceptedPageSize(size);
+                              setUnacceptedCurrentPage(1);
+                            }
+                          }
+                        }}
                      />
-                     <Button
-                       variant="outline"
-                       size="sm"
-                       onClick={() => {
-                         const size = Number(unacceptedCustomPageSize);
-                         if (size > 0) {
-                           setUnacceptedPageSize(size);
-                           setUnacceptedCurrentPage(1);
-                           setUnacceptedCustomPageSize("");
-                         }
-                       }}
-                       disabled={!unacceptedCustomPageSize}
-                     >
-                       Apply
-                     </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const size = Number(unacceptedCustomPageSize);
+                          if (size > 0) {
+                            setUnacceptedPageSize(size);
+                            setUnacceptedCurrentPage(1);
+                          }
+                        }}
+                        disabled={!unacceptedCustomPageSize}
+                      >
+                        Apply
+                      </Button>
                    </div>
                  </div>
 

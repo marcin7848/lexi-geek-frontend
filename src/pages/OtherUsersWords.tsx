@@ -262,7 +262,6 @@ const OtherUsersWords = () => {
     if (size > 0) {
       setPageSize(size);
       setCurrentPage(1);
-      setCustomPageSize("");
     }
   };
 
@@ -466,58 +465,66 @@ const OtherUsersWords = () => {
 
             {/* Pagination Controls */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">Rows per page:</span>
-                  <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
-                    <SelectTrigger className="w-20">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="20">20</SelectItem>
-                      <SelectItem value="50">50</SelectItem>
-                      <SelectItem value="100">100</SelectItem>
-                      <SelectItem value="custom">Custom</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Items per page:</span>
+                <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                  <SelectTrigger className="w-24">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                    <SelectItem value="1000">1000</SelectItem>
+                    <SelectItem value="5000">5000</SelectItem>
+                  </SelectContent>
+                </Select>
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"
-                    placeholder="Custom size"
+                    placeholder="Custom"
+                    className="w-24"
                     value={customPageSize}
                     onChange={(e) => setCustomPageSize(e.target.value)}
-                    className="w-32"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleCustomPageSize();
+                      }
+                    }}
                   />
-                  <Button onClick={handleCustomPageSize} size="sm">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCustomPageSize}
+                    disabled={!customPageSize}
+                  >
                     Apply
                   </Button>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">
-                  Page {currentPage} of {totalPages}
+                  Page {currentPage} of {totalPages || 1} ({filteredAndSortedWords().length} total items)
                 </span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </div>
