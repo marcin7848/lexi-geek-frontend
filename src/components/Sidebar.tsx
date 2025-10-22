@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import type { AuthUser } from "@/lib/supabase";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 type Language = {
   id: string;
@@ -22,6 +23,7 @@ export const Sidebar = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const toggleSidebar = () => setIsOpen(!isOpen);
   const isActive = (path: string) => location.pathname === path;
@@ -155,14 +157,14 @@ export const Sidebar = () => {
             )}
           >
             <Home className="h-4 w-4" />
-            <span>Home</span>
+            <span>{t("sidebar.languages")}</span>
           </Link>
 
           {/* Languages Section - Only visible for logged-in users */}
           {user && (
             <div className="mt-6">
               <div className="flex items-center justify-between px-3 py-2">
-                <span className="text-sidebar-foreground font-medium">Languages</span>
+                <span className="text-sidebar-foreground font-medium">{t("sidebar.languages")}</span>
                 <Button
                   variant="ghost"
                   size="icon"

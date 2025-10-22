@@ -8,10 +8,12 @@ import { ArrowLeft } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { mockCategories } from "@/data/mockCategories";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 const AutomaticTranslate = () => {
   const { categoryId } = useParams();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [method, setMethod] = useState("GOOGLE_TRANSLATOR");
   const [text, setText] = useState("");
 
@@ -35,40 +37,40 @@ const AutomaticTranslate = () => {
             className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Category
+            {t("autoTranslate.backToCategory")}
           </Button>
 
           <div>
-            <h1 className="text-3xl font-bold mb-2">Automatic Translation</h1>
-            <p className="text-muted-foreground">Category: {categoryName}</p>
+            <h1 className="text-3xl font-bold mb-2">{t("autoTranslate.title")}</h1>
+            <p className="text-muted-foreground">{t("autoTranslate.category")} {categoryName}</p>
           </div>
 
           <div className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="method">Translation Method</Label>
+              <Label htmlFor="method">{t("autoTranslate.method")}</Label>
               <Select value={method} onValueChange={setMethod}>
                 <SelectTrigger id="method">
-                  <SelectValue placeholder="Select translation method" />
+                  <SelectValue placeholder={t("autoTranslate.selectMethod")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="GOOGLE_TRANSLATOR">Google Translator</SelectItem>
+                  <SelectItem value="GOOGLE_TRANSLATOR">{t("autoTranslate.googleTranslator")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="text">Text to Translate</Label>
+              <Label htmlFor="text">{t("autoTranslate.textToTranslate")}</Label>
               <Textarea
                 id="text"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder="Insert the text for automatic translation here..."
+                placeholder={t("autoTranslate.placeholder")}
                 className="min-h-[300px] resize-y"
               />
             </div>
 
             <Button onClick={handleAutoTranslate}>
-              Auto Translate
+              {t("autoTranslate.button")}
             </Button>
           </div>
         </div>

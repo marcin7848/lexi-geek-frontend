@@ -5,6 +5,15 @@ import { Lightbulb } from "lucide-react";
 import { supabase, type AuthUser } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/components/ThemeProvider";
+import { useLanguage } from "@/i18n/LanguageProvider";
+import { languageOptions } from "@/i18n/languageConfig";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Header = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -12,6 +21,7 @@ export const Header = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
+  const { language, setLanguage, t } = useLanguage();
 
   useEffect(() => {
     // Check for mocked session first
@@ -63,14 +73,14 @@ export const Header = () => {
       window.dispatchEvent(new Event('storage'));
       
       toast({
-        title: "Logged out successfully",
-        description: "You have been logged out of your account.",
+        title: t("header.logoutSuccess"),
+        description: t("header.logoutSuccessDesc"),
       });
       navigate("/");
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to log out. Please try again.",
+        title: t("header.logoutError"),
+        description: t("header.logoutErrorDesc"),
         variant: "destructive",
       });
     }
@@ -97,8 +107,33 @@ export const Header = () => {
           LexiGeek
         </Link>
 
-        {/* Theme Toggle & Auth Buttons */}
+        {/* Language Selector, Theme Toggle & Auth Buttons */}
         <div className="flex items-center gap-3">
+          <Select value={language} onValueChange={(value) => setLanguage(value as typeof language)}>
+            <SelectTrigger className="w-[140px] border-border/20 bg-background/50 hover:bg-accent/10">
+              <SelectValue>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold min-w-[24px]">
+                    {languageOptions.find(lang => lang.code === language)?.flag}
+                  </span>
+                  <span className="text-sm">
+                    {languageOptions.find(lang => lang.code === language)?.name}
+                  </span>
+                </div>
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {languageOptions.map((lang) => (
+                <SelectItem key={lang.code} value={lang.code}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold min-w-[24px]">{lang.flag}</span>
+                    <span>{lang.name}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <Button
             variant="ghost"
             size="icon"
@@ -113,22 +148,22 @@ export const Header = () => {
           ) : user ? (
             <>
               <span className="text-foreground/80">
-                Hi, {getDisplayName()}!
+                {t("header.greeting")}, {getDisplayName()}!
               </span>
               <Button variant="header" size="sm" onClick={handleLogout}>
-                Log out
+                {t("header.logout")}
               </Button>
             </>
           ) : (
             <>
               <Link to="/login">
                 <Button variant="header" size="sm">
-                  Login
+                  {t("header.login")}
                 </Button>
               </Link>
               <Link to="/register">
                 <Button variant="auth" size="sm">
-                  Register
+                  {t("header.register")}
                 </Button>
               </Link>
             </>

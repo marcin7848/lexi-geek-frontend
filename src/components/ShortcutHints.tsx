@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 interface ShortcutUsage {
   shortcut: string;
@@ -48,6 +49,7 @@ interface ShortcutHintsProps {
 export function ShortcutHints({ value, onSelect, onHide, inputRef }: ShortcutHintsProps) {
   const [shortcuts, setShortcuts] = useState<ShortcutUsage[]>([]);
   const hintsRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const allShortcuts = getMockShortcutUsage();
@@ -105,7 +107,7 @@ export function ShortcutHints({ value, onSelect, onHide, inputRef }: ShortcutHin
               <span className="text-sm text-muted-foreground">{item.name}</span>
             </div>
             <span className="text-xs text-muted-foreground">
-              {item.usage} uses
+              {item.usage} {t("shortcutHints.uses")}
             </span>
           </div>
         ))}

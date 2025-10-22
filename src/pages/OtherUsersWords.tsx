@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 type SortColumn = "word" | "comment" | "mechanism" | "category";
 type SortDirection = "asc" | "desc";
@@ -122,6 +123,7 @@ const getMockOtherUsersWords = (): WordWithCategory[] => {
 const OtherUsersWords = () => {
   const { categoryId } = useParams();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [otherUsersWords, setOtherUsersWords] = useState<WordWithCategory[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -294,14 +296,14 @@ const OtherUsersWords = () => {
     setOtherUsersWords(updatedOtherUsersWords);
     localStorage.setItem("otherUsersWords", JSON.stringify(updatedOtherUsersWords));
     
-    toast.success("Word added to pending words");
+    toast.success(t("otherUsers.wordAdded"));
   };
 
   const handleRejectWord = (wordId: number) => {
     const updatedWords = otherUsersWords.filter(w => w.id !== wordId);
     setOtherUsersWords(updatedWords);
     localStorage.setItem("otherUsersWords", JSON.stringify(updatedWords));
-    toast.success("Word removed");
+    toast.success(t("otherUsers.wordRemoved"));
   };
 
   return (
@@ -316,21 +318,21 @@ const OtherUsersWords = () => {
             className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Category
+            {t("otherUsers.backToCategory")}
           </Button>
 
           <div>
-            <h1 className="text-3xl font-bold mb-2">Other Users Words</h1>
-            <p className="text-muted-foreground">Category: {categoryName}</p>
+            <h1 className="text-3xl font-bold mb-2">{t("otherUsers.title")}</h1>
+            <p className="text-muted-foreground">{t("otherUsers.category")} {categoryName}</p>
           </div>
 
           <div className="space-y-4">
             {/* Filters */}
             <div className="flex gap-4 items-end">
               <div className="flex-1">
-                <label className="text-sm font-medium mb-2 block">Search</label>
+                <label className="text-sm font-medium mb-2 block">{t("common.search")}</label>
                 <Input
-                  placeholder="Filter by word or comment..."
+                  placeholder={t("otherUsers.searchPlaceholder")}
                   value={textFilter}
                   onChange={(e) => {
                     setTextFilter(e.target.value);
@@ -339,9 +341,9 @@ const OtherUsersWords = () => {
                 />
               </div>
               <div className="w-48">
-                <label className="text-sm font-medium mb-2 block">Category</label>
+                <label className="text-sm font-medium mb-2 block">{t("otherUsers.categoryFilter")}</label>
                 <Input
-                  placeholder="Filter by category..."
+                  placeholder={t("otherUsers.categoryPlaceholder")}
                   value={categoryFilter}
                   onChange={(e) => {
                     setCategoryFilter(e.target.value);
@@ -350,7 +352,7 @@ const OtherUsersWords = () => {
                 />
               </div>
               <div className="w-48">
-                <label className="text-sm font-medium mb-2 block">Mechanism</label>
+                <label className="text-sm font-medium mb-2 block">{t("otherUsers.mechanism")}</label>
                 <Select
                   value={mechanismFilter}
                   onValueChange={(value: Mechanism | "ALL") => {
@@ -362,7 +364,7 @@ const OtherUsersWords = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ALL">All</SelectItem>
+                    <SelectItem value="ALL">{t("otherUsers.all")}</SelectItem>
                     <SelectItem value="BASIC">BASIC</SelectItem>
                     <SelectItem value="TABLE">TABLE</SelectItem>
                   </SelectContent>
@@ -381,7 +383,7 @@ const OtherUsersWords = () => {
                         onClick={() => handleSort("word")}
                         className="flex items-center gap-1"
                       >
-                        Word
+                        {t("otherUsers.word")}
                         <ArrowUpDown className="h-4 w-4" />
                       </Button>
                     </TableHead>
@@ -391,7 +393,7 @@ const OtherUsersWords = () => {
                         onClick={() => handleSort("comment")}
                         className="flex items-center gap-1"
                       >
-                        Comment
+                        {t("otherUsers.comment")}
                         <ArrowUpDown className="h-4 w-4" />
                       </Button>
                     </TableHead>
@@ -401,7 +403,7 @@ const OtherUsersWords = () => {
                         onClick={() => handleSort("category")}
                         className="flex items-center gap-1 w-full justify-center"
                       >
-                        Category
+                        {t("otherUsers.category")}
                         <ArrowUpDown className="h-4 w-4" />
                       </Button>
                     </TableHead>
@@ -411,18 +413,18 @@ const OtherUsersWords = () => {
                         onClick={() => handleSort("mechanism")}
                         className="flex items-center gap-1 w-full justify-center"
                       >
-                        Mechanism
+                        {t("otherUsers.mechanism")}
                         <ArrowUpDown className="h-4 w-4" />
                       </Button>
                     </TableHead>
-                    <TableHead className="w-32 text-center">Actions</TableHead>
+                    <TableHead className="w-32 text-center">{t("otherUsers.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedWords().length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                        No words available from other users
+                        {t("otherUsers.noWords")}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -466,7 +468,7 @@ const OtherUsersWords = () => {
             {/* Pagination Controls */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Items per page:</span>
+                <span className="text-sm text-muted-foreground">{t("otherUsers.itemsPerPage")}</span>
                 <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
                   <SelectTrigger className="w-24">
                     <SelectValue />
@@ -484,7 +486,7 @@ const OtherUsersWords = () => {
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"
-                    placeholder="Custom"
+                    placeholder={t("otherUsers.custom")}
                     className="w-24"
                     value={customPageSize}
                     onChange={(e) => setCustomPageSize(e.target.value)}
@@ -500,14 +502,14 @@ const OtherUsersWords = () => {
                     onClick={handleCustomPageSize}
                     disabled={!customPageSize}
                   >
-                    Apply
+                    {t("otherUsers.apply")}
                   </Button>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">
-                  Page {currentPage} of {totalPages || 1} ({filteredAndSortedWords().length} total items)
+                  {t("otherUsers.page")} {currentPage} {t("otherUsers.of")} {totalPages || 1} ({filteredAndSortedWords().length} total items)
                 </span>
                 <Button
                   variant="outline"
