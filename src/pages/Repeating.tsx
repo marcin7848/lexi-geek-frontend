@@ -25,7 +25,7 @@ export default function Repeating() {
   const navigate = useNavigate();
   const [repeatData, setRepeatData] = useState<RepeatData>({ active: false, wordsLeft: 0 });
   const [currentWord, setCurrentWord] = useState<Word | null>(null);
-  const [currentMethod, setCurrentMethod] = useState<Method>("FirstToSecond");
+  const [currentMethod, setCurrentMethod] = useState<Method>("QuestionToAnswer");
   const [categoryMode, setCategoryMode] = useState<CategoryMode>("Dictionary");
   const [specialLetters, setSpecialLetters] = useState<string>("");
   const [answers, setAnswers] = useState<{ [key: string]: string }>({});
@@ -140,8 +140,8 @@ export default function Repeating() {
       setCategoryMode(wordCategory.mode);
     }
 
-    // Randomly choose method (never BothSides)
-    const method = Math.random() > 0.5 ? "FirstToSecond" : "SecondToFirst";
+    // Randomly choose method (never Both)
+    const method = Math.random() > 0.5 ? "QuestionToAnswer" : "AnswerToQuestion";
     setCurrentMethod(method);
 
     // Log to console
@@ -161,9 +161,9 @@ export default function Repeating() {
     if (stage === "ANSWER") {
       // Check answers and move to RESULT stage
       const sortedParts = [...currentWord.wordParts].sort((a, b) => a.position - b.position);
-      const inputParts = currentMethod === "FirstToSecond"
-        ? sortedParts.filter(p => p.answer)
-        : sortedParts.filter(p => !p.answer);
+      const inputParts = currentMethod === "QuestionToAnswer"
+        ? sortedParts.filter(p => p.answer && !p.isSeparator)
+        : sortedParts.filter(p => !p.answer && !p.isSeparator);
 
       const checked: CheckedWordPart[] = sortedParts.map(part => {
         const isInput = inputParts.some(p => p.position === part.position);
@@ -259,195 +259,192 @@ export default function Repeating() {
     const sortedParts = [...partsToUse].sort((a, b) => a.position - b.position);
     const mechanism = currentWord.mechanism;
 
-    // Determine which parts are shown and which need inputs
-    let shownParts: WordPart[] = [];
-    let inputParts: WordPart[] = [];
+    // Helper to render separator
+    const renderSeparator = (part: WordPart) => {
+      if (part.separatorType === "ENTER") {
+        return <div key={part.position} className="w-full" />;
+      } else if (part.separatorType === "TAB") {
+        return <span key={part.position} className="inline-block w-8">{part.basicWord}</span>;
+      } else if (part.separatorType === "MULTI_DASH") {
+        return <span key={part.position} className="mx-1">{part.basicWord}</span>;
+      }
+      return null;
+    };
 
-    if (currentMethod === "FirstToSecond") {
-      shownParts = sortedParts.filter(p => !p.answer);
-      inputParts = sortedParts.filter(p => p.answer);
-    } else {
-      shownParts = sortedParts.filter(p => p.answer);
-      inputParts = sortedParts.filter(p => !p.answer);
-    }
-
-    if (mechanism === "BASIC") {
-      // BASIC mechanism
+    // In RESULT stage, always show all parts with word and basicWord
+    if (stage === "RESULT") {
       return (
         <div className="flex flex-wrap gap-2 items-center">
-          {sortedParts.map((part, idx) => {
-            const isInput = inputParts.some(p => p.position === part.position);
-            const checkedPart = part as CheckedWordPart;
-            
-            if (isInput) {
-              if (stage === "RESULT") {
-                return (
-                  <span key={part.position} className="inline-flex items-center gap-1">
-                    <span className={`px-2 py-1 rounded ${checkedPart.correct ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
-                      {part.word}
-                    </span>
-                    {part.basicWord && (
-                      <span className="text-muted-foreground text-sm">({part.basicWord})</span>
-                    )}
-                  </span>
-                );
-              }
-              return (
-                <span key={part.position} className="inline-flex items-center gap-1">
-                  <Input
-                    ref={idx === sortedParts.findIndex(p => inputParts.some(ip => ip.position === p.position)) ? firstInputRef : null}
-                    data-answer-input
-                    data-part-id={part.position.toString()}
-                    value={answers[part.position.toString()] || ""}
-                    onChange={(e) => setAnswers(prev => ({ ...prev, [part.position.toString()]: e.target.value }))}
-                    onFocus={(e) => lastFocusedInputRef.current = e.target}
-                    onKeyDown={handleKeyDown}
-                    className="w-40 inline-block"
-                  />
-                  {part.basicWord && (
-                    <span className="text-muted-foreground text-sm">({part.basicWord})</span>
-                  )}
-                </span>
-              );
-            } else {
-              return (
-                <span key={part.position} className="inline-flex items-center gap-1">
-                  <span>{part.word}</span>
-                  {part.basicWord && (
-                    <span className="text-muted-foreground text-sm">({part.basicWord})</span>
-                  )}
-                </span>
-              );
+          {sortedParts.map((part) => {
+            if (part.isSeparator) {
+              return renderSeparator(part);
             }
+            
+            const checkedPart = part as CheckedWordPart;
+            const hasCorrectProperty = checkedPart.correct !== undefined;
+            
+            return (
+              <span key={part.position} className="inline-flex items-center gap-1">
+                <span className={hasCorrectProperty 
+                  ? `px-2 py-1 rounded ${checkedPart.correct ? 'bg-green-500/20' : 'bg-red-500/20'}`
+                  : ''
+                }>
+                  {part.word}
+                </span>
+                {part.basicWord && (
+                  <span className="text-muted-foreground text-sm">({part.basicWord})</span>
+                )}
+              </span>
+            );
           })}
         </div>
       );
-    } else {
-      // TABLE mechanism
-      if (categoryMode === "Dictionary") {
-        return (
-          <div className="space-y-4">
-            {stage === "ANSWER" && (
-              <div className="border rounded-lg p-4 flex flex-wrap gap-4">
-                {shownParts.map(part => (
-                  <span
-                    key={part.position}
-                    className="px-3 py-1 hover:bg-accent/50 rounded cursor-pointer transition-colors"
-                  >
-                    {part.word}
-                    {part.basicWord && (
-                      <span className="text-muted-foreground text-sm ml-1">({part.basicWord})</span>
-                    )}
-                  </span>
-                ))}
-              </div>
-            )}
-            <div className="flex flex-wrap gap-2 items-center">
-              {sortedParts.map((part, idx) => {
-                const isInput = inputParts.some(p => p.position === part.position);
-                const checkedPart = part as CheckedWordPart;
-                
-                if (isInput) {
-                  if (stage === "RESULT") {
-                    return (
-                      <span key={part.position} className="inline-flex items-center gap-1">
-                        <span className={`px-2 py-1 rounded ${checkedPart.correct ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
-                          {part.word}
-                        </span>
-                      </span>
-                    );
-                  }
-                  return (
-                    <span key={part.position} className="inline-flex items-center gap-1">
-                      <Input
-                        ref={idx === sortedParts.findIndex(p => inputParts.some(ip => ip.position === p.position)) ? firstInputRef : null}
-                        data-answer-input
-                        data-part-id={part.position.toString()}
-                        value={answers[part.position.toString()] || ""}
-                        onChange={(e) => setAnswers(prev => ({ ...prev, [part.position.toString()]: e.target.value }))}
-                        onFocus={(e) => lastFocusedInputRef.current = e.target}
-                        onKeyDown={handleKeyDown}
-                        className="w-40 inline-block"
-                      />
-                    </span>
-                  );
-                } else {
-                  return (
-                    <span key={part.position} className="inline-flex items-center gap-1">
-                      <span>{part.word}</span>
-                      {part.basicWord && (
-                        <span className="text-muted-foreground text-sm">({part.basicWord})</span>
-                      )}
-                    </span>
-                  );
-                }
-              })}
-            </div>
-          </div>
-        );
-      } else {
-        // Exercise mode - only show basicWord in the box
-        return (
-          <div className="space-y-4">
-            {stage === "ANSWER" && (
-              <div className="border rounded-lg p-4 flex flex-wrap gap-4">
-                {shownParts.map(part => (
-                  part.basicWord && (
-                    <span
-                      key={part.position}
-                      className="px-3 py-1 hover:bg-accent/50 rounded cursor-pointer transition-colors"
-                    >
-                      {part.basicWord}
-                    </span>
-                  )
-                ))}
-              </div>
-            )}
-            <div className="flex flex-wrap gap-2 items-center">
-              {sortedParts.map((part, idx) => {
-                const isInput = inputParts.some(p => p.position === part.position);
-                const checkedPart = part as CheckedWordPart;
-                
-                if (isInput) {
-                  if (stage === "RESULT") {
-                    return (
-                      <span key={part.position} className="inline-flex items-center gap-1">
-                        <span className={`px-2 py-1 rounded ${checkedPart.correct ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
-                          {part.word}
-                        </span>
-                      </span>
-                    );
-                  }
-                  return (
-                    <span key={part.position} className="inline-flex items-center gap-1">
-                      <Input
-                        ref={idx === sortedParts.findIndex(p => inputParts.some(ip => ip.position === p.position)) ? firstInputRef : null}
-                        data-answer-input
-                        data-part-id={part.position.toString()}
-                        value={answers[part.position.toString()] || ""}
-                        onChange={(e) => setAnswers(prev => ({ ...prev, [part.position.toString()]: e.target.value }))}
-                        onFocus={(e) => lastFocusedInputRef.current = e.target}
-                        onKeyDown={handleKeyDown}
-                        className="w-40 inline-block"
-                      />
-                    </span>
-                  );
-                } else {
-                  return (
-                    <span key={part.position} className="inline-flex items-center gap-1">
-                      <span>{part.word}</span>
-                      {part.basicWord && (
-                        <span className="text-muted-foreground text-sm">({part.basicWord})</span>
-                      )}
-                    </span>
-                  );
-                }
-              })}
-            </div>
-          </div>
-        );
-      }
     }
+
+    // ANSWER stage logic based on Mode, Mechanism, Method
+    const mode = categoryMode;
+    const method = currentMethod;
+
+    // Helper to shuffle array (for random order)
+    const shuffle = <T,>(array: T[]): T[] => {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    };
+
+    // Determine behaviors based on combination
+    let showBox = false;
+    let boxParts: WordPart[] = [];
+    let boxDisplayType: 'word-with-basic' | 'basic-only' = 'word-with-basic';
+    let belowParts: WordPart[] = sortedParts;
+    let inputAnswerValue: boolean = true;
+
+    if (mode === "Dictionary" && mechanism === "BASIC" && method === "QuestionToAnswer") {
+      // J, F
+      showBox = false;
+      inputAnswerValue = true;
+    } else if (mode === "Dictionary" && mechanism === "BASIC" && method === "AnswerToQuestion") {
+      // J, G
+      showBox = false;
+      inputAnswerValue = false;
+    } else if (mode === "Dictionary" && mechanism === "TABLE" && method === "QuestionToAnswer") {
+      // A, B, F
+      showBox = true;
+      boxParts = shuffle(sortedParts.filter(p => p.answer && !p.isSeparator));
+      boxDisplayType = 'word-with-basic';
+      inputAnswerValue = true;
+    } else if (mode === "Dictionary" && mechanism === "TABLE" && method === "AnswerToQuestion") {
+      // A, D, G
+      showBox = true;
+      boxParts = shuffle(sortedParts.filter(p => !p.answer && !p.isSeparator));
+      boxDisplayType = 'word-with-basic';
+      inputAnswerValue = false;
+    } else if (mode === "Exercise" && mechanism === "BASIC" && method === "QuestionToAnswer") {
+      // J, I
+      showBox = false;
+      inputAnswerValue = true;
+    } else if (mode === "Exercise" && mechanism === "BASIC" && method === "AnswerToQuestion") {
+      // J, H
+      showBox = false;
+      inputAnswerValue = false;
+    } else if (mode === "Exercise" && mechanism === "TABLE" && method === "QuestionToAnswer") {
+      // A, C, F
+      showBox = true;
+      boxParts = shuffle(sortedParts.filter(p => p.answer && !p.isSeparator));
+      boxDisplayType = 'basic-only';
+      inputAnswerValue = true;
+    } else if (mode === "Exercise" && mechanism === "TABLE" && method === "AnswerToQuestion") {
+      // A, E, G
+      showBox = true;
+      boxParts = shuffle(sortedParts.filter(p => !p.answer && !p.isSeparator));
+      boxDisplayType = 'basic-only';
+      inputAnswerValue = false;
+    }
+
+    // Normalize TABLE box parts to match inputAnswerValue to avoid inversion bugs
+    if (showBox && mechanism === "TABLE") {
+      boxParts = shuffle(sortedParts.filter(p => (p.answer === inputAnswerValue && !p.isSeparator)));
+    }
+
+    // Render box if needed
+    const boxElement = showBox ? (
+      <div className="border rounded-lg p-4 flex flex-wrap gap-4 mb-4">
+        {boxParts.map((part, idx) => (
+          <span
+            key={`box-${part.position}-${idx}`}
+            className="px-3 py-1 hover:bg-accent/50 rounded cursor-pointer transition-colors"
+          >
+            {boxDisplayType === 'word-with-basic' ? (
+              <>
+                {part.word}
+                {part.basicWord && (
+                  <span className="text-muted-foreground text-sm ml-1">({part.basicWord})</span>
+                )}
+              </>
+            ) : (
+              part.basicWord ? part.basicWord : null
+            )}
+          </span>
+        ))}
+      </div>
+    ) : null;
+
+    // Render below parts with inputs
+    const belowElement = (
+      <div className="flex flex-wrap gap-2 items-center">
+        {belowParts.map((part, idx) => {
+          // Check if it's a separator first
+          if (part.isSeparator) {
+            return renderSeparator(part);
+          }
+          
+          const isInput = part.answer === inputAnswerValue;
+          const isFirstInput = idx === belowParts.findIndex(p => p.answer === inputAnswerValue && !p.isSeparator);
+          
+          if (isInput) {
+            // Determine if we show basicWord next to input based on mode and mechanism (H/I only for Exercise BASIC)
+            const showBasicNextToInput = mode === "Exercise" && mechanism === "BASIC";
+            
+            return (
+              <span key={part.position} className="inline-flex items-center gap-1">
+                <Input
+                  ref={isFirstInput ? firstInputRef : null}
+                  data-answer-input
+                  data-part-id={part.position.toString()}
+                  value={answers[part.position.toString()] || ""}
+                  onChange={(e) => setAnswers(prev => ({ ...prev, [part.position.toString()]: e.target.value }))}
+                  onFocus={(e) => lastFocusedInputRef.current = e.target}
+                  onKeyDown={handleKeyDown}
+                  className="w-40 inline-block"
+                />
+                {showBasicNextToInput && part.basicWord && (
+                  <span className="text-muted-foreground text-sm">({part.basicWord})</span>
+                )}
+              </span>
+            );
+          } else {
+            return (
+              <span key={part.position} className="inline-flex items-center gap-1">
+                <span>{part.word}</span>
+                {part.basicWord && (
+                  <span className="text-muted-foreground text-sm">({part.basicWord})</span>
+                )}
+              </span>
+            );
+          }
+        })}
+      </div>
+    );
+
+    return (
+      <div>
+        {boxElement}
+        {belowElement}
+      </div>
+    );
   };
 
   if (!repeatData.active) {

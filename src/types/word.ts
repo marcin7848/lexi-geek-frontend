@@ -1,5 +1,6 @@
 export type Mechanism = "BASIC" | "TABLE";
-export type Method = "FirstToSecond" | "SecondToFirst";
+export type Method = "QuestionToAnswer" | "AnswerToQuestion";
+export type SeparatorType = "ENTER" | "TAB" | "MULTI_DASH";
 
 export interface WordPart {
   answer: boolean;
@@ -7,6 +8,8 @@ export interface WordPart {
   position: number;
   toSpeech: boolean;
   word: string;
+  isSeparator?: boolean;
+  separatorType?: SeparatorType;
 }
 
 export interface WordStat {

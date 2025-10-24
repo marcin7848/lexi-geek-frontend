@@ -67,12 +67,12 @@ export const CategoryNode = ({
 
   const getMethodIcon = () => {
     switch (category.method) {
-      case "FirstToSecond":
-        return <span title="First to Second"><ArrowRight className="h-4 w-4 text-muted-foreground" /></span>;
-      case "SecondToFirst":
-        return <span title="Second to First"><ArrowLeft className="h-4 w-4 text-muted-foreground" /></span>;
-      case "BothSides":
-        return <span title="Both Sides"><ArrowLeftRight className="h-4 w-4 text-muted-foreground" /></span>;
+      case "QuestionToAnswer":
+        return <span title="Question to Answer"><ArrowRight className="h-4 w-4 text-muted-foreground" /></span>;
+      case "AnswerToQuestion":
+        return <span title="Answer to Question"><ArrowLeft className="h-4 w-4 text-muted-foreground" /></span>;
+      case "Both":
+        return <span title="Both"><ArrowLeftRight className="h-4 w-4 text-muted-foreground" /></span>;
     }
   };
 

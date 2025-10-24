@@ -18,7 +18,7 @@ const category1Words: Word[] = [
       { answer: true, basicWord: "greet", position: 2, toSpeech: true, word: "Hola" },
     ],
     wordStats: [
-      { timestampRepeated: Date.now() - 86400000, toAnswer: 10, answered: 8, method: "FirstToSecond" },
+      { timestampRepeated: Date.now() - 86400000, toAnswer: 10, answered: 8, method: "QuestionToAnswer" },
     ],
     inCategories: ["Test1", "the best item", "OOOtest2", "very long category XXX the best could be haha"],
   },
@@ -38,7 +38,7 @@ const category1Words: Word[] = [
       { answer: true, basicWord: "say", position: 2, toSpeech: true, word: "Adiós" },
     ],
     wordStats: [
-      { timestampRepeated: Date.now() - 172800000, toAnswer: 5, answered: 3, method: "SecondToFirst" },
+      { timestampRepeated: Date.now() - 172800000, toAnswer: 5, answered: 3, method: "AnswerToQuestion" },
     ],
     inCategories: ["Test1", "the best item", "OOOtest2", "very long category XXX the best could be haha"],
   },
@@ -58,7 +58,7 @@ const category1Words: Word[] = [
       { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Por favor" },
     ],
     wordStats: [
-      { timestampRepeated: Date.now() - 43200000, toAnswer: 12, answered: 10, method: "FirstToSecond" },
+      { timestampRepeated: Date.now() - 43200000, toAnswer: 12, answered: 10, method: "QuestionToAnswer" },
     ],
     inCategories: [],
   },
@@ -78,7 +78,7 @@ const category1Words: Word[] = [
       { answer: true, basicWord: "agradecer", position: 2, toSpeech: true, word: "Gracias" },
     ],
     wordStats: [
-      { timestampRepeated: Date.now() - 21600000, toAnswer: 15, answered: 14, method: "FirstToSecond" },
+      { timestampRepeated: Date.now() - 21600000, toAnswer: 15, answered: 14, method: "QuestionToAnswer" },
     ],
     inCategories: [],
   },
@@ -98,7 +98,7 @@ const category1Words: Word[] = [
       { answer: true, basicWord: "disculpar", position: 2, toSpeech: true, word: "Lo siento" },
     ],
     wordStats: [
-      { timestampRepeated: Date.now() - 604800000, toAnswer: 3, answered: 2, method: "SecondToFirst" },
+      { timestampRepeated: Date.now() - 604800000, toAnswer: 3, answered: 2, method: "AnswerToQuestion" },
     ],
     inCategories: [],
   },
@@ -118,7 +118,7 @@ const category1Words: Word[] = [
       { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Sí" },
     ],
     wordStats: [
-      { timestampRepeated: Date.now() - 10800000, toAnswer: 20, answered: 19, method: "FirstToSecond" },
+      { timestampRepeated: Date.now() - 10800000, toAnswer: 20, answered: 19, method: "QuestionToAnswer" },
     ],
     inCategories: [],
   },
@@ -138,7 +138,7 @@ const category1Words: Word[] = [
       { answer: true, basicWord: "", position: 2, toSpeech: true, word: "No" },
     ],
     wordStats: [
-      { timestampRepeated: Date.now() - 129600000, toAnswer: 14, answered: 13, method: "SecondToFirst" },
+      { timestampRepeated: Date.now() - 129600000, toAnswer: 14, answered: 13, method: "AnswerToQuestion" },
     ],
     inCategories: [],
   },
@@ -158,7 +158,7 @@ const category1Words: Word[] = [
       { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Buenos días" },
     ],
     wordStats: [
-      { timestampRepeated: Date.now() - 259200000, toAnswer: 8, answered: 7, method: "FirstToSecond" },
+      { timestampRepeated: Date.now() - 259200000, toAnswer: 8, answered: 7, method: "QuestionToAnswer" },
     ],
     inCategories: [],
   },
@@ -178,7 +178,7 @@ const category1Words: Word[] = [
       { answer: true, basicWord: "noche", position: 2, toSpeech: true, word: "Buenas noches" },
     ],
     wordStats: [
-      { timestampRepeated: Date.now() - 345600000, toAnswer: 5, answered: 4, method: "FirstToSecond" },
+      { timestampRepeated: Date.now() - 345600000, toAnswer: 5, answered: 4, method: "QuestionToAnswer" },
     ],
     inCategories: [],
   },
@@ -198,7 +198,7 @@ const category1Words: Word[] = [
       { answer: true, basicWord: "", position: 2, toSpeech: true, word: "De nada" },
     ],
     wordStats: [
-      { timestampRepeated: Date.now() - 432000000, toAnswer: 6, answered: 5, method: "SecondToFirst" },
+      { timestampRepeated: Date.now() - 432000000, toAnswer: 6, answered: 5, method: "AnswerToQuestion" },
     ],
     inCategories: [],
   },
@@ -222,7 +222,7 @@ const category2Words: Word[] = [
       { answer: true, basicWord: "ser", position: 2, toSpeech: true, word: "Yo soy" },
     ],
     wordStats: [
-      { timestampRepeated: Date.now() - 43200000, toAnswer: 12, answered: 11, method: "FirstToSecond" },
+      { timestampRepeated: Date.now() - 43200000, toAnswer: 12, answered: 11, method: "QuestionToAnswer" },
     ],
     inCategories: [],
   },
@@ -242,7 +242,7 @@ const category2Words: Word[] = [
       { answer: true, basicWord: "tener", position: 2, toSpeech: true, word: "Yo tenía" },
     ],
     wordStats: [
-      { timestampRepeated: Date.now() - 259200000, toAnswer: 6, answered: 5, method: "FirstToSecond" },
+      { timestampRepeated: Date.now() - 259200000, toAnswer: 6, answered: 5, method: "QuestionToAnswer" },
     ],
     inCategories: [],
   },
@@ -304,7 +304,7 @@ const category3Words: Word[] = [
       { answer: true, basicWord: "", position: 4, toSpeech: true, word: "¿Cómo estás?" },
     ],
     wordStats: [
-      { timestampRepeated: Date.now() - 604800000, toAnswer: 3, answered: 2, method: "SecondToFirst" },
+      { timestampRepeated: Date.now() - 604800000, toAnswer: 3, answered: 2, method: "AnswerToQuestion" },
     ],
     inCategories: [],
   },
@@ -364,7 +364,7 @@ const category4Words: Word[] = [
       { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Perro" },
     ],
     wordStats: [
-      { timestampRepeated: Date.now() - 86400000, toAnswer: 8, answered: 7, method: "FirstToSecond" },
+      { timestampRepeated: Date.now() - 86400000, toAnswer: 8, answered: 7, method: "QuestionToAnswer" },
     ],
     inCategories: [],
   },
@@ -384,7 +384,7 @@ const category4Words: Word[] = [
       { answer: true, basicWord: "feline", position: 2, toSpeech: true, word: "Gato" },
     ],
     wordStats: [
-      { timestampRepeated: Date.now() - 172800000, toAnswer: 9, answered: 8, method: "SecondToFirst" },
+      { timestampRepeated: Date.now() - 172800000, toAnswer: 9, answered: 8, method: "AnswerToQuestion" },
     ],
     inCategories: [],
   },
@@ -444,7 +444,7 @@ const category101Words: Word[] = [
       { answer: true, basicWord: "", position: 2, toSpeech: true, word: "Hello" },
     ],
     wordStats: [
-      { timestampRepeated: Date.now() - 86400000, toAnswer: 5, answered: 5, method: "FirstToSecond" },
+      { timestampRepeated: Date.now() - 86400000, toAnswer: 5, answered: 5, method: "QuestionToAnswer" },
     ],
     inCategories: [],
   },
@@ -464,7 +464,7 @@ const category101Words: Word[] = [
       { answer: true, basicWord: "thank", position: 2, toSpeech: true, word: "Thanks" },
     ],
     wordStats: [
-      { timestampRepeated: Date.now() - 43200000, toAnswer: 10, answered: 9, method: "FirstToSecond" },
+      { timestampRepeated: Date.now() - 43200000, toAnswer: 10, answered: 9, method: "QuestionToAnswer" },
     ],
     inCategories: [],
   },
@@ -511,86 +511,54 @@ const category201Words: Word[] = [
   {
     id: 11,
     accepted: true,
-    comment: "Main class structure",
+    comment: "Basic syntax",
     resetTimestamp: null,
-    mechanism: "TABLE",
+    mechanism: "BASIC",
     chosen: true,
     toRepeat: false,
-    repeated: 10,
+    repeated: 2,
     lastTimestampRepeated: Date.now() - 86400000,
-    created: Date.now() - 820800000,
+    created: Date.now() - 777600000,
     wordParts: [
-      { answer: false, basicWord: "", position: 1, toSpeech: false, word: "public class" },
-      { answer: true, basicWord: "", position: 2, toSpeech: false, word: "classe publique" },
+      { answer: false, basicWord: "out", position: 1, toSpeech: true, word: "System.out.println()" },
+      { answer: true, basicWord: "console", position: 2, toSpeech: true, word: "Prints to console" },
     ],
     wordStats: [
-      { timestampRepeated: Date.now() - 86400000, toAnswer: 15, answered: 14, method: "FirstToSecond" },
+      { timestampRepeated: Date.now() - 86400000, toAnswer: 15, answered: 14, method: "QuestionToAnswer" },
     ],
     inCategories: [],
   },
   {
     id: 12,
     accepted: true,
-    comment: "Loop structure",
-    resetTimestamp: null,
-    mechanism: "BASIC",
-    chosen: false,
-    toRepeat: true,
-    repeated: 5,
-    lastTimestampRepeated: Date.now() - 172800000,
-    created: Date.now() - 907200000,
-    wordParts: [
-      { answer: false, basicWord: "", position: 1, toSpeech: false, word: "for loop" },
-      { answer: true, basicWord: "", position: 2, toSpeech: false, word: "boucle for" },
-    ],
-    wordStats: [
-      { timestampRepeated: Date.now() - 172800000, toAnswer: 8, answered: 6, method: "SecondToFirst" },
-    ],
-    inCategories: [],
-  },
-  {
-    id: 110,
-    accepted: false,
-    comment: "Method declaration",
-    resetTimestamp: null,
-    mechanism: "TABLE",
-    chosen: false,
-    toRepeat: false,
-    repeated: 0,
-    lastTimestampRepeated: null,
-    created: Date.now() - 32400000,
-    wordParts: [
-      { answer: false, basicWord: "", position: 1, toSpeech: false, word: "public void" },
-      { answer: true, basicWord: "", position: 2, toSpeech: false, word: "public vide" },
-    ],
-    wordStats: [],
-    inCategories: [],
-  },
-  {
-    id: 111,
-    accepted: false,
     comment: "Variable declaration",
     resetTimestamp: null,
     mechanism: "BASIC",
-    chosen: false,
+    chosen: true,
     toRepeat: false,
-    repeated: 0,
-    lastTimestampRepeated: null,
-    created: Date.now() - 19800000,
+    repeated: 5,
+    lastTimestampRepeated: Date.now() - 172800000,
+    created: Date.now() - 864000000,
     wordParts: [
-      { answer: false, basicWord: "", position: 1, toSpeech: false, word: "int variable" },
-      { answer: true, basicWord: "", position: 2, toSpeech: false, word: "variable entière" },
+      { answer: false, basicWord: "type", position: 1, toSpeech: true, word: "int x = 5;" },
+      { answer: true, basicWord: "var", position: 2, toSpeech: true, word: "Declares integer variable" },
     ],
-    wordStats: [],
+    wordStats: [
+      { timestampRepeated: Date.now() - 172800000, toAnswer: 8, answered: 6, method: "AnswerToQuestion" },
+    ],
     inCategories: [],
   },
 ];
 
-export const mockWordsByCategory: Record<number, Word[]> = {
-  1: category1Words,
-  2: category2Words,
-  3: category3Words,
-  4: category4Words,
-  101: category101Words,
-  201: category201Words,
+// Export words by category ID
+export const mockWordsByCategory: Record<string, Word[]> = {
+  "1": category1Words,
+  "2": category2Words,
+  "3": category3Words,
+  "4": category4Words,
+  "101": category101Words,
+  "201": category201Words,
 };
+
+// Keep this export for backward compatibility
+export const mockWords = category1Words;

@@ -70,9 +70,9 @@ export const CategoryEditForm = ({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="FirstToSecond">First → Second</SelectItem>
-          <SelectItem value="SecondToFirst">Second → First</SelectItem>
-          <SelectItem value="BothSides">Both Sides</SelectItem>
+          <SelectItem value="QuestionToAnswer">Question → Answer</SelectItem>
+          <SelectItem value="AnswerToQuestion">Answer → Question</SelectItem>
+          <SelectItem value="Both">Both</SelectItem>
         </SelectContent>
       </Select>
 

@@ -151,24 +151,36 @@ const OtherUsersWords = () => {
     
     return (
       <div className="flex flex-wrap gap-1 items-center">
-        {sortedParts.map((part, index) => (
-          <span key={index}>
-            <span
-              className={
-                part.answer
-                  ? "bg-primary/20 px-1 py-0.5 rounded"
-                  : ""
-              }
-            >
-              {part.word}
-            </span>
-            {part.basicWord && (
-              <span className="text-muted-foreground text-sm ml-1">
-                ({part.basicWord})
+        {sortedParts.map((part, index) => {
+          if (part.isSeparator) {
+            if (part.separatorType === "ENTER") {
+              return <div key={index} className="w-full" />;
+            } else if (part.separatorType === "TAB") {
+              return <span key={index} className="inline-block w-8">{part.basicWord}</span>;
+            } else if (part.separatorType === "MULTI_DASH") {
+              return <span key={index} className="mx-1">{part.basicWord}</span>;
+            }
+          }
+          
+          return (
+            <span key={index}>
+              <span
+                className={
+                  part.answer
+                    ? "bg-primary/20 px-1 py-0.5 rounded"
+                    : ""
+                }
+              >
+                {part.word}
               </span>
-            )}
-          </span>
-        ))}
+              {part.basicWord && !part.isSeparator && (
+                <span className="text-muted-foreground text-sm ml-1">
+                  ({part.basicWord})
+                </span>
+              )}
+            </span>
+          );
+        })}
       </div>
     );
   };

@@ -1,5 +1,5 @@
 export type CategoryMode = "Dictionary" | "Exercise";
-export type CategoryMethod = "FirstToSecond" | "SecondToFirst" | "BothSides";
+export type CategoryMethod = "QuestionToAnswer" | "AnswerToQuestion" | "Both";
 
 export type Category = {
   id: number;

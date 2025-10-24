@@ -20,21 +20,19 @@ type CategoryFormProps = {
 export const CategoryForm = ({ categories, onSubmit, onCancel }: CategoryFormProps) => {
   const [name, setName] = useState("");
   const [mode, setMode] = useState<CategoryMode>("Dictionary");
-  const [method, setMethod] = useState<CategoryMethod>("BothSides");
+  const [method, setMethod] = useState<CategoryMethod>("Both");
   const [parentId, setParentId] = useState<string>("none");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const parentIdNum = parentId === "none" ? null : Number(parentId);
+    onSubmit(name, mode, method, parentIdNum);
+    
+    // Reset form
     if (name.trim()) {
-      onSubmit(
-        name.trim(),
-        mode,
-        method,
-        parentId === "none" ? null : Number(parentId)
-      );
       setName("");
       setMode("Dictionary");
-      setMethod("BothSides");
+      setMethod("Both");
       setParentId("none");
     }
   };
@@ -89,9 +87,9 @@ export const CategoryForm = ({ categories, onSubmit, onCancel }: CategoryFormPro
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="FirstToSecond">First → Second</SelectItem>
-            <SelectItem value="SecondToFirst">Second → First</SelectItem>
-            <SelectItem value="BothSides">Both Sides</SelectItem>
+            <SelectItem value="QuestionToAnswer">Question → Answer</SelectItem>
+            <SelectItem value="AnswerToQuestion">Answer → Question</SelectItem>
+            <SelectItem value="Both">Both</SelectItem>
           </SelectContent>
         </Select>
       </div>

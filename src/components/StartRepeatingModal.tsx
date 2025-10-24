@@ -28,15 +28,19 @@ export default function StartRepeatingModal({
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [includeChosen, setIncludeChosen] = useState(false);
   const [wordCount, setWordCount] = useState(10);
-  const [method, setMethod] = useState<CategoryMethod>("BothSides");
+  const [method, setMethod] = useState<CategoryMethod>("Both");
+  const [filterText, setFilterText] = useState("");
 
-  const handleSelectAll = () => {
-    if (selectedCategories.length === categories.length) {
+  useEffect(() => {
+    // Reset state when modal opens
+    if (open) {
       setSelectedCategories([]);
-    } else {
-      setSelectedCategories(categories.map(c => c.id));
+      setIncludeChosen(false);
+      setWordCount(10);
+      setMethod("Both");
+      setFilterText("");
     }
-  };
+  }, [open]);
 
   const handleCategoryToggle = (categoryId: number) => {
     setSelectedCategories(prev =>
@@ -46,26 +50,50 @@ export default function StartRepeatingModal({
     );
   };
 
-  const handleSubmit = () => {
-    if (selectedCategories.length === 0) {
-      return;
+  const handleSelectAll = () => {
+    if (selectedCategories.length === categories.length) {
+      setSelectedCategories([]);
+    } else {
+      setSelectedCategories(categories.map(c => c.id));
     }
-    onStart({
+  };
+
+  const handleSubmit = async () => {
+    await onStart({
       categoryIds: selectedCategories,
       includeChosen,
       wordCount,
       method,
     });
+    onOpenChange(false);
   };
 
-  useEffect(() => {
-    if (!open) {
-      setSelectedCategories([]);
-      setIncludeChosen(false);
-      setWordCount(10);
-      setMethod("BothSides");
+  const getVisibleCategories = () => {
+    if (!filterText.trim()) {
+      return categories;
     }
-  }, [open]);
+
+    const searchTerm = filterText.toLowerCase();
+    const visibleIds = new Set<number>();
+    
+    // Find matching categories
+    categories.forEach(cat => {
+      if (cat.name.toLowerCase().includes(searchTerm)) {
+        visibleIds.add(cat.id);
+        
+        // Add all parents
+        let parent = categories.find(c => c.id === cat.id_parent);
+        while (parent) {
+          visibleIds.add(parent.id);
+          parent = categories.find(c => c.id === parent?.id_parent);
+        }
+      }
+    });
+    
+    return categories.filter(cat => visibleIds.has(cat.id));
+  };
+
+  const visibleCategories = getVisibleCategories();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -90,7 +118,7 @@ export default function StartRepeatingModal({
                 {selectedCategories.length === categories.length ? "Deselect All" : "Select All"}
               </Button>
             </div>
-            <div className="text-sm text-muted-foreground border rounded-lg p-3 bg-muted/50 mb-2">
+            <div className="text-sm text-muted-foreground border rounded-lg p-3 bg-muted/50">
               {selectedCategories.length > 0 
                 ? categories
                     .filter(c => selectedCategories.includes(c.id))
@@ -98,8 +126,14 @@ export default function StartRepeatingModal({
                     .join(", ")
                 : "No categories selected"}
             </div>
+            <Input
+              placeholder="Filter categories..."
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+              className="h-9"
+            />
             <div className="border rounded-lg p-4 max-h-60 overflow-y-auto space-y-2">
-              {categories
+              {visibleCategories
                 .sort((a, b) => a.order - b.order)
                 .map(category => {
                   const indentLevel = category.id_parent ? 1 : 0;
@@ -158,9 +192,9 @@ export default function StartRepeatingModal({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="BothSides">BothSides</SelectItem>
-                <SelectItem value="FirstToSecond">FirstToSecond</SelectItem>
-                <SelectItem value="SecondToFirst">SecondToFirst</SelectItem>
+                <SelectItem value="Both">Both</SelectItem>
+                <SelectItem value="QuestionToAnswer">QuestionToAnswer</SelectItem>
+                <SelectItem value="AnswerToQuestion">AnswerToQuestion</SelectItem>
               </SelectContent>
             </Select>
           </div>

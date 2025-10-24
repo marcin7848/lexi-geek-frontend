@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Category } from "@/types/category";
 
@@ -20,10 +21,12 @@ export default function ManageCategoriesModal({
   onSave,
 }: ManageCategoriesModalProps) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [filterText, setFilterText] = useState("");
 
   useEffect(() => {
     if (open) {
       setSelectedCategories(initialCategories);
+      setFilterText("");
     }
   }, [open, initialCategories]);
 
@@ -44,6 +47,33 @@ export default function ManageCategoriesModal({
     ? selectedCategories.join(", ") 
     : "No categories selected";
 
+  const getVisibleCategories = () => {
+    if (!filterText.trim()) {
+      return categories;
+    }
+
+    const searchTerm = filterText.toLowerCase();
+    const visibleIds = new Set<number>();
+    
+    // Find matching categories
+    categories.forEach(cat => {
+      if (cat.name.toLowerCase().includes(searchTerm)) {
+        visibleIds.add(cat.id);
+        
+        // Add all parents
+        let parent = categories.find(c => c.id === cat.id_parent);
+        while (parent) {
+          visibleIds.add(parent.id);
+          parent = categories.find(c => c.id === parent?.id_parent);
+        }
+      }
+    });
+    
+    return categories.filter(cat => visibleIds.has(cat.id));
+  };
+
+  const visibleCategories = getVisibleCategories();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -60,11 +90,14 @@ export default function ManageCategoriesModal({
             <div className="text-sm text-muted-foreground border rounded-lg p-3 bg-muted/50">
               {selectedCategoriesText}
             </div>
-          </div>
-
-          <div className="space-y-2">
+            <Input
+              placeholder="Filter categories..."
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+              className="h-9"
+            />
             <div className="border rounded-lg p-4 max-h-60 overflow-y-auto space-y-2">
-              {categories
+              {visibleCategories
                 .sort((a, b) => a.order - b.order)
                 .map(category => {
                   const indentLevel = category.id_parent ? 1 : 0;

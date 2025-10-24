@@ -38,6 +38,8 @@ interface WordPartInput {
   basicWord: string;
   answer: boolean;
   toSpeech: boolean;
+  isSeparator?: boolean;
+  separatorType?: "ENTER" | "TAB" | "MULTI_DASH";
 }
 
 function SortableWordPartRow({
@@ -86,7 +88,28 @@ function SortableWordPartRow({
         <GripVertical className="h-5 w-5 text-muted-foreground" />
       </div>
 
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
+      {part.isSeparator ? (
+        <div className="flex-1 flex items-center gap-2">
+          <Select
+            value={part.word}
+            onValueChange={(value) => onUpdate(part.id, "word", value)}
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ENTER">ENTER (new line)</SelectItem>
+              <SelectItem value="TAB">TAB (tabulator)</SelectItem>
+              <SelectItem value="MULTI_DASH">MULTI_DASH (----------)</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-muted-foreground">
+            Separator - {part.basicWord}
+          </span>
+        </div>
+      ) : (
+        <>
+          <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
         <Input
           id={`word-${part.id}-word`}
           ref={index === 0 && !part.answer ? firstInputRef : undefined}
@@ -137,8 +160,10 @@ function SortableWordPartRow({
           >
             To Speech
           </label>
+          </div>
         </div>
-      </div>
+      </>
+      )}
 
       <Button
           type="button"
@@ -164,6 +189,8 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
           basicWord: part.basicWord,
           answer: part.answer,
           toSpeech: part.toSpeech,
+          isSeparator: part.isSeparator,
+          separatorType: part.separatorType,
         }))
       : [
           {
@@ -206,6 +233,9 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
       } else if (e.ctrlKey && e.key === "'") {
         e.preventDefault();
         addWordPart(true);
+      } else if (e.ctrlKey && e.key === "/") {
+        e.preventDefault();
+        addSeparator();
       }
     };
 
@@ -272,9 +302,26 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
 
   const updateWordPart = (id: string, field: keyof WordPartInput, value: any) => {
     setWordParts((parts) =>
-      parts.map((part) =>
-        part.id === id ? { ...part, [field]: value } : part
-      )
+      parts.map((part) => {
+        if (part.id === id) {
+          const updated = { ...part, [field]: value };
+          
+          // Auto-set basicWord for separators
+          if (field === "word" && part.isSeparator) {
+            if (value === "ENTER") {
+              updated.basicWord = "(representation for enter)";
+            } else if (value === "TAB") {
+              updated.basicWord = "(representation for tabulator)";
+            } else if (value === "MULTI_DASH") {
+              updated.basicWord = "----------";
+            }
+            updated.separatorType = value;
+          }
+          
+          return updated;
+        }
+        return part;
+      })
     );
   };
 
@@ -293,6 +340,19 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
       basicWord: "",
       answer,
       toSpeech: answer,
+    };
+    setWordParts((parts) => [...parts, newPart]);
+  };
+
+  const addSeparator = () => {
+    const newPart: WordPartInput = {
+      id: crypto.randomUUID(),
+      word: "ENTER",
+      basicWord: "(representation for enter)",
+      answer: false,
+      toSpeech: false,
+      isSeparator: true,
+      separatorType: "ENTER",
     };
     setWordParts((parts) => [...parts, newPart]);
   };
@@ -324,6 +384,8 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
         position: index,
         toSpeech: part.toSpeech,
         word: part.word.trim(),
+        isSeparator: part.isSeparator,
+        separatorType: part.separatorType,
       })),
       wordStats: editWord?.wordStats || [],
       inCategories: editWord?.inCategories || [],
@@ -366,7 +428,7 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
 
       {/* Keyboard shortcuts info */}
       <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-        <strong>Shortcuts:</strong> Ctrl+; (add question part), Ctrl+' (add answer part), Enter (submit)
+        <strong>Shortcuts:</strong> Ctrl+; (add question part), Ctrl+' (add answer part), Ctrl+/ (add separator), Enter (submit)
       </div>
 
 
@@ -459,6 +521,15 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Answer Part
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addSeparator}
+            className="flex-1"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Separator
           </Button>
         </div>
       </div>
