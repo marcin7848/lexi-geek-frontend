@@ -19,6 +19,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ShortcutHints } from "@/components/ShortcutHints";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 type Language = {
   id: string;
@@ -33,6 +34,7 @@ type Language = {
 export default function LanguageSettings() {
   const { languageId } = useParams();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [language, setLanguage] = useState<Language | null>(null);
   const [showShortcutHints, setShowShortcutHints] = useState(false);
   const shortcutInputRef = useRef<HTMLInputElement>(null);
@@ -45,10 +47,10 @@ export default function LanguageSettings() {
     if (found) {
       setLanguage(found);
     } else {
-      toast.error("Language not found");
+      toast.error(t("addLanguage.notFound"));
       navigate("/");
     }
-  }, [languageId, navigate]);
+  }, [languageId, navigate, t]);
 
   const validateForm = () => {
     if (!language) return false;
@@ -56,25 +58,25 @@ export default function LanguageSettings() {
     const newErrors: Record<string, string> = {};
 
     if (language.name.length < 3) {
-      newErrors.name = "Name must be at least 3 characters";
+      newErrors.name = t("addLanguage.errorNameShort");
     } else if (language.name.length > 64) {
-      newErrors.name = "Name must be less than 64 characters";
+      newErrors.name = t("addLanguage.errorNameLong");
     }
 
     if (language.shortcut.length < 2) {
-      newErrors.shortcut = "Shortcut must be at least 2 characters";
+      newErrors.shortcut = t("addLanguage.errorShortcutShort");
     }
 
     if (language.codeForTranslator && language.codeForTranslator.length < 2) {
-      newErrors.codeForTranslator = "Code for translator must be at least 2 characters";
+      newErrors.codeForTranslator = t("addLanguage.errorTranslatorShort");
     } else if (language.codeForTranslator && language.codeForTranslator.length > 15) {
-      newErrors.codeForTranslator = "Code for translator must be less than 15 characters";
+      newErrors.codeForTranslator = t("addLanguage.errorTranslatorLong");
     }
 
     if (language.codeForSpeech && language.codeForSpeech.length < 2) {
-      newErrors.codeForSpeech = "Code for speech must be at least 2 characters";
+      newErrors.codeForSpeech = t("addLanguage.errorSpeechShort");
     } else if (language.codeForSpeech && language.codeForSpeech.length > 15) {
-      newErrors.codeForSpeech = "Code for speech must be less than 15 characters";
+      newErrors.codeForSpeech = t("addLanguage.errorSpeechLong");
     }
 
     setErrors(newErrors);
@@ -85,7 +87,7 @@ export default function LanguageSettings() {
     e.preventDefault();
 
     if (!validateForm()) {
-      toast.error("Please fix the errors in the form");
+      toast.error(t("addLanguage.errorValidation"));
       return;
     }
 
@@ -95,7 +97,7 @@ export default function LanguageSettings() {
     );
 
     localStorage.setItem("languages", JSON.stringify(updatedLanguages));
-    toast.success("Language updated successfully");
+    toast.success(t("addLanguage.successUpdate"));
   };
 
   const handleDelete = () => {
@@ -103,7 +105,7 @@ export default function LanguageSettings() {
     const filteredLanguages = languages.filter((lang: Language) => lang.id !== languageId);
     
     localStorage.setItem("languages", JSON.stringify(filteredLanguages));
-    toast.success("Language deleted successfully");
+    toast.success(t("addLanguage.successDelete"));
     navigate("/");
   };
 
@@ -117,30 +119,30 @@ export default function LanguageSettings() {
       <Sidebar />
       <main className="pt-16 px-4 md:px-8 max-w-2xl mx-auto">
         <div className="py-8">
-          <h1 className="text-3xl font-bold mb-6">Language Settings: {language.name}</h1>
+          <h1 className="text-3xl font-bold mb-6">{t("addLanguage.titleEdit").replace("{name}", language.name)}</h1>
           
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="name">Name *</Label>
+              <Label htmlFor="name">{t("addLanguage.name")} *</Label>
               <Input
                 id="name"
                 value={language.name}
                 onChange={(e) => setLanguage({ ...language, name: e.target.value })}
-                placeholder="Enter language name"
+                placeholder={t("addLanguage.namePlaceholder")}
                 required
               />
               {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
             </div>
 
             <div className="space-y-2 relative">
-              <Label htmlFor="shortcut">Shortcut *</Label>
+              <Label htmlFor="shortcut">{t("addLanguage.shortcut")} *</Label>
               <Input
                 id="shortcut"
                 ref={shortcutInputRef}
                 value={language.shortcut}
                 onChange={(e) => setLanguage({ ...language, shortcut: e.target.value })}
                 onFocus={() => setShowShortcutHints(true)}
-                placeholder="Enter shortcut"
+                placeholder={t("addLanguage.shortcutPlaceholder")}
                 required
               />
               {showShortcutHints && (
@@ -165,16 +167,16 @@ export default function LanguageSettings() {
                   setLanguage({ ...language, hidden: checked as boolean })
                 }
               />
-              <Label htmlFor="hidden" className="cursor-pointer">Hidden</Label>
+              <Label htmlFor="hidden" className="cursor-pointer">{t("addLanguage.hidden")}</Label>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="codeForTranslator">Code for Translator</Label>
+              <Label htmlFor="codeForTranslator">{t("addLanguage.codeForTranslator")}</Label>
               <Input
                 id="codeForTranslator"
                 value={language.codeForTranslator}
                 onChange={(e) => setLanguage({ ...language, codeForTranslator: e.target.value })}
-                placeholder="e.g., en-US"
+                placeholder={t("addLanguage.codeForTranslatorPlaceholder")}
               />
               {errors.codeForTranslator && (
                 <p className="text-sm text-destructive">{errors.codeForTranslator}</p>
@@ -182,12 +184,12 @@ export default function LanguageSettings() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="codeForSpeech">Code for Speech</Label>
+              <Label htmlFor="codeForSpeech">{t("addLanguage.codeForSpeech")}</Label>
               <Input
                 id="codeForSpeech"
                 value={language.codeForSpeech}
                 onChange={(e) => setLanguage({ ...language, codeForSpeech: e.target.value })}
-                placeholder="e.g., en-US"
+                placeholder={t("addLanguage.codeForSpeechPlaceholder")}
               />
               {errors.codeForSpeech && (
                 <p className="text-sm text-destructive">{errors.codeForSpeech}</p>
@@ -195,37 +197,37 @@ export default function LanguageSettings() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="specialLetters">Special Letters</Label>
+              <Label htmlFor="specialLetters">{t("addLanguage.specialLetters")}</Label>
               <Input
                 id="specialLetters"
                 value={language.specialLetters || ""}
                 onChange={(e) => setLanguage({ ...language, specialLetters: e.target.value })}
-                placeholder="e.g., ä,Ä,ö,Ö,ü,Ü,ß"
+                placeholder={t("addLanguage.specialLettersPlaceholder")}
               />
-              <p className="text-sm text-muted-foreground">Separate letters with commas</p>
+              <p className="text-sm text-muted-foreground">{t("addLanguage.specialLettersHint")}</p>
             </div>
 
             <div className="flex gap-4">
-              <Button type="submit">Save Changes</Button>
+              <Button type="submit">{t("addLanguage.saveButton")}</Button>
               <Button type="button" variant="outline" onClick={() => navigate("/")}>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button type="button" variant="destructive">
-                    Delete Language
+                    {t("addLanguage.deleteButton")}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogTitle>{t("addLanguage.deleteConfirm")}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will permanently delete the language "{language.name}". This action cannot be undone.
+                      {t("addLanguage.deleteDesc").replace("{name}", language.name)}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                    <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete}>{t("addLanguage.deleteButton")}</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>

@@ -3,11 +3,11 @@ import { Language } from "./translations";
 export const languageOptions: Array<{
   code: Language;
   name: string;
-  flag: string;
+  countryCode: string;
 }> = [
-  { code: "en", name: "English", flag: "EN" },
-  { code: "pl", name: "Polish", flag: "PL" },
-  { code: "de", name: "German", flag: "DE" },
-  { code: "es", name: "Spanish", flag: "ES" },
-  { code: "fr", name: "French", flag: "FR" },
+  { code: "en", name: "English", countryCode: "us" },
+  { code: "pl", name: "Polish", countryCode: "pl" },
+  { code: "de", name: "German", countryCode: "de" },
+  { code: "es", name: "Spanish", countryCode: "es" },
+  { code: "fr", name: "French", countryCode: "fr" },
 ];

@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import "flag-icons/css/flag-icons.min.css";
 
 export const Header = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -113,9 +114,7 @@ export const Header = () => {
             <SelectTrigger className="w-[140px] border-border/20 bg-background/50 hover:bg-accent/10">
               <SelectValue>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold min-w-[24px]">
-                    {languageOptions.find(lang => lang.code === language)?.flag}
-                  </span>
+                  <span className={`fi fi-${languageOptions.find(lang => lang.code === language)?.countryCode} text-lg`}></span>
                   <span className="text-sm">
                     {languageOptions.find(lang => lang.code === language)?.name}
                   </span>
@@ -126,7 +125,7 @@ export const Header = () => {
               {languageOptions.map((lang) => (
                 <SelectItem key={lang.code} value={lang.code}>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold min-w-[24px]">{lang.flag}</span>
+                    <span className={`fi fi-${lang.countryCode} text-lg`}></span>
                     <span>{lang.name}</span>
                   </div>
                 </SelectItem>
