@@ -90,6 +90,14 @@ export default function StartRepeatingModal({
                 {selectedCategories.length === categories.length ? "Deselect All" : "Select All"}
               </Button>
             </div>
+            <div className="text-sm text-muted-foreground border rounded-lg p-3 bg-muted/50 mb-2">
+              {selectedCategories.length > 0 
+                ? categories
+                    .filter(c => selectedCategories.includes(c.id))
+                    .map(c => c.name)
+                    .join(", ")
+                : "No categories selected"}
+            </div>
             <div className="border rounded-lg p-4 max-h-60 overflow-y-auto space-y-2">
               {categories
                 .sort((a, b) => a.order - b.order)

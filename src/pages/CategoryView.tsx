@@ -7,6 +7,7 @@ import { Word, Mechanism } from "@/types/word";
 import { mockWordsByCategory } from "@/data/mockWords";
 import { toast } from "sonner";
 import WordFormModal from "@/components/WordFormModal";
+import ManageCategoriesModal from "@/components/ManageCategoriesModal";
 import {
   Table,
   TableBody,
@@ -20,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUpDown, ChevronLeft, ChevronRight, Check, X, ArrowLeft, Book, Dumbbell, ArrowRight, ArrowLeftRight } from "lucide-react";
+import { ArrowUpDown, ChevronLeft, ChevronRight, Check, X, ArrowLeft, Book, Dumbbell, ArrowRight, ArrowLeftRight, Edit, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import {
   Tooltip,
@@ -59,6 +60,9 @@ export default function CategoryView() {
   const [editingWord, setEditingWord] = useState<Word | null>(null);
   const [languageId, setLanguageId] = useState<string | null>(null);
   const [specialLetters, setSpecialLetters] = useState<string>("");
+  const [isCategoriesModalOpen, setIsCategoriesModalOpen] = useState(false);
+  const [categoriesModalWord, setCategoriesModalWord] = useState<Word | null>(null);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
 
   useEffect(() => {
     // Find category from all languages
@@ -86,6 +90,15 @@ export default function CategoryView() {
     if (foundCategory) {
       setCategory(foundCategory);
       setLanguageId(foundLanguageId);
+      
+      // Load all categories for the language
+      if (foundLanguageId) {
+        const storageKey = `categories_${foundLanguageId}`;
+        const storedCategories = localStorage.getItem(storageKey);
+        if (storedCategories) {
+          setAllCategories(JSON.parse(storedCategories));
+        }
+      }
       
       // Load words from localStorage or initialize with mock data
       const storageKey = `words_${categoryId}`;
@@ -134,6 +147,31 @@ export default function CategoryView() {
     const storageKey = `words_${categoryId}`;
     localStorage.setItem(storageKey, JSON.stringify(updatedWords));
     toast.success("Word removed");
+  };
+
+  const handleDeleteWord = (wordId: number) => {
+    const updatedWords = words.filter((w) => w.id !== wordId);
+    setWords(updatedWords);
+    localStorage.setItem(`words_${categoryId}`, JSON.stringify(updatedWords));
+    toast.success("Word deleted");
+  };
+
+  const handleOpenCategoriesModal = (word: Word) => {
+    setCategoriesModalWord(word);
+    setIsCategoriesModalOpen(true);
+  };
+
+  const handleSaveCategories = (categoryNames: string[]) => {
+    if (!categoriesModalWord) return;
+
+    const updatedWords = words.map((w) =>
+      w.id === categoriesModalWord.id
+        ? { ...w, inCategories: categoryNames }
+        : w
+    );
+    setWords(updatedWords);
+    localStorage.setItem(`words_${categoryId}`, JSON.stringify(updatedWords));
+    toast.success("Categories updated");
   };
 
   const handleWordAdded = (word: Word) => {
@@ -373,6 +411,14 @@ export default function CategoryView() {
             specialLetters={specialLetters}
           />
 
+          <ManageCategoriesModal
+            open={isCategoriesModalOpen}
+            onOpenChange={setIsCategoriesModalOpen}
+            categories={allCategories}
+            initialCategories={categoriesModalWord?.inCategories || []}
+            onSave={handleSaveCategories}
+          />
+
           <div className="space-y-4">
             {/* Filters */}
             <div className="flex gap-4 items-end">
@@ -484,6 +530,7 @@ export default function CategoryView() {
                          <ArrowUpDown className="h-4 w-4" />
                        </Button>
                      </TableHead>
+                     <TableHead className="w-32 text-center">Actions</TableHead>
                    </TableRow>
                  </TableHeader>
                   <TableBody>
@@ -511,7 +558,13 @@ export default function CategoryView() {
                         </div>
                        </TableCell>
                         <TableCell className="text-center">{word.repeated}</TableCell>
-                        <TableCell className="text-center">
+                        <TableCell 
+                          className="text-center cursor-pointer"
+                          onDoubleClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenCategoriesModal(word);
+                          }}
+                        >
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -534,12 +587,38 @@ export default function CategoryView() {
                         <TableCell className="text-center">
                           {format(new Date(word.created), "PPp")}
                        </TableCell>
-                       <TableCell className="text-center">
-                         {word.lastTimestampRepeated
-                           ? format(new Date(word.lastTimestampRepeated), "PPp")
-                           : "-"}
-                       </TableCell>
-                     </TableRow>
+                        <TableCell className="text-center">
+                          {word.lastTimestampRepeated
+                            ? format(new Date(word.lastTimestampRepeated), "PPp")
+                            : "-"}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex gap-2 justify-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenEditModal(word);
+                              }}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteWord(word.id);
+                              }}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
                    ))}
                  </TableBody>
                </Table>
@@ -739,7 +818,13 @@ export default function CategoryView() {
                               <Badge variant="secondary">{word.mechanism}</Badge>
                             </div>
                           </TableCell>
-                          <TableCell className="text-center">
+                          <TableCell 
+                            className="text-center cursor-pointer"
+                            onDoubleClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenCategoriesModal(word);
+                            }}
+                          >
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
