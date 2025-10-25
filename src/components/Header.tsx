@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Lightbulb } from "lucide-react";
+import { Lightbulb, Star } from "lucide-react";
 import { supabase, type AuthUser } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/components/ThemeProvider";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { languageOptions } from "@/i18n/languageConfig";
+import { authService } from "@/services/authService";
+import { dashboardService } from "@/services/dashboardService";
 import {
   Select,
   SelectContent,
@@ -19,26 +21,22 @@ import "flag-icons/css/flag-icons.min.css";
 export const Header = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [stars, setStars] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
 
   useEffect(() => {
+    loadUserData();
+    
     // Check for mocked session first
     const checkMockedSession = () => {
-      const mockedSession = localStorage.getItem('supabase.auth.token');
-      if (mockedSession) {
-        try {
-          const parsed = JSON.parse(mockedSession);
-          if (parsed.currentSession?.user) {
-            setUser(parsed.currentSession.user as AuthUser);
-            setLoading(false);
-            return true;
-          }
-        } catch (e) {
-          // Invalid mocked session, continue to real auth
-        }
+      const user = authService.getCurrentUser();
+      if (user) {
+        setUser(user as AuthUser);
+        setLoading(false);
+        return true;
       }
       return false;
     };
@@ -62,16 +60,16 @@ export const Header = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  const loadUserData = async () => {
+    const userData = await dashboardService.getUserData();
+    setStars(userData.stars);
+  };
+
   const handleLogout = async () => {
     try {
-      // Clear mocked session if exists
-      localStorage.removeItem('supabase.auth.token');
-      
+      await authService.logout();
       await supabase.auth.signOut();
       setUser(null);
-      
-      // Trigger storage event to notify other components
-      window.dispatchEvent(new Event('storage'));
       
       toast({
         title: t("header.logoutSuccess"),
@@ -146,6 +144,10 @@ export const Header = () => {
             <div className="h-10 w-32 bg-muted animate-pulse rounded-md" />
           ) : user ? (
             <>
+              <div className="flex items-center gap-2 text-amber-500 font-semibold">
+                <Star className="w-5 h-5 fill-current" />
+                <span>{stars}</span>
+              </div>
               <span className="text-foreground/80">
                 {t("header.greeting")}, {getDisplayName()}!
               </span>

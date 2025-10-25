@@ -9,6 +9,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { authService } from "@/services/authService";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -53,35 +54,18 @@ export default function Login() {
     try {
       // Check for mocked credentials
       if (email === "test@test.com" && password === "test12") {
-        // Create a mocked user session
-        const mockedUser = {
-          id: "mock-user-123",
-          email: "test@test.com",
-          user_metadata: {
-            username: "TestUser",
-            full_name: "Test User"
-          }
-        };
+        const user = await authService.login(email, password);
         
-        // Store mocked session in localStorage
-        localStorage.setItem('supabase.auth.token', JSON.stringify({
-          currentSession: {
-            user: mockedUser,
-            access_token: 'mock-token'
-          }
-        }));
-        
-        // Trigger auth state change manually
-        window.dispatchEvent(new Event('storage'));
-        
-        toast({
-          title: "Welcome back!",
-          description: "You have successfully logged in.",
-        });
-        
-        navigate("/");
-        setLoading(false);
-        return;
+        if (user) {
+          toast({
+            title: "Welcome back!",
+            description: "You have successfully logged in.",
+          });
+          
+          navigate("/");
+          setLoading(false);
+          return;
+        }
       }
       
       const { error } = await supabase.auth.signInWithPassword({

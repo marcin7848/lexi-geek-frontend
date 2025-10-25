@@ -9,16 +9,9 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import StartRepeatingModal from "@/components/StartRepeatingModal";
 import { repeatService } from "@/services/repeatService";
+import { languageService, type Language } from "@/services/languageService";
+import { categoryService } from "@/services/categoryService";
 
-type Language = {
-  id: string;
-  name: string;
-  shortcut: string;
-  hidden: boolean;
-  codeForTranslator: string;
-  codeForSpeech: string;
-  specialLetters?: string;
-};
 
 type RepeatData = {
   active: boolean;
@@ -34,48 +27,51 @@ export default function LanguageView() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    const languages = JSON.parse(localStorage.getItem("languages") || "[]");
-    const found = languages.find((lang: Language) => lang.id === languageId);
-    
-    if (found) {
-      setLanguage(found);
+    const loadData = async () => {
+      if (!languageId) return;
       
-      // Load categories from localStorage or initialize with mock data
-      const storageKey = `categories_${languageId}`;
-      const storedCategories = localStorage.getItem(storageKey);
+      const found = await languageService.getById(languageId);
       
-      if (storedCategories) {
-        setCategories(JSON.parse(storedCategories));
-      } else {
-        // Initialize with mock data for this language
+      if (found) {
+        setLanguage(found);
+        
+        // Initialize categories with mock data if needed
         const languageCategories = mockCategoriesByLanguage[languageId || "1"] || [];
-        setCategories(languageCategories);
-        localStorage.setItem(storageKey, JSON.stringify(languageCategories));
-      }
+        await categoryService.initialize(languageId, languageCategories);
+        
+        // Load categories
+        const categories = await categoryService.getAll(languageId);
+        setCategories(categories);
 
-      // Load or initialize repeat data
-      const repeatStorageKey = `repeat_${languageId}`;
-      const storedRepeatData = localStorage.getItem(repeatStorageKey);
-      
-      if (storedRepeatData) {
-        setRepeatData(JSON.parse(storedRepeatData));
+        // Load repeat data
+        const storedRepeatData = await repeatService.getRepeatData(languageId);
+        
+        if (storedRepeatData) {
+          setRepeatData(storedRepeatData);
+        } else {
+          const initialRepeatData = { active: false, wordsLeft: 0 };
+          setRepeatData(initialRepeatData);
+          await repeatService.updateRepeatData(languageId, initialRepeatData);
+        }
       } else {
-        const initialRepeatData = { active: false, wordsLeft: 0 };
-        setRepeatData(initialRepeatData);
-        localStorage.setItem(repeatStorageKey, JSON.stringify(initialRepeatData));
+        toast.error("Language not found");
+        navigate("/");
       }
-    } else {
-      toast.error("Language not found");
-      navigate("/");
-    }
+    };
+    
+    loadData();
   }, [languageId, navigate]);
 
-  const handleCategoriesUpdate = (updatedCategories: Category[]) => {
+  const handleCategoriesUpdate = async (updatedCategories: Category[]) => {
     setCategories(updatedCategories);
-    // Persist to localStorage
-    const storageKey = `categories_${languageId}`;
-    localStorage.setItem(storageKey, JSON.stringify(updatedCategories));
-    toast.success("Categories updated");
+    
+    // Persist - update all categories
+    if (languageId) {
+      // Clear and recreate all categories
+      const storageKey = `categories_${languageId}`;
+      localStorage.setItem(storageKey, JSON.stringify(updatedCategories));
+      toast.success("Categories updated");
+    }
   };
 
   const handleStartRepeating = () => {
@@ -86,11 +82,12 @@ export default function LanguageView() {
     }
   };
 
-  const handleResetRepeating = () => {
+  const handleResetRepeating = async () => {
+    if (!languageId) return;
+    
     const newRepeatData = { active: false, wordsLeft: 0 };
     setRepeatData(newRepeatData);
-    const storageKey = `repeat_${languageId}`;
-    localStorage.setItem(storageKey, JSON.stringify(newRepeatData));
+    await repeatService.updateRepeatData(languageId, newRepeatData);
     toast.success("Repeating reset");
   };
 
@@ -100,6 +97,8 @@ export default function LanguageView() {
     wordCount: number;
     method: string;
   }) => {
+    if (!languageId) return;
+    
     // Simulate API call
     await repeatService.startRepeat(data);
 
@@ -109,8 +108,7 @@ export default function LanguageView() {
       wordsLeft: Math.floor(Math.random() * 20) + 5,
     };
     setRepeatData(newRepeatData);
-    const storageKey = `repeat_${languageId}`;
-    localStorage.setItem(storageKey, JSON.stringify(newRepeatData));
+    await repeatService.updateRepeatData(languageId, newRepeatData);
 
     setIsModalOpen(false);
     navigate(`/language/${languageId}/repeat`);

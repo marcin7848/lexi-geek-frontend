@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ShortcutHints } from "@/components/ShortcutHints";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { languageService } from "@/services/languageService";
 
 export default function AddLanguage() {
   const navigate = useNavigate();
@@ -55,7 +56,7 @@ export default function AddLanguage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -63,17 +64,13 @@ export default function AddLanguage() {
       return;
     }
 
-    // Get existing languages from localStorage
-    const existingLanguages = JSON.parse(localStorage.getItem("languages") || "[]");
-    
     // Add new language with a unique ID
     const newLanguage = {
       id: Date.now().toString(),
       ...formData,
     };
 
-    existingLanguages.push(newLanguage);
-    localStorage.setItem("languages", JSON.stringify(existingLanguages));
+    await languageService.create(newLanguage);
 
     toast.success(t("addLanguage.successAdd"));
     navigate("/");

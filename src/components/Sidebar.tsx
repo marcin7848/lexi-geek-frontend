@@ -6,16 +6,9 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import type { AuthUser } from "@/lib/supabase";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { authService } from "@/services/authService";
+import { languageService, type Language } from "@/services/languageService";
 
-type Language = {
-  id: string;
-  name: string;
-  shortcut: string;
-  hidden: boolean;
-  codeForTranslator: string;
-  codeForSpeech: string;
-  specialLetters?: string;
-};
 
 export const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -31,15 +24,10 @@ export const Sidebar = () => {
   useEffect(() => {
     // Check for mocked session first
     const checkMockedSession = () => {
-      const mockedSession = localStorage.getItem('supabase.auth.token');
-      if (mockedSession) {
-        try {
-          const parsed = JSON.parse(mockedSession);
-          setUser(parsed as AuthUser);
-          return true;
-        } catch (e) {
-          return false;
-        }
+      const user = authService.getCurrentUser();
+      if (user) {
+        setUser(user as AuthUser);
+        return true;
       }
       return false;
     };
@@ -76,9 +64,8 @@ export const Sidebar = () => {
   }, []);
 
   useEffect(() => {
-    // Initialize with mock data if localStorage is empty
-    const storedLanguages = localStorage.getItem("languages");
-    if (!storedLanguages) {
+    // Load languages
+    const loadLanguages = async () => {
       const mockLanguages: Language[] = [
         {
           id: "1",
@@ -108,18 +95,18 @@ export const Sidebar = () => {
           specialLetters: "",
         },
       ];
-      localStorage.setItem("languages", JSON.stringify(mockLanguages));
-      setLanguages(mockLanguages);
-    } else {
-      setLanguages(JSON.parse(storedLanguages));
-    }
+      
+      await languageService.initialize(mockLanguages);
+      const languages = await languageService.getAll();
+      setLanguages(languages);
+    };
+
+    loadLanguages();
 
     // Listen for storage changes to update the list
-    const handleStorageChange = () => {
-      const updated = localStorage.getItem("languages");
-      if (updated) {
-        setLanguages(JSON.parse(updated));
-      }
+    const handleStorageChange = async () => {
+      const updated = await languageService.getAll();
+      setLanguages(updated);
     };
 
     window.addEventListener("storage", handleStorageChange);

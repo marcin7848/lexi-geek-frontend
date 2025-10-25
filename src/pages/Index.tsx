@@ -1,30 +1,29 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase, type AuthUser } from "@/lib/supabase";
-import { useLanguage } from "@/i18n/LanguageProvider";
+import { authService } from "@/services/authService";
+import { dashboardService } from "@/services/dashboardService";
+import { RecentActivitySection } from "@/components/dashboard/RecentActivity";
+import { DailyTasks } from "@/components/dashboard/DailyTasks";
+import { StatisticsChart } from "@/components/dashboard/StatisticsChart";
+import { Star } from "lucide-react";
 
 const Index = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const { t } = useLanguage();
+  const [stars, setStars] = useState(0);
 
   useEffect(() => {
+    loadUserData();
+
     // Check for mocked session first
     const checkMockedSession = () => {
-      const mockedSession = localStorage.getItem('supabase.auth.token');
-      if (mockedSession) {
-        try {
-          const parsed = JSON.parse(mockedSession);
-          if (parsed.currentSession?.user) {
-            setUser(parsed.currentSession.user as AuthUser);
-            setLoading(false);
-            return true;
-          }
-        } catch (e) {
-          // Invalid mocked session, continue to real auth
-        }
+      const user = authService.getCurrentUser();
+      if (user) {
+        setUser(user as AuthUser);
+        setLoading(false);
+        return true;
       }
       return false;
     };
@@ -63,13 +62,18 @@ const Index = () => {
     };
   }, []);
 
+  const loadUserData = async () => {
+    const userData = await dashboardService.getUserData();
+    setStars(userData.stars);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <Sidebar />
       
       <main className="pt-4 pl-6 pr-6">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           {loading ? (
             <div className="flex items-center justify-center min-h-[60vh]">
               <div className="animate-pulse">
@@ -77,131 +81,43 @@ const Index = () => {
                 <div className="h-4 bg-muted rounded w-96"></div>
               </div>
             </div>
-          ) : (
+          ) : user ? (
             <>
-              {user ? (
-                <>
-                  <div className="mb-8">
-                    <h1 className="text-4xl font-bold text-primary mb-4 animate-fade-in">
-                      {t("dashboard.yourDashboard")}
-                    </h1>
-                    <p className="text-xl text-muted-foreground animate-fade-in">
-                      {t("dashboard.welcomeBack").replace("{username}", user.user_metadata?.username || user.email?.split('@')[0] || '')}
-                    </p>
-                  </div>
+              <div className="mb-8 flex items-center justify-between">
+                <div>
+                  <h1 className="text-4xl font-bold text-primary mb-2 animate-fade-in">
+                    Dashboard
+                  </h1>
+                  <p className="text-xl text-muted-foreground animate-fade-in">
+                    Welcome back, {user.user_metadata?.username || user.email?.split('@')[0] || ''}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 text-amber-500 text-2xl font-bold">
+                  <Star className="w-8 h-8 fill-current" />
+                  <span>{stars}</span>
+                </div>
+              </div>
 
-                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
-                    <Card className="shadow-card hover:shadow-glow transition-all duration-300 animate-fade-in border-border/50">
-                      <CardHeader>
-                        <CardTitle className="text-primary">{t("dashboard.recentActivity")}</CardTitle>
-                        <CardDescription>
-                          {t("dashboard.recentActivityDesc")}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-muted-foreground">
-                          {t("dashboard.recentActivityText")}
-                        </p>
-                      </CardContent>
-                    </Card>
+              <div className="grid gap-6 lg:grid-cols-3 mb-6">
+                <div className="lg:col-span-1">
+                  <RecentActivitySection />
+                </div>
+                <div className="lg:col-span-2">
+                  <DailyTasks onStarsUpdate={loadUserData} />
+                </div>
+              </div>
 
-                    <Card className="shadow-card hover:shadow-glow transition-all duration-300 animate-fade-in border-border/50">
-                      <CardHeader>
-                        <CardTitle className="text-primary">{t("dashboard.studyGoals")}</CardTitle>
-                        <CardDescription>
-                          {t("dashboard.studyGoalsDesc")}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-muted-foreground">
-                          {t("dashboard.studyGoalsText")}
-                        </p>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="shadow-card hover:shadow-glow transition-all duration-300 animate-fade-in border-border/50">
-                      <CardHeader>
-                        <CardTitle className="text-primary">{t("dashboard.achievements")}</CardTitle>
-                        <CardDescription>
-                          {t("dashboard.achievementsDesc")}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-muted-foreground">
-                          {t("dashboard.achievementsText")}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="mb-8 text-center">
-                    <h1 className="text-4xl font-bold text-primary mb-4 animate-fade-in">
-                      {t("dashboard.welcome")}
-                    </h1>
-                    <p className="text-xl text-muted-foreground animate-fade-in">
-                      {t("dashboard.welcomeDesc")}
-                    </p>
-                  </div>
-
-                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    <Card className="shadow-card hover:shadow-glow transition-all duration-300 animate-fade-in border-border/50">
-                      <CardHeader>
-                        <CardTitle className="text-primary">{t("dashboard.quickStart")}</CardTitle>
-                        <CardDescription>
-                          {t("dashboard.quickStartDesc")}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-muted-foreground">
-                          {t("dashboard.quickStartText")}
-                        </p>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="shadow-card hover:shadow-glow transition-all duration-300 animate-fade-in border-border/50">
-                      <CardHeader>
-                        <CardTitle className="text-primary">{t("dashboard.groups")}</CardTitle>
-                        <CardDescription>
-                          {t("dashboard.groupsDesc")}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-muted-foreground">
-                          {t("dashboard.groupsText")}
-                        </p>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="shadow-card hover:shadow-glow transition-all duration-300 animate-fade-in border-border/50">
-                      <CardHeader>
-                        <CardTitle className="text-primary">{t("dashboard.yourProgress")}</CardTitle>
-                        <CardDescription>
-                          {t("dashboard.yourProgressDesc")}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-muted-foreground">
-                          {t("dashboard.yourProgressText")}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  <div className="mt-12 text-center">
-                    <Card className="max-w-md mx-auto shadow-card border border-primary/20">
-                      <CardHeader>
-                        <CardTitle className="text-primary">{t("dashboard.readyToBegin")}</CardTitle>
-                        <CardDescription>
-                          {t("dashboard.readyToBeginDesc")}
-                        </CardDescription>
-                      </CardHeader>
-                    </Card>
-                  </div>
-                </>
-              )}
+              <StatisticsChart />
             </>
+          ) : (
+            <div className="text-center py-20">
+              <h1 className="text-4xl font-bold text-primary mb-4">
+                Welcome to Your Language Learning Dashboard
+              </h1>
+              <p className="text-xl text-muted-foreground mb-8">
+                Please login to access your personalized dashboard
+              </p>
+            </div>
           )}
         </div>
       </main>
