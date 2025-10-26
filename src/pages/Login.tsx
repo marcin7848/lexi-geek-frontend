@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
@@ -19,11 +20,20 @@ const loginSchema = z.object({
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("rememberMeEmail");
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   const validateForm = () => {
     try {
@@ -52,6 +62,13 @@ export default function Login() {
     setLoading(true);
     
     try {
+      // Handle remember me
+      if (rememberMe) {
+        localStorage.setItem("rememberMeEmail", email);
+      } else {
+        localStorage.removeItem("rememberMeEmail");
+      }
+
       // Check for mocked credentials
       if (email === "test@test.com" && password === "test12") {
         const user = await authService.login(email, password);
@@ -173,6 +190,20 @@ export default function Login() {
               {errors.password && (
                 <p className="text-sm text-destructive">{errors.password}</p>
               )}
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="remember"
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(checked === true)}
+              />
+              <Label
+                htmlFor="remember"
+                className="text-sm font-normal cursor-pointer"
+              >
+                Remember me
+              </Label>
             </div>
             
             <Button 
