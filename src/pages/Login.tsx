@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,13 +27,6 @@ export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  useEffect(() => {
-    const savedEmail = localStorage.getItem("rememberMeEmail");
-    if (savedEmail) {
-      setEmail(savedEmail);
-      setRememberMe(true);
-    }
-  }, []);
 
   const validateForm = () => {
     try {
@@ -62,50 +55,7 @@ export default function Login() {
     setLoading(true);
     
     try {
-      // Handle remember me
-      if (rememberMe) {
-        localStorage.setItem("rememberMeEmail", email);
-      } else {
-        localStorage.removeItem("rememberMeEmail");
-      }
-
-      // Check for mocked credentials
-      if (email === "test@test.com" && password === "test12") {
-        const user = await authService.login(email, password);
-        
-        if (user) {
-          toast({
-            title: "Welcome back!",
-            description: "You have successfully logged in.",
-          });
-          
-          navigate("/");
-          setLoading(false);
-          return;
-        }
-      }
-      
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        if (error.message.includes("Invalid login credentials")) {
-          toast({
-            title: "Login failed",
-            description: "Invalid email or password. Please check your credentials.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Login failed",
-            description: error.message,
-            variant: "destructive",
-          });
-        }
-        return;
-      }
+      await authService.login(email, password, rememberMe);
 
       toast({
         title: "Welcome back!",
@@ -114,9 +64,10 @@ export default function Login() {
       
       navigate("/");
     } catch (error) {
+      const message = error instanceof Error && error.message ? error.message : "An unexpected error occurred. Please try again.";
       toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+        title: "Login failed",
+        description: message,
         variant: "destructive",
       });
     } finally {

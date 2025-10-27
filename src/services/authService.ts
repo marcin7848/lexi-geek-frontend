@@ -16,33 +16,23 @@ export interface AuthSession {
   };
 }
 
+import { HttpMethod, RequestBuilder, RequestService } from '@/services/requestService';
+import { throwIfError } from '@/services/requestError';
+
 export const authService = {
-  login: async (email: string, password: string): Promise<AuthUser | null> => {
-    // Mock login - check credentials
-    if (email === "test@test.com" && password === "test12") {
-      const mockedUser: AuthUser = {
-        id: "mock-user-123",
-        email: "test@test.com",
-        user_metadata: {
-          username: "TestUser",
-          full_name: "Test User"
-        }
-      };
-      
-      const session: AuthSession = {
-        currentSession: {
-          user: mockedUser,
-          access_token: 'mock-token'
-        }
-      };
-      
-      localStorage.setItem('supabase.auth.token', JSON.stringify(session));
-      window.dispatchEvent(new Event('storage'));
-      
-      return mockedUser;
-    }
-    
-    return null;
+  login: async (email: string, password: string, rememberMe: boolean = false): Promise<void> => {
+    const service = new RequestService();
+    const request = new RequestBuilder<{ email: string; password: string; rememberMe: boolean }>()
+      .url('/login')
+      .method(HttpMethod.POST)
+      .contentTypeHeader('application/json')
+      .body({ email, password, rememberMe })
+      .responseAsVoid()
+      .build();
+
+    const res = await service.sendVoid(request);
+    throwIfError(res, 'Login failed');
+    return;
   },
 
   register: async (email: string, password: string, username: string): Promise<AuthUser | null> => {
@@ -70,6 +60,17 @@ export const authService = {
   },
 
   logout: async (): Promise<void> => {
+    const service = new RequestService();
+    const request = new RequestBuilder<void>()
+      .url('/logout')
+      .method(HttpMethod.POST)
+      .responseAsVoid()
+      .build();
+
+    const res = await service.sendVoid(request);
+    throwIfError(res, 'Logout failed');
+
+    // Also clear any local mock session to keep UI in sync (for mocked register flows)
     localStorage.removeItem('supabase.auth.token');
     window.dispatchEvent(new Event('storage'));
   },
