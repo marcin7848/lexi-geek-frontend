@@ -67,10 +67,32 @@ export default function Login() {
       
       navigate("/");
     } catch (error) {
-      const message = error instanceof Error && error.message ? error.message : t("common.unexpectedError");
+      let description = t("common.unexpectedError");
+      try {
+        const { RequestError, buildLocalizedErrorDescription } = await import("@/services/requestError");
+        if (error instanceof RequestError) {
+          const resolveField = (field: string) => {
+            switch (field) {
+              case "email":
+                return t("auth.email");
+              case "password":
+                return t("auth.password");
+              default:
+                return field;
+            }
+          };
+          description = buildLocalizedErrorDescription(error, t, resolveField);
+        } else if (error instanceof Error && error.message) {
+          description = error.message;
+        }
+      } catch (_) {
+        if (error instanceof Error && error.message) {
+          description = error.message;
+        }
+      }
       toast({
         title: t("auth.loginFailed"),
-        description: message,
+        description,
         variant: "destructive",
       });
     } finally {

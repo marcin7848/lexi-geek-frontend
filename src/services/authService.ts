@@ -27,10 +27,9 @@ export const authService = {
       .method(HttpMethod.POST)
       .contentTypeHeader('application/json')
       .body({ email, password, rememberMe })
-      .responseAsVoid()
       .build();
 
-    const res = await service.sendVoid(request);
+    const res = await service.send(request);
     throwIfError(res, 'Login failed');
     return;
   },

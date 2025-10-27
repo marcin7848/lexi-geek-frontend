@@ -317,6 +317,14 @@ export const en = {
   "repeatingPage.shortcutsSpeaker": "Ctrl+; (speaker/microphone)",
   "repeatingPage.checkButton": "Check",
   "repeatingPage.nextButton": "Next",
+
+  // Error
+  "error.VALIDATION_ERROR": "There was an validation error",
+
+  // Error Codes
+  "code.WRONG_EMAIL": "Email is not in a correct format",
+  "code.WRONG_SIZE": "%s has wrong size, should be between %s and %s"
 };
+export default en
 
 export type TranslationKeys = keyof typeof en;

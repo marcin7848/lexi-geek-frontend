@@ -110,3 +110,45 @@ export function throwIfError<T>(res: Response<T>, fallbackMessage = 'Request fai
   const msg = extractMessageFromUnknown(bodyUnknown) ?? fallbackMessage;
   throw new RequestError({ message: msg, statusCode: status });
 }
+
+// Utility to replace %s placeholders with provided args
+export function formatWithArgs(template: string, args: unknown[] = []): string {
+  if (!template.includes('%s')) return template;
+  let i = 0;
+  return template.replace(/%s/g, () => String(args[i++] ?? ''));
+}
+
+// Build a localized description for RequestError based on translations
+// t: translation function
+// fieldLabelResolver: optional function to localize field names
+export function buildLocalizedErrorDescription(
+  err: RequestError,
+  t: (key: string) => string,
+  fieldLabelResolver?: (field: string) => string
+): string {
+  const parts: string[] = [];
+  if (err.errorCode) {
+    const topKey = `error.${err.errorCode}`;
+    const top = t(topKey);
+    if (top && top !== topKey) parts.push(top);
+  }
+
+  if (err.validationMessages && err.validationMessages.length) {
+    for (const vm of err.validationMessages) {
+      const codeKey = `code.${vm.code}`;
+      const template = t(codeKey);
+      if (template && template !== codeKey) {
+        const fieldLabel = fieldLabelResolver ? fieldLabelResolver(vm.field) : vm.field;
+        const msg = formatWithArgs(template, [fieldLabel, ...(vm.args ?? [])]);
+        parts.push(msg);
+      } else {
+        const argsStr = vm.args && vm.args.length ? ` (${vm.args.join(', ')})` : '';
+        parts.push(`${vm.field}: ${vm.code}${argsStr}`);
+      }
+    }
+  } else if (err.message) {
+    parts.push(err.message);
+  }
+
+  return parts.join('\n');
+}
