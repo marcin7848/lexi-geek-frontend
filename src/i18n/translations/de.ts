@@ -24,6 +24,7 @@ export const de = {
   "common.noData": "Keine Daten verfügbar",
   "common.error": "Fehler",
   "common.success": "Erfolg",
+  "common.unexpectedError": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
 
   // Sidebar
   "sidebar.languages": "Sprachen",
@@ -84,6 +85,23 @@ export const de = {
   "auth.hasAccount": "Bereits ein Konto?",
   "auth.signUpLink": "Registrieren",
   "auth.loginLink": "Anmelden",
+  
+  // Auth - Login page specific
+  "auth.signInDescription": "Melden Sie sich bei Ihrem LexiGeek-Konto an",
+  "auth.emailPlaceholder": "Geben Sie Ihre E-Mail ein",
+  "auth.passwordPlaceholder": "Geben Sie Ihr Passwort ein",
+  "auth.rememberMe": "Angemeldet bleiben",
+  "auth.signIn": "Anmelden",
+  "auth.signingIn": "Anmeldung läuft...",
+  "auth.orContinueWith": "Oder fortfahren mit",
+  "auth.continueWithGoogle": "Mit Google fortfahren",
+  "auth.loginSuccessTitle": "Willkommen zurück!",
+  "auth.loginSuccessDesc": "Sie haben sich erfolgreich angemeldet.",
+  "auth.loginFailed": "Anmeldung fehlgeschlagen",
+  "auth.invalidEmail": "Ungültige E-Mail-Adresse",
+  "auth.passwordMin": "Das Passwort muss mindestens 6 Zeichen enthalten",
+  "auth.googleLoginFailed": "Google-Anmeldung fehlgeschlagen",
+  "auth.googleLoginInitFailed": "Google-Anmeldefehler",
 
   // Not Found
   "notFound.title": "404",

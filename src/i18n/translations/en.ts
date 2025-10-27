@@ -24,6 +24,7 @@ export const en = {
   "common.noData": "No data available",
   "common.error": "Error",
   "common.success": "Success",
+  "common.unexpectedError": "An unexpected error occurred. Please try again.",
 
   // Sidebar
   "sidebar.languages": "Languages",
@@ -84,6 +85,23 @@ export const en = {
   "auth.hasAccount": "Already have an account?",
   "auth.signUpLink": "Sign up",
   "auth.loginLink": "Login",
+  
+  // Auth - Login page specific
+  "auth.signInDescription": "Sign in to your LexiGeek account",
+  "auth.emailPlaceholder": "Enter your email",
+  "auth.passwordPlaceholder": "Enter your password",
+  "auth.rememberMe": "Remember me",
+  "auth.signIn": "Sign In",
+  "auth.signingIn": "Signing in...",
+  "auth.orContinueWith": "Or continue with",
+  "auth.continueWithGoogle": "Continue with Google",
+  "auth.loginSuccessTitle": "Welcome back!",
+  "auth.loginSuccessDesc": "You have successfully logged in.",
+  "auth.loginFailed": "Login failed",
+  "auth.invalidEmail": "Invalid email address",
+  "auth.passwordMin": "Password must be at least 6 characters",
+  "auth.googleLoginFailed": "Google login failed",
+  "auth.googleLoginInitFailed": "Google login error",
 
   // Not Found
   "notFound.title": "404",

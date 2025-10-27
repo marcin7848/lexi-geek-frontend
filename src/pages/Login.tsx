@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,11 +11,7 @@ import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { authService } from "@/services/authService";
-
-const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -26,7 +22,14 @@ export default function Login() {
   
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
+  const loginSchema = useMemo(() => 
+    z.object({
+      email: z.string().email(t("auth.invalidEmail")),
+      password: z.string().min(6, t("auth.passwordMin")),
+    })
+  , [t]);
 
   const validateForm = () => {
     try {
@@ -58,15 +61,15 @@ export default function Login() {
       await authService.login(email, password, rememberMe);
 
       toast({
-        title: "Welcome back!",
-        description: "You have successfully logged in.",
+        title: t("auth.loginSuccessTitle"),
+        description: t("auth.loginSuccessDesc"),
       });
       
       navigate("/");
     } catch (error) {
-      const message = error instanceof Error && error.message ? error.message : "An unexpected error occurred. Please try again.";
+      const message = error instanceof Error && error.message ? error.message : t("common.unexpectedError");
       toast({
-        title: "Login failed",
+        title: t("auth.loginFailed"),
         description: message,
         variant: "destructive",
       });
@@ -86,15 +89,15 @@ export default function Login() {
 
       if (error) {
         toast({
-          title: "Google login failed",
+          title: t("auth.googleLoginFailed"),
           description: error.message,
           variant: "destructive",
         });
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to initiate Google login. Please try again.",
+        title: t("auth.googleLoginInitFailed"),
+        description: t("common.unexpectedError"),
         variant: "destructive",
       });
     }
@@ -108,17 +111,17 @@ export default function Login() {
       <main className="pt-8 pl-6 pr-6 flex justify-center">
         <Card className="w-full max-w-md shadow-card">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-primary">Welcome Back</CardTitle>
-          <CardDescription>Sign in to your LexiGeek account</CardDescription>
+          <CardTitle className="text-2xl font-bold text-primary">{t("auth.loginTitle")}</CardTitle>
+          <CardDescription>{t("auth.signInDescription")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <form onSubmit={handleEmailLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("auth.email")}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="Enter your email"
+                placeholder={t("auth.emailPlaceholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className={errors.email ? "border-destructive" : ""}
@@ -129,11 +132,11 @@ export default function Login() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("auth.password")}</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Enter your password"
+                placeholder={t("auth.passwordPlaceholder")}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className={errors.password ? "border-destructive" : ""}
@@ -153,7 +156,7 @@ export default function Login() {
                 htmlFor="remember"
                 className="text-sm font-normal cursor-pointer"
               >
-                Remember me
+                {t("auth.rememberMe")}
               </Label>
             </div>
             
@@ -163,7 +166,7 @@ export default function Login() {
               className="w-full" 
               disabled={loading}
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? t("auth.signingIn") : t("auth.signIn")}
             </Button>
           </form>
           
@@ -172,7 +175,7 @@ export default function Login() {
               <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+              <span className="bg-card px-2 text-muted-foreground">{t("auth.orContinueWith")}</span>
             </div>
           </div>
           
@@ -187,13 +190,13 @@ export default function Login() {
               <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            Continue with Google
+            {t("auth.continueWithGoogle")}
           </Button>
           
           <p className="text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
+            {t("auth.noAccount")} {" "}
             <Link to="/register" className="text-primary hover:text-primary-glow transition-colors">
-              Sign up here
+              {t("auth.signUpLink")}
             </Link>
           </p>
         </CardContent>
