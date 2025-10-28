@@ -147,7 +147,9 @@ export function buildLocalizedErrorDescription(
       }
     }
   } else if (err.message) {
-    parts.push(err.message);
+    if (parts.length === 0) {
+      parts.push(err.message);
+    }
   }
 
   return parts.join('\n');

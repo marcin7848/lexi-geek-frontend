@@ -320,6 +320,7 @@ export const en = {
 
   // Error
   "error.VALIDATION_ERROR": "There was an validation error",
+  "error.INVALID_CREDENTIALS": "Email and password are incorrect",
 
   // Error Codes
   "code.WRONG_EMAIL": "Email is not in a correct format",
