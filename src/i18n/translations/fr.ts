@@ -317,4 +317,12 @@ export const fr = {
   "repeatingPage.shortcutsSpeaker": "Ctrl+; (haut-parleur/microphone)",
   "repeatingPage.checkButton": "Vérifier",
   "repeatingPage.nextButton": "Suivant",
+
+  // Error
+  "error.VALIDATION_ERROR": "Une erreur de validation s'est produite",
+  "error.INVALID_CREDENTIALS": "L'e-mail et le mot de passe sont incorrects",
+
+  // Error Codes
+  "code.WRONG_EMAIL": "L'e-mail n'est pas dans un format correct",
+  "code.WRONG_SIZE": "%s a une taille incorrecte, elle doit être entre %s et %s"
 };
