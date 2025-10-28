@@ -16,8 +16,32 @@ export interface AuthSession {
   };
 }
 
+// Backend Account DTO shape
+export interface AccountDto {
+  uuid: string;
+  username: string;
+  email: string;
+}
+
 import { HttpMethod, RequestBuilder, RequestService } from '@/services/requestService';
 import { throwIfError } from '@/services/requestError';
+
+function saveMockSession(user: AuthUser) {
+  const session: AuthSession = {
+    currentSession: {
+      user,
+      access_token: 'cookie-based-session',
+    },
+  };
+  localStorage.setItem('supabase.auth.token', JSON.stringify(session));
+  // notify listeners (Header/Sidebar/Index)
+  window.dispatchEvent(new Event('storage'));
+}
+
+function clearMockSession() {
+  localStorage.removeItem('supabase.auth.token');
+  window.dispatchEvent(new Event('storage'));
+}
 
 export const authService = {
   login: async (email: string, password: string, rememberMe: boolean = false): Promise<void> => {
@@ -31,11 +55,56 @@ export const authService = {
 
     const res = await service.send(request);
     throwIfError(res, 'Login failed');
+
+    // After successful login (cookies set), fetch account and mirror into localStorage
+    await authService.initializeFromAccount();
     return;
   },
 
+  // Fetch current account from backend and mirror into legacy localStorage used by UI
+  initializeFromAccount: async (): Promise<AuthUser | null> => {
+    try {
+      const account = await authService.getAccount();
+      if (account) {
+        const user: AuthUser = {
+          id: account.uuid,
+          email: account.email,
+          user_metadata: {
+            username: account.username,
+            full_name: account.username,
+          },
+        };
+        saveMockSession(user);
+        return user;
+      }
+    } catch (_) {
+      // ignore and treat as unauthenticated
+    }
+    clearMockSession();
+    return null;
+  },
+
+  // Direct call to backend /api/account
+  getAccount: async (): Promise<AccountDto | null> => {
+    const service = new RequestService();
+    const request = new RequestBuilder<void>()
+      .url('/account')
+      .method(HttpMethod.GET)
+      .build();
+
+    const res = await service.send<void, AccountDto | null>(request);
+    if (res.statusCode === 200 && res.body && typeof res.body === 'object') {
+      // Basic runtime guard
+      const b = res.body as AccountDto;
+      if (b && typeof b.uuid === 'string' && typeof b.email === 'string' && typeof b.username === 'string') {
+        return b;
+      }
+    }
+    return null;
+  },
+
   register: async (email: string, password: string, username: string): Promise<AuthUser | null> => {
-    // Mock registration
+    // Mock registration (local only)
     const mockedUser: AuthUser = {
       id: `mock-user-${Date.now()}`,
       email,
@@ -45,15 +114,7 @@ export const authService = {
       }
     };
     
-    const session: AuthSession = {
-      currentSession: {
-        user: mockedUser,
-        access_token: 'mock-token'
-      }
-    };
-    
-    localStorage.setItem('supabase.auth.token', JSON.stringify(session));
-    window.dispatchEvent(new Event('storage'));
+    saveMockSession(mockedUser);
     
     return mockedUser;
   },
@@ -70,8 +131,7 @@ export const authService = {
     throwIfError(res, 'Logout failed');
 
     // Also clear any local mock session to keep UI in sync (for mocked register flows)
-    localStorage.removeItem('supabase.auth.token');
-    window.dispatchEvent(new Event('storage'));
+    clearMockSession();
   },
 
   getCurrentUser: (): AuthUser | null => {

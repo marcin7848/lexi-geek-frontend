@@ -17,49 +17,58 @@ const Index = () => {
   useEffect(() => {
     loadUserData();
 
-    // Check for mocked session first
-    const checkMockedSession = () => {
-      const user = authService.getCurrentUser();
-      if (user) {
-        setUser(user as AuthUser);
-        setLoading(false);
-        return true;
-      }
-      return false;
-    };
-
-    // Listen for storage changes (logout events)
-    const handleStorageChange = () => {
-      if (!checkMockedSession()) {
-        setUser(null);
+    // Initialize from backend account if authenticated
+    (async () => {
+      const serverUser = await authService.initializeFromAccount();
+      if (serverUser) {
+        setUser(serverUser as AuthUser);
         setLoading(false);
       }
-    };
 
-    window.addEventListener('storage', handleStorageChange);
+      // Check for mocked session first
+      const checkMockedSession = () => {
+        const u = authService.getCurrentUser();
+        if (u) {
+          setUser(u as AuthUser);
+          setLoading(false);
+          return true;
+        }
+        return false;
+      };
 
-    if (checkMockedSession()) {
-      return () => window.removeEventListener('storage', handleStorageChange);
-    }
+      // Listen for storage changes (logout/login events)
+      const handleStorageChange = () => {
+        if (!checkMockedSession()) {
+          setUser(null);
+          setLoading(false);
+        }
+      };
 
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      window.addEventListener('storage', handleStorageChange);
+
+      if (checkMockedSession()) {
+        return () => window.removeEventListener('storage', handleStorageChange);
+      }
+
+      // Set up auth state listener
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        (event, session) => {
+          setUser(session?.user as AuthUser | null);
+          setLoading(false);
+        }
+      );
+
+      // Check for existing session
+      supabase.auth.getSession().then(({ data: { session } }) => {
         setUser(session?.user as AuthUser | null);
         setLoading(false);
-      }
-    );
+      });
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user as AuthUser | null);
-      setLoading(false);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-      window.removeEventListener('storage', handleStorageChange);
-    };
+      return () => {
+        subscription.unsubscribe();
+        window.removeEventListener('storage', handleStorageChange);
+      };
+    })();
   }, []);
 
   const loadUserData = async () => {
