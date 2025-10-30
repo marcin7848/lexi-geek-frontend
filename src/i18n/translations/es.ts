@@ -85,6 +85,18 @@ export const es = {
   "auth.hasAccount": "¿Ya tienes cuenta?",
   "auth.signUpLink": "Regístrate",
   "auth.loginLink": "Iniciar sesión",
+  "auth.registrationFailed": "Error al registrarse",
+  "auth.signUpDescription": "Crea tu cuenta de LexiGeek",
+  "auth.registerSuccessTitle": "¡Bienvenido a LexiGeek!",
+  "auth.registerSuccessDesc": "Tu cuenta se ha creado correctamente.",
+  "auth.usernamePlaceholder": "Elige un nombre de usuario",
+  "auth.confirmPasswordPlaceholder": "Confirma tu contraseña",
+  "auth.creatingAccount": "Creando cuenta...",
+  "auth.googleRegisterFailed": "Error al registrarse con Google",
+  "auth.googleRegisterInitFailed": "No se pudo iniciar el registro con Google. Inténtalo de nuevo.",
+  "auth.usernameMin": "El nombre de usuario debe tener al menos 3 caracteres",
+  "auth.usernameMax": "El nombre de usuario debe tener menos de 20 caracteres",
+  "auth.passwordsMismatch": "Las contraseñas no coinciden",
   
   // Auth - Login page specific
   "auth.signInDescription": "Inicia sesión en tu cuenta de LexiGeek",

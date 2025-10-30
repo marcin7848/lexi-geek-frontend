@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,13 +12,15 @@ import { z } from "zod";
 import { authService } from "@/services/authService";
 import { useLanguage } from "@/i18n/LanguageProvider";
 
-const registerSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters").max(20, "Username must be less than 20 characters"),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+const registerSchemaFactory = (t: (k: string) => string) => z.object({
+  username: z.string()
+    .min(3, t("auth.usernameMin"))
+    .max(20, t("auth.usernameMax")),
+  email: z.string().email(t("auth.invalidEmail")),
+  password: z.string().min(6, t("auth.passwordMin")),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
+  message: t("auth.passwordsMismatch"),
   path: ["confirmPassword"],
 });
 
@@ -40,6 +42,8 @@ export default function Register() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useLanguage();
+
+  const registerSchema = useMemo(() => registerSchemaFactory(t as unknown as (k: string) => string), [t]);
 
   const validateForm = () => {
     try {
@@ -75,8 +79,8 @@ export default function Register() {
       await authService.register(formData.email, formData.password, formData.username);
 
       toast({
-        title: "Welcome to LexiGeek!",
-        description: "Your account has been created successfully.",
+        title: t("auth.registerSuccessTitle") as unknown as string,
+        description: t("auth.registerSuccessDesc") as unknown as string,
       });
       
       navigate("/");
@@ -127,15 +131,15 @@ export default function Register() {
 
       if (error) {
         toast({
-          title: "Google registration failed",
+          title: t("auth.googleRegisterFailed") as unknown as string,
           description: error.message,
           variant: "destructive",
         });
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to initiate Google registration. Please try again.",
+        title: t("common.error") as unknown as string,
+        description: t("auth.googleRegisterInitFailed") as unknown as string,
         variant: "destructive",
       });
     }
@@ -149,17 +153,17 @@ export default function Register() {
       <main className="pt-8 pl-6 pr-6 flex justify-center">
         <Card className="w-full max-w-md shadow-card">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-primary">Join LexiGeek</CardTitle>
-          <CardDescription>Create your account to get started</CardDescription>
+          <CardTitle className="text-2xl font-bold text-primary">{t("auth.registerTitle") as unknown as string}</CardTitle>
+          <CardDescription>{t("auth.signUpDescription") as unknown as string}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <form onSubmit={handleEmailRegister} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username">{t("auth.username") as unknown as string}</Label>
               <Input
                 id="username"
                 type="text"
-                placeholder="Choose a username"
+                placeholder={t("auth.usernamePlaceholder") as unknown as string}
                 value={formData.username}
                 onChange={handleInputChange("username")}
                 className={errors.username ? "border-destructive" : ""}
@@ -170,11 +174,11 @@ export default function Register() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("auth.email") as unknown as string}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="Enter your email"
+                placeholder={t("auth.emailPlaceholder") as unknown as string}
                 value={formData.email}
                 onChange={handleInputChange("email")}
                 className={errors.email ? "border-destructive" : ""}
@@ -185,11 +189,11 @@ export default function Register() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("auth.password") as unknown as string}</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Create a password"
+                placeholder={t("auth.passwordPlaceholder") as unknown as string}
                 value={formData.password}
                 onChange={handleInputChange("password")}
                 className={errors.password ? "border-destructive" : ""}
@@ -200,11 +204,11 @@ export default function Register() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">{t("auth.confirmPassword") as unknown as string}</Label>
               <Input
                 id="confirmPassword"
                 type="password"
-                placeholder="Confirm your password"
+                placeholder={t("auth.confirmPasswordPlaceholder") as unknown as string}
                 value={formData.confirmPassword}
                 onChange={handleInputChange("confirmPassword")}
                 className={errors.confirmPassword ? "border-destructive" : ""}
@@ -220,7 +224,7 @@ export default function Register() {
               className="w-full" 
               disabled={loading}
             >
-              {loading ? "Creating account..." : "Create Account"}
+              {loading ? (t("auth.creatingAccount") as unknown as string) : (t("auth.registerButton") as unknown as string)}
             </Button>
           </form>
           
@@ -229,7 +233,7 @@ export default function Register() {
               <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+              <span className="bg-card px-2 text-muted-foreground">{t("auth.orContinueWith") as unknown as string}</span>
             </div>
           </div>
           
@@ -244,13 +248,13 @@ export default function Register() {
               <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            Continue with Google
+            {t("auth.continueWithGoogle") as unknown as string}
           </Button>
           
           <p className="text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
+            {t("auth.hasAccount") as unknown as string}{" "}
             <Link to="/login" className="text-primary hover:text-primary-glow transition-colors">
-              Sign in here
+              {t("auth.loginLink") as unknown as string}
             </Link>
           </p>
         </CardContent>

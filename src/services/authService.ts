@@ -115,9 +115,7 @@ export const authService = {
     const res = await service.send(request);
     throwIfError(res, 'Registration failed');
 
-    // After successful registration, try to initialize session from backend account
-    const user = await authService.initializeFromAccount();
-    return user;
+    return await authService.initializeFromAccount();
   },
 
   logout: async (): Promise<void> => {
