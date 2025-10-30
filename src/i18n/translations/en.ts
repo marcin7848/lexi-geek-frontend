@@ -94,8 +94,8 @@ export const en = {
   "auth.creatingAccount": "Creating account...",
   "auth.googleRegisterFailed": "Google registration failed",
   "auth.googleRegisterInitFailed": "Failed to initiate Google registration. Please try again.",
-  "auth.usernameMin": "Username must be at least 3 characters",
-  "auth.usernameMax": "Username must be less than 20 characters",
+  "auth.usernameMin": "Username must be at least %s characters",
+  "auth.usernameMax": "Username must be less than %s characters",
   "auth.passwordsMismatch": "Passwords don't match",
 
   // Auth - Login page specific
@@ -111,7 +111,7 @@ export const en = {
   "auth.loginSuccessDesc": "You have successfully logged in.",
   "auth.loginFailed": "Login failed",
   "auth.invalidEmail": "Invalid email address",
-  "auth.passwordMin": "Password must be at least 6 characters",
+  "auth.passwordMin": "Password must be at least %s characters",
   "auth.googleLoginFailed": "Google login failed",
   "auth.googleLoginInitFailed": "Google login error",
   "auth.oauthNotSupportedTitle": "Not available",

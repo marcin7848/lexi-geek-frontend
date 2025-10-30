@@ -94,8 +94,8 @@ export const de = {
   "auth.creatingAccount": "Konto wird erstellt...",
   "auth.googleRegisterFailed": "Google-Registrierung fehlgeschlagen",
   "auth.googleRegisterInitFailed": "Google-Registrierung konnte nicht gestartet werden. Bitte versuchen Sie es erneut.",
-  "auth.usernameMin": "Benutzername muss mindestens 3 Zeichen lang sein",
-  "auth.usernameMax": "Benutzername muss weniger als 20 Zeichen lang sein",
+  "auth.usernameMin": "Benutzername muss mindestens %s Zeichen lang sein",
+  "auth.usernameMax": "Benutzername muss weniger als %s Zeichen lang sein",
   "auth.passwordsMismatch": "Passwörter stimmen nicht überein",
   
   // Auth - Login page specific
@@ -111,7 +111,7 @@ export const de = {
   "auth.loginSuccessDesc": "Sie haben sich erfolgreich angemeldet.",
   "auth.loginFailed": "Anmeldung fehlgeschlagen",
   "auth.invalidEmail": "Ungültige E-Mail-Adresse",
-  "auth.passwordMin": "Das Passwort muss mindestens 6 Zeichen enthalten",
+  "auth.passwordMin": "Das Passwort muss mindestens %s Zeichen enthalten",
   "auth.googleLoginFailed": "Google-Anmeldung fehlgeschlagen",
   "auth.googleLoginInitFailed": "Google-Anmeldefehler",
   "auth.oauthNotSupportedTitle": "Nicht verfügbar",

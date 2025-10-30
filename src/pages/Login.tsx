@@ -26,7 +26,7 @@ export default function Login() {
   const loginSchema = useMemo(() => 
     z.object({
       email: z.string().email(t("auth.invalidEmail")),
-      password: z.string().min(6, t("auth.passwordMin")),
+      password: z.string().min(6, t("auth.passwordMin", 6)),
     })
   , [t]);
 
@@ -80,7 +80,7 @@ export default function Login() {
                 return field;
             }
           };
-          description = buildLocalizedErrorDescription(error, t, resolveField);
+          description = buildLocalizedErrorDescription(error, t as unknown as (k: string) => string, resolveField);
         } else if (error instanceof Error && error.message) {
           description = error.message;
         }

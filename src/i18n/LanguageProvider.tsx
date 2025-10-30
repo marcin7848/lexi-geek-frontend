@@ -9,7 +9,7 @@ type LanguageProviderProps = {
 type LanguageProviderState = {
   language: Language;
   setLanguage: (language: Language) => void;
-  t: (key: TranslationKeys) => string;
+  t: (key: TranslationKeys, ...args: unknown[]) => string;
 };
 
 const LanguageProviderContext = createContext<LanguageProviderState | undefined>(
@@ -28,8 +28,12 @@ export function LanguageProvider({
     localStorage.setItem("language", language);
   }, [language]);
 
-  const t = (key: TranslationKeys): string => {
-    return translations[language][key] || key;
+  const t = (key: TranslationKeys, ...args: unknown[]): string => {
+    const template = translations[language][key] || key;
+    if (!args || args.length === 0) return template;
+    // Simple %s placeholder replacement
+    let i = 0;
+    return template.replace(/%s/g, () => String(args[i++] ?? ''));
   };
 
   return (

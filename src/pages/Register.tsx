@@ -11,12 +11,12 @@ import { z } from "zod";
 import { authService } from "@/services/authService";
 import { useLanguage } from "@/i18n/LanguageProvider";
 
-const registerSchemaFactory = (t: (k: string) => string) => z.object({
+const registerSchemaFactory = (t: (k: string, ...args: unknown[]) => string) => z.object({
   username: z.string()
-    .min(3, t("auth.usernameMin"))
-    .max(20, t("auth.usernameMax")),
+    .min(3, t("auth.usernameMin", 3))
+    .max(20, t("auth.usernameMax", 20)),
   email: z.string().email(t("auth.invalidEmail")),
-  password: z.string().min(6, t("auth.passwordMin")),
+  password: z.string().min(6, t("auth.passwordMin", 6)),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: t("auth.passwordsMismatch"),
@@ -42,7 +42,7 @@ export default function Register() {
   const { toast } = useToast();
   const { t } = useLanguage();
 
-  const registerSchema = useMemo(() => registerSchemaFactory(t as unknown as (k: string) => string), [t]);
+  const registerSchema = useMemo(() => registerSchemaFactory(t as unknown as (k: string, ...args: unknown[]) => string), [t]);
 
   const validateForm = () => {
     try {

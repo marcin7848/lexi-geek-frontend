@@ -94,8 +94,8 @@ const es = {
   "auth.creatingAccount": "Creando cuenta...",
   "auth.googleRegisterFailed": "Error al registrarse con Google",
   "auth.googleRegisterInitFailed": "No se pudo iniciar el registro con Google. Inténtalo de nuevo.",
-  "auth.usernameMin": "El nombre de usuario debe tener al menos 3 caracteres",
-  "auth.usernameMax": "El nombre de usuario debe tener menos de 20 caracteres",
+  "auth.usernameMin": "El nombre de usuario debe tener al menos %s caracteres",
+  "auth.usernameMax": "El nombre de usuario debe tener menos de %s caracteres",
   "auth.passwordsMismatch": "Las contraseñas no coinciden",
   
   // Auth - Login page specific
@@ -111,7 +111,7 @@ const es = {
   "auth.loginSuccessDesc": "Has iniciado sesión correctamente.",
   "auth.loginFailed": "Error al iniciar sesión",
   "auth.invalidEmail": "Dirección de correo inválida",
-  "auth.passwordMin": "La contraseña debe tener al menos 6 caracteres",
+  "auth.passwordMin": "La contraseña debe tener al menos %s caracteres",
   "auth.googleLoginFailed": "Error al iniciar sesión con Google",
   "auth.googleLoginInitFailed": "Error de inicio de sesión de Google",
   "auth.oauthNotSupportedTitle": "No disponible",

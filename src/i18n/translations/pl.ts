@@ -94,8 +94,8 @@ export const pl = {
   "auth.creatingAccount": "Tworzenie konta...",
   "auth.googleRegisterFailed": "Rejestracja przez Google nie powiodła się",
   "auth.googleRegisterInitFailed": "Nie udało się rozpocząć rejestracji przez Google. Spróbuj ponownie.",
-  "auth.usernameMin": "Nazwa użytkownika musi mieć co najmniej 3 znaki",
-  "auth.usernameMax": "Nazwa użytkownika musi mieć mniej niż 20 znaków",
+  "auth.usernameMin": "Nazwa użytkownika musi mieć co najmniej %s znaków",
+  "auth.usernameMax": "Nazwa użytkownika musi mieć mniej niż %s znaków",
   "auth.passwordsMismatch": "Hasła nie są takie same",
   
   // Auth - Login page specific
@@ -111,7 +111,7 @@ export const pl = {
   "auth.loginSuccessDesc": "Zalogowano pomyślnie.",
   "auth.loginFailed": "Logowanie nie powiodło się",
   "auth.invalidEmail": "Nieprawidłowy adres email",
-  "auth.passwordMin": "Hasło musi mieć co najmniej 6 znaków",
+  "auth.passwordMin": "Hasło musi mieć co najmniej %s znaków",
   "auth.googleLoginFailed": "Logowanie przez Google nie powiodło się",
   "auth.googleLoginInitFailed": "Błąd logowania przez Google",
   "auth.oauthNotSupportedTitle": "Niedostępne",
