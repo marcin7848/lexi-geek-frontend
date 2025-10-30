@@ -85,7 +85,8 @@ export const en = {
   "auth.hasAccount": "Already have an account?",
   "auth.signUpLink": "Sign up",
   "auth.loginLink": "Login",
-  
+  "auth.registrationFailed": "Registration failed",
+
   // Auth - Login page specific
   "auth.signInDescription": "Sign in to your LexiGeek account",
   "auth.emailPlaceholder": "Enter your email",

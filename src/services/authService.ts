@@ -104,19 +104,20 @@ export const authService = {
   },
 
   register: async (email: string, password: string, username: string): Promise<AuthUser | null> => {
-    // Mock registration (local only)
-    const mockedUser: AuthUser = {
-      id: `mock-user-${Date.now()}`,
-      email,
-      user_metadata: {
-        username,
-        full_name: username
-      }
-    };
-    
-    saveMockSession(mockedUser);
-    
-    return mockedUser;
+    const service = new RequestService();
+    const request = new RequestBuilder<{ username: string; email: string; password: string }>()
+      .url('/register')
+      .method(HttpMethod.POST)
+      .contentTypeHeader('application/json')
+      .body({ username, email, password })
+      .build();
+
+    const res = await service.send(request);
+    throwIfError(res, 'Registration failed');
+
+    // After successful registration, try to initialize session from backend account
+    const user = await authService.initializeFromAccount();
+    return user;
   },
 
   logout: async (): Promise<void> => {

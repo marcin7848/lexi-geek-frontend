@@ -9,6 +9,8 @@ import { Sidebar } from "@/components/Sidebar";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { authService } from "@/services/authService";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 const registerSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters").max(20, "Username must be less than 20 characters"),
@@ -37,6 +39,7 @@ export default function Register() {
   
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const validateForm = () => {
     try {
@@ -69,34 +72,7 @@ export default function Register() {
     setLoading(true);
     
     try {
-      const { error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            username: formData.username,
-            full_name: formData.username,
-          },
-          emailRedirectTo: `${window.location.origin}/`
-        }
-      });
-
-      if (error) {
-        if (error.message.includes("User already registered")) {
-          toast({
-            title: "Registration failed",
-            description: "An account with this email already exists. Try logging in instead.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Registration failed",
-            description: error.message,
-            variant: "destructive",
-          });
-        }
-        return;
-      }
+      await authService.register(formData.email, formData.password, formData.username);
 
       toast({
         title: "Welcome to LexiGeek!",
@@ -105,9 +81,34 @@ export default function Register() {
       
       navigate("/");
     } catch (error) {
+      let description: string = t("common.unexpectedError");
+      try {
+        const { RequestError, buildLocalizedErrorDescription } = await import("@/services/requestError");
+        if (error instanceof RequestError) {
+          const resolveField = (field: string) => {
+            switch (field) {
+              case "username":
+                return t("auth.username") as unknown as string;
+              case "email":
+                return t("auth.email") as unknown as string;
+              case "password":
+                return t("auth.password") as unknown as string;
+              default:
+                return field;
+            }
+          };
+          description = buildLocalizedErrorDescription(error, t as unknown as (k: string) => string, resolveField);
+        } else if (error instanceof Error && error.message) {
+          description = error.message;
+        }
+      } catch (_) {
+        if (error instanceof Error && error.message) {
+          description = error.message;
+        }
+      }
       toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+        title: t("auth.registrationFailed") as unknown as string,
+        description,
         variant: "destructive",
       });
     } finally {
