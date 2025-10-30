@@ -24,6 +24,7 @@ export const pl = {
   "common.noData": "Brak danych",
   "common.error": "Błąd",
   "common.success": "Sukces",
+  "common.unexpectedError": "Wystąpił nieoczekiwany błąd. Spróbuj ponownie.",
 
   // Sidebar
   "sidebar.languages": "Języki",
@@ -84,6 +85,37 @@ export const pl = {
   "auth.hasAccount": "Masz już konto?",
   "auth.signUpLink": "Zarejestruj się",
   "auth.loginLink": "Zaloguj się",
+  "auth.registrationFailed": "Rejestracja nie powiodła się",
+  "auth.signUpDescription": "Utwórz swoje konto LexiGeek",
+  "auth.registerSuccessTitle": "Witamy w LexiGeek!",
+  "auth.registerSuccessDesc": "Twoje konto zostało pomyślnie utworzone.",
+  "auth.usernamePlaceholder": "Wybierz nazwę użytkownika",
+  "auth.confirmPasswordPlaceholder": "Potwierdź swoje hasło",
+  "auth.creatingAccount": "Tworzenie konta...",
+  "auth.googleRegisterFailed": "Rejestracja przez Google nie powiodła się",
+  "auth.googleRegisterInitFailed": "Nie udało się rozpocząć rejestracji przez Google. Spróbuj ponownie.",
+  "auth.usernameMin": "Nazwa użytkownika musi mieć co najmniej %s znaków",
+  "auth.usernameMax": "Nazwa użytkownika musi mieć mniej niż %s znaków",
+  "auth.passwordsMismatch": "Hasła nie są takie same",
+  
+  // Auth - Login page specific
+  "auth.signInDescription": "Zaloguj się do swojego konta LexiGeek",
+  "auth.emailPlaceholder": "Wprowadź swój email",
+  "auth.passwordPlaceholder": "Wprowadź swoje hasło",
+  "auth.rememberMe": "Zapamiętaj mnie",
+  "auth.signIn": "Zaloguj się",
+  "auth.signingIn": "Logowanie...",
+  "auth.orContinueWith": "Lub kontynuuj za pomocą",
+  "auth.continueWithGoogle": "Kontynuuj z Google",
+  "auth.loginSuccessTitle": "Witaj ponownie!",
+  "auth.loginSuccessDesc": "Zalogowano pomyślnie.",
+  "auth.loginFailed": "Logowanie nie powiodło się",
+  "auth.invalidEmail": "Nieprawidłowy adres email",
+  "auth.passwordMin": "Hasło musi mieć co najmniej %s znaków",
+  "auth.googleLoginFailed": "Logowanie przez Google nie powiodło się",
+  "auth.googleLoginInitFailed": "Błąd logowania przez Google",
+  "auth.oauthNotSupportedTitle": "Niedostępne",
+  "auth.oauthNotSupportedDesc": "Logowanie przez Google jest obecnie niewspierane.",
 
   // Not Found
   "notFound.title": "404",
@@ -299,4 +331,12 @@ export const pl = {
   "repeatingPage.shortcutsSpeaker": "Ctrl+; (głośnik/mikrofon)",
   "repeatingPage.checkButton": "Sprawdź",
   "repeatingPage.nextButton": "Dalej",
+
+  // Error
+  "error.VALIDATION_ERROR": "Wystąpił błąd walidacji",
+  "error.INVALID_CREDENTIALS": "Email i hasło są nieprawidłowe",
+
+  // Error Codes
+  "code.WRONG_EMAIL": "Email nie jest w prawidłowym formacie",
+  "code.WRONG_SIZE": "%s ma nieprawidłowy rozmiar, powinien być między %s a %s"
 };

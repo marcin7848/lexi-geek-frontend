@@ -24,6 +24,7 @@ export const fr = {
   "common.noData": "Aucune donnée disponible",
   "common.error": "Erreur",
   "common.success": "Succès",
+  "common.unexpectedError": "Une erreur inattendue s'est produite. Veuillez réessayer.",
 
   // Sidebar
   "sidebar.languages": "Langues",
@@ -84,6 +85,37 @@ export const fr = {
   "auth.hasAccount": "Vous avez déjà un compte?",
   "auth.signUpLink": "S'inscrire",
   "auth.loginLink": "Se connecter",
+  "auth.registrationFailed": "Échec de l'inscription",
+  "auth.signUpDescription": "Créez votre compte LexiGeek",
+  "auth.registerSuccessTitle": "Bienvenue sur LexiGeek !",
+  "auth.registerSuccessDesc": "Votre compte a été créé avec succès.",
+  "auth.usernamePlaceholder": "Choisissez un nom d'utilisateur",
+  "auth.confirmPasswordPlaceholder": "Confirmez votre mot de passe",
+  "auth.creatingAccount": "Création du compte...",
+  "auth.googleRegisterFailed": "Échec de l'inscription avec Google",
+  "auth.googleRegisterInitFailed": "Impossible de lancer l'inscription Google. Veuillez réessayer.",
+  "auth.usernameMin": "Le nom d'utilisateur doit contenir au moins %s caractères",
+  "auth.usernameMax": "Le nom d'utilisateur doit contenir moins de %s caractères",
+  "auth.passwordsMismatch": "Les mots de passe ne correspondent pas",
+  
+  // Auth - Login page specific
+  "auth.signInDescription": "Connectez-vous à votre compte LexiGeek",
+  "auth.emailPlaceholder": "Entrez votre email",
+  "auth.passwordPlaceholder": "Entrez votre mot de passe",
+  "auth.rememberMe": "Se souvenir de moi",
+  "auth.signIn": "Se connecter",
+  "auth.signingIn": "Connexion...",
+  "auth.orContinueWith": "Ou continuer avec",
+  "auth.continueWithGoogle": "Continuer avec Google",
+  "auth.loginSuccessTitle": "Bienvenue de retour !",
+  "auth.loginSuccessDesc": "Vous vous êtes connecté avec succès.",
+  "auth.loginFailed": "Échec de la connexion",
+  "auth.invalidEmail": "Adresse e-mail invalide",
+  "auth.passwordMin": "Le mot de passe doit contenir au moins %s caractères",
+  "auth.googleLoginFailed": "Échec de la connexion Google",
+  "auth.googleLoginInitFailed": "Erreur de connexion Google",
+  "auth.oauthNotSupportedTitle": "Non disponible",
+  "auth.oauthNotSupportedDesc": "La connexion avec Google n'est actuellement pas prise en charge.",
 
   // Not Found
   "notFound.title": "404",
@@ -299,4 +331,12 @@ export const fr = {
   "repeatingPage.shortcutsSpeaker": "Ctrl+; (haut-parleur/microphone)",
   "repeatingPage.checkButton": "Vérifier",
   "repeatingPage.nextButton": "Suivant",
+
+  // Error
+  "error.VALIDATION_ERROR": "Une erreur de validation s'est produite",
+  "error.INVALID_CREDENTIALS": "L'e-mail et le mot de passe sont incorrects",
+
+  // Error Codes
+  "code.WRONG_EMAIL": "L'e-mail n'est pas dans un format correct",
+  "code.WRONG_SIZE": "%s a une taille incorrecte, elle doit être entre %s et %s"
 };

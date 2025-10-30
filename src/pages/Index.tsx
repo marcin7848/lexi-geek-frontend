@@ -8,58 +8,69 @@ import { RecentActivitySection } from "@/components/dashboard/RecentActivity";
 import { DailyTasks } from "@/components/dashboard/DailyTasks";
 import { StatisticsChart } from "@/components/dashboard/StatisticsChart";
 import { Star } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 const Index = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [stars, setStars] = useState(0);
+  const { t } = useLanguage();
 
   useEffect(() => {
     loadUserData();
 
-    // Check for mocked session first
-    const checkMockedSession = () => {
-      const user = authService.getCurrentUser();
-      if (user) {
-        setUser(user as AuthUser);
-        setLoading(false);
-        return true;
-      }
-      return false;
-    };
-
-    // Listen for storage changes (logout events)
-    const handleStorageChange = () => {
-      if (!checkMockedSession()) {
-        setUser(null);
+    // Initialize from backend account if authenticated
+    (async () => {
+      const serverUser = await authService.initializeFromAccount();
+      if (serverUser) {
+        setUser(serverUser as AuthUser);
         setLoading(false);
       }
-    };
 
-    window.addEventListener('storage', handleStorageChange);
+      // Check for mocked session first
+      const checkMockedSession = () => {
+        const u = authService.getCurrentUser();
+        if (u) {
+          setUser(u as AuthUser);
+          setLoading(false);
+          return true;
+        }
+        return false;
+      };
 
-    if (checkMockedSession()) {
-      return () => window.removeEventListener('storage', handleStorageChange);
-    }
+      // Listen for storage changes (logout/login events)
+      const handleStorageChange = () => {
+        if (!checkMockedSession()) {
+          setUser(null);
+          setLoading(false);
+        }
+      };
 
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      window.addEventListener('storage', handleStorageChange);
+
+      if (checkMockedSession()) {
+        return () => window.removeEventListener('storage', handleStorageChange);
+      }
+
+      // Set up auth state listener
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        (event, session) => {
+          setUser(session?.user as AuthUser | null);
+          setLoading(false);
+        }
+      );
+
+      // Check for existing session
+      supabase.auth.getSession().then(({ data: { session } }) => {
         setUser(session?.user as AuthUser | null);
         setLoading(false);
-      }
-    );
+      });
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user as AuthUser | null);
-      setLoading(false);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-      window.removeEventListener('storage', handleStorageChange);
-    };
+      return () => {
+        subscription.unsubscribe();
+        window.removeEventListener('storage', handleStorageChange);
+      };
+    })();
   }, []);
 
   const loadUserData = async () => {
@@ -86,10 +97,10 @@ const Index = () => {
               <div className="mb-8 flex items-center justify-between">
                 <div>
                   <h1 className="text-4xl font-bold text-primary mb-2 animate-fade-in">
-                    Dashboard
+                    {t("dashboard.yourDashboard")}
                   </h1>
                   <p className="text-xl text-muted-foreground animate-fade-in">
-                    Welcome back, {user.user_metadata?.username || user.email?.split('@')[0] || ''}
+                    {t("dashboard.welcomeBack", { username: (user.user_metadata?.username || user.email?.split('@')[0] || "") as string })}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 text-amber-500 text-2xl font-bold">
@@ -112,10 +123,10 @@ const Index = () => {
           ) : (
             <div className="text-center py-20">
               <h1 className="text-4xl font-bold text-primary mb-4">
-                Welcome to Your Language Learning Dashboard
+                {t("dashboard.welcome")}
               </h1>
               <p className="text-xl text-muted-foreground mb-8">
-                Please login to access your personalized dashboard
+                {t("dashboard.readyToBeginDesc")}
               </p>
             </div>
           )}

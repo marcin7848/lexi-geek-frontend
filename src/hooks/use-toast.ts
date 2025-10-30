@@ -3,7 +3,8 @@ import * as React from "react";
 import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
 
 const TOAST_LIMIT = 1;
-const TOAST_REMOVE_DELAY = 1000000;
+const TOAST_REMOVE_DELAY = 1000;
+const TOAST_AUTO_DISMISS = 3000;
 
 type ToasterToast = ToastProps & {
   id: string;
@@ -52,6 +53,43 @@ interface State {
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
 
+// Independent auto-dismiss timers (not paused by hover/focus like Radix Provider timers)
+const autoDismissTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
+
+function clearAutoDismiss(toastId?: string) {
+  if (toastId) {
+    const t = autoDismissTimeouts.get(toastId);
+    if (t) {
+      clearTimeout(t);
+      autoDismissTimeouts.delete(toastId);
+    }
+  } else {
+    autoDismissTimeouts.forEach((t) => clearTimeout(t));
+    autoDismissTimeouts.clear();
+  }
+}
+
+function startAutoDismiss(toastId: string, duration?: number) {
+  // Ensure only one timer per toast
+  clearAutoDismiss(toastId);
+  const d = typeof duration === "number" ? duration : TOAST_AUTO_DISMISS;
+  const timeout = setTimeout(() => {
+    // Trigger regular dismiss flow which will schedule removal
+    dispatch({ type: "DISMISS_TOAST", toastId });
+  }, d);
+  autoDismissTimeouts.set(toastId, timeout);
+}
+
+function pauseAutoDismiss(toastId: string) {
+  // Pauses by clearing current countdown without closing the toast
+  clearAutoDismiss(toastId);
+}
+
+function resumeAutoDismiss(toastId: string, duration?: number) {
+  // Resumes by starting a fresh countdown
+  startAutoDismiss(toastId, duration);
+}
+
 const addToRemoveQueue = (toastId: string) => {
   if (toastTimeouts.has(toastId)) {
     return;
@@ -85,6 +123,13 @@ export const reducer = (state: State, action: Action): State => {
     case "DISMISS_TOAST": {
       const { toastId } = action;
 
+      // Clear independent auto-dismiss timers
+      if (toastId) {
+        clearAutoDismiss(toastId);
+      } else {
+        clearAutoDismiss();
+      }
+
       // ! Side effects ! - This could be extracted into a dismissToast() action,
       // but I'll keep it here for simplicity
       if (toastId) {
@@ -109,11 +154,15 @@ export const reducer = (state: State, action: Action): State => {
     }
     case "REMOVE_TOAST":
       if (action.toastId === undefined) {
+        // Clearing all auto-dismiss timers since all toasts are being removed
+        clearAutoDismiss();
         return {
           ...state,
           toasts: [],
         };
       }
+      // Clear timer for the specific toast being removed
+      clearAutoDismiss(action.toastId);
       return {
         ...state,
         toasts: state.toasts.filter((t) => t.id !== action.toastId),
@@ -156,6 +205,9 @@ function toast({ ...props }: Toast) {
     },
   });
 
+  // Start independent auto-dismiss countdown
+  startAutoDismiss(id, props.duration);
+
   return {
     id: id,
     dismiss,
@@ -180,6 +232,8 @@ function useToast() {
     ...state,
     toast,
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
+    pauseAutoDismiss,
+    resumeAutoDismiss,
   };
 }
 

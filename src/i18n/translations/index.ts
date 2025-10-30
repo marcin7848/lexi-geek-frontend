@@ -1,7 +1,7 @@
 import { en } from "./en";
 import { pl } from "./pl";
 import { de } from "./de";
-import { es } from "./es";
+import es from "./es";
 import { fr } from "./fr";
 
 export const translations = {

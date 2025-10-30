@@ -1,4 +1,4 @@
-export const es = {
+const es = {
   // Header
   "header.login": "Iniciar sesión",
   "header.register": "Registrarse",
@@ -24,6 +24,7 @@ export const es = {
   "common.noData": "No hay datos disponibles",
   "common.error": "Error",
   "common.success": "Éxito",
+  "common.unexpectedError": "Ocurrió un error inesperado. Inténtalo de nuevo.",
 
   // Sidebar
   "sidebar.languages": "Idiomas",
@@ -84,6 +85,37 @@ export const es = {
   "auth.hasAccount": "¿Ya tienes cuenta?",
   "auth.signUpLink": "Regístrate",
   "auth.loginLink": "Iniciar sesión",
+  "auth.registrationFailed": "Error al registrarse",
+  "auth.signUpDescription": "Crea tu cuenta de LexiGeek",
+  "auth.registerSuccessTitle": "¡Bienvenido a LexiGeek!",
+  "auth.registerSuccessDesc": "Tu cuenta se ha creado correctamente.",
+  "auth.usernamePlaceholder": "Elige un nombre de usuario",
+  "auth.confirmPasswordPlaceholder": "Confirma tu contraseña",
+  "auth.creatingAccount": "Creando cuenta...",
+  "auth.googleRegisterFailed": "Error al registrarse con Google",
+  "auth.googleRegisterInitFailed": "No se pudo iniciar el registro con Google. Inténtalo de nuevo.",
+  "auth.usernameMin": "El nombre de usuario debe tener al menos %s caracteres",
+  "auth.usernameMax": "El nombre de usuario debe tener menos de %s caracteres",
+  "auth.passwordsMismatch": "Las contraseñas no coinciden",
+  
+  // Auth - Login page specific
+  "auth.signInDescription": "Inicia sesión en tu cuenta de LexiGeek",
+  "auth.emailPlaceholder": "Introduce tu correo electrónico",
+  "auth.passwordPlaceholder": "Introduce tu contraseña",
+  "auth.rememberMe": "Recuérdame",
+  "auth.signIn": "Iniciar sesión",
+  "auth.signingIn": "Iniciando sesión...",
+  "auth.orContinueWith": "O continúa con",
+  "auth.continueWithGoogle": "Continuar con Google",
+  "auth.loginSuccessTitle": "¡Bienvenido de nuevo!",
+  "auth.loginSuccessDesc": "Has iniciado sesión correctamente.",
+  "auth.loginFailed": "Error al iniciar sesión",
+  "auth.invalidEmail": "Dirección de correo inválida",
+  "auth.passwordMin": "La contraseña debe tener al menos %s caracteres",
+  "auth.googleLoginFailed": "Error al iniciar sesión con Google",
+  "auth.googleLoginInitFailed": "Error de inicio de sesión de Google",
+  "auth.oauthNotSupportedTitle": "No disponible",
+  "auth.oauthNotSupportedDesc": "Iniciar sesión con Google no está disponible actualmente.",
 
   // Not Found
   "notFound.title": "404",
@@ -299,4 +331,13 @@ export const es = {
   "repeatingPage.shortcutsSpeaker": "Ctrl+; (altavoz/micrófono)",
   "repeatingPage.checkButton": "Comprobar",
   "repeatingPage.nextButton": "Siguiente",
+
+  // Error
+  "error.VALIDATION_ERROR": "Se produjo un error de validación",
+  "error.INVALID_CREDENTIALS": "El correo y la contraseña son incorrectos",
+
+  // Error Codes
+  "code.WRONG_EMAIL": "El correo electrónico no tiene un formato correcto",
+  "code.WRONG_SIZE": "%s tiene un tamaño incorrecto, debe estar entre %s y %s"
 };
+export default es

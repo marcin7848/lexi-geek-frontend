@@ -29,35 +29,41 @@ export const Header = () => {
 
   useEffect(() => {
     loadUserData();
-    
-    // Check for mocked session first
-    const checkMockedSession = () => {
-      const user = authService.getCurrentUser();
-      if (user) {
-        setUser(user as AuthUser);
+
+    // Try to initialize from backend account and mirror to localStorage
+    (async () => {
+      const serverUser = await authService.initializeFromAccount();
+      if (serverUser) {
+        setUser(serverUser as AuthUser);
         setLoading(false);
-        return true;
+        return; // already initialized
       }
-      return false;
-    };
 
-    if (checkMockedSession()) return;
+      // Fallback to mocked session (if any)
+      const mocked = authService.getCurrentUser();
+      if (mocked) {
+        setUser(mocked as AuthUser);
+        setLoading(false);
+        return;
+      }
 
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      // Set up auth state listener
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        (event, session) => {
+          setUser(session?.user as AuthUser | null);
+          setLoading(false);
+        }
+      );
+
+      // Check for existing session
+      supabase.auth.getSession().then(({ data: { session } }) => {
         setUser(session?.user as AuthUser | null);
         setLoading(false);
-      }
-    );
+      });
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user as AuthUser | null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+      // Cleanup on unmount
+      return () => subscription.unsubscribe();
+    })();
   }, []);
 
   const loadUserData = async () => {

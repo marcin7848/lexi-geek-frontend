@@ -24,6 +24,7 @@ export const en = {
   "common.noData": "No data available",
   "common.error": "Error",
   "common.success": "Success",
+  "common.unexpectedError": "An unexpected error occurred. Please try again.",
 
   // Sidebar
   "sidebar.languages": "Languages",
@@ -84,6 +85,37 @@ export const en = {
   "auth.hasAccount": "Already have an account?",
   "auth.signUpLink": "Sign up",
   "auth.loginLink": "Login",
+  "auth.registrationFailed": "Registration failed",
+  "auth.signUpDescription": "Create your LexiGeek account",
+  "auth.registerSuccessTitle": "Welcome to LexiGeek!",
+  "auth.registerSuccessDesc": "Your account has been created successfully.",
+  "auth.usernamePlaceholder": "Choose a username",
+  "auth.confirmPasswordPlaceholder": "Confirm your password",
+  "auth.creatingAccount": "Creating account...",
+  "auth.googleRegisterFailed": "Google registration failed",
+  "auth.googleRegisterInitFailed": "Failed to initiate Google registration. Please try again.",
+  "auth.usernameMin": "Username must be at least %s characters",
+  "auth.usernameMax": "Username must be less than %s characters",
+  "auth.passwordsMismatch": "Passwords don't match",
+
+  // Auth - Login page specific
+  "auth.signInDescription": "Sign in to your LexiGeek account",
+  "auth.emailPlaceholder": "Enter your email",
+  "auth.passwordPlaceholder": "Enter your password",
+  "auth.rememberMe": "Remember me",
+  "auth.signIn": "Sign In",
+  "auth.signingIn": "Signing in...",
+  "auth.orContinueWith": "Or continue with",
+  "auth.continueWithGoogle": "Continue with Google",
+  "auth.loginSuccessTitle": "Welcome back!",
+  "auth.loginSuccessDesc": "You have successfully logged in.",
+  "auth.loginFailed": "Login failed",
+  "auth.invalidEmail": "Invalid email address",
+  "auth.passwordMin": "Password must be at least %s characters",
+  "auth.googleLoginFailed": "Google login failed",
+  "auth.googleLoginInitFailed": "Google login error",
+  "auth.oauthNotSupportedTitle": "Not available",
+  "auth.oauthNotSupportedDesc": "Signing in with Google is currently not supported.",
 
   // Not Found
   "notFound.title": "404",
@@ -299,6 +331,15 @@ export const en = {
   "repeatingPage.shortcutsSpeaker": "Ctrl+; (speaker/microphone)",
   "repeatingPage.checkButton": "Check",
   "repeatingPage.nextButton": "Next",
+
+  // Error
+  "error.VALIDATION_ERROR": "There was an validation error",
+  "error.INVALID_CREDENTIALS": "Email and password are incorrect",
+
+  // Error Codes
+  "code.WRONG_EMAIL": "Email is not in a correct format",
+  "code.WRONG_SIZE": "%s has wrong size, should be between %s and %s"
 };
+export default en
 
 export type TranslationKeys = keyof typeof en;
