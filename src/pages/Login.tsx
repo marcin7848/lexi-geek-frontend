@@ -7,7 +7,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
-import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { authService } from "@/services/authService";
@@ -101,28 +100,10 @@ export default function Login() {
   };
 
   const handleGoogleLogin = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/`
-        }
-      });
-
-      if (error) {
-        toast({
-          title: t("auth.googleLoginFailed"),
-          description: error.message,
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: t("auth.googleLoginInitFailed"),
-        description: t("common.unexpectedError"),
-        variant: "destructive",
-      });
-    }
+    toast({
+      title: t("auth.oauthNotSupportedTitle"),
+      description: t("auth.oauthNotSupportedDesc"),
+    });
   };
 
   return (

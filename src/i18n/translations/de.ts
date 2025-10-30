@@ -114,6 +114,8 @@ export const de = {
   "auth.passwordMin": "Das Passwort muss mindestens 6 Zeichen enthalten",
   "auth.googleLoginFailed": "Google-Anmeldung fehlgeschlagen",
   "auth.googleLoginInitFailed": "Google-Anmeldefehler",
+  "auth.oauthNotSupportedTitle": "Nicht verfügbar",
+  "auth.oauthNotSupportedDesc": "Die Anmeldung mit Google wird derzeit nicht unterstützt.",
 
   // Not Found
   "notFound.title": "404",

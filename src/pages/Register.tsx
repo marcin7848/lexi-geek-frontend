@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
-import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { authService } from "@/services/authService";
@@ -83,7 +82,7 @@ export default function Register() {
         description: t("auth.registerSuccessDesc") as unknown as string,
       });
       
-      navigate("/");
+      navigate("/login");
     } catch (error) {
       let description: string = t("common.unexpectedError");
       try {
@@ -121,28 +120,10 @@ export default function Register() {
   };
 
   const handleGoogleRegister = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/`
-        }
-      });
-
-      if (error) {
-        toast({
-          title: t("auth.googleRegisterFailed") as unknown as string,
-          description: error.message,
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: t("common.error") as unknown as string,
-        description: t("auth.googleRegisterInitFailed") as unknown as string,
-        variant: "destructive",
-      });
-    }
+    toast({
+      title: t("auth.oauthNotSupportedTitle") as unknown as string,
+      description: t("auth.oauthNotSupportedDesc") as unknown as string,
+    });
   };
 
   return (

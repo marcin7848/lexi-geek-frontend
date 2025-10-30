@@ -114,6 +114,8 @@ export const en = {
   "auth.passwordMin": "Password must be at least 6 characters",
   "auth.googleLoginFailed": "Google login failed",
   "auth.googleLoginInitFailed": "Google login error",
+  "auth.oauthNotSupportedTitle": "Not available",
+  "auth.oauthNotSupportedDesc": "Signing in with Google is currently not supported.",
 
   // Not Found
   "notFound.title": "404",

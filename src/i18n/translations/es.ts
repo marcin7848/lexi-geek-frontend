@@ -1,4 +1,4 @@
-export const es = {
+const es = {
   // Header
   "header.login": "Iniciar sesión",
   "header.register": "Registrarse",
@@ -114,6 +114,8 @@ export const es = {
   "auth.passwordMin": "La contraseña debe tener al menos 6 caracteres",
   "auth.googleLoginFailed": "Error al iniciar sesión con Google",
   "auth.googleLoginInitFailed": "Error de inicio de sesión de Google",
+  "auth.oauthNotSupportedTitle": "No disponible",
+  "auth.oauthNotSupportedDesc": "Iniciar sesión con Google no está disponible actualmente.",
 
   // Not Found
   "notFound.title": "404",
@@ -338,3 +340,4 @@ export const es = {
   "code.WRONG_EMAIL": "El correo electrónico no tiene un formato correcto",
   "code.WRONG_SIZE": "%s tiene un tamaño incorrecto, debe estar entre %s y %s"
 };
+export default es

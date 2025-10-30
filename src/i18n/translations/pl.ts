@@ -114,6 +114,8 @@ export const pl = {
   "auth.passwordMin": "Hasło musi mieć co najmniej 6 znaków",
   "auth.googleLoginFailed": "Logowanie przez Google nie powiodło się",
   "auth.googleLoginInitFailed": "Błąd logowania przez Google",
+  "auth.oauthNotSupportedTitle": "Niedostępne",
+  "auth.oauthNotSupportedDesc": "Logowanie przez Google jest obecnie niewspierane.",
 
   // Not Found
   "notFound.title": "404",

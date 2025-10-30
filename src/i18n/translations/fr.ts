@@ -114,6 +114,8 @@ export const fr = {
   "auth.passwordMin": "Le mot de passe doit contenir au moins 6 caractères",
   "auth.googleLoginFailed": "Échec de la connexion Google",
   "auth.googleLoginInitFailed": "Erreur de connexion Google",
+  "auth.oauthNotSupportedTitle": "Non disponible",
+  "auth.oauthNotSupportedDesc": "La connexion avec Google n'est actuellement pas prise en charge.",
 
   // Not Found
   "notFound.title": "404",
