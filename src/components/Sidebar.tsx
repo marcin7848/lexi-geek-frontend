@@ -91,53 +91,19 @@ export const Sidebar = () => {
   }, []);
 
   useEffect(() => {
-    // Load languages
     const loadLanguages = async () => {
-      const mockLanguages: Language[] = [
-        {
-          id: "1",
-          name: "English",
-          shortcut: "ENG",
-          hidden: false,
-          codeForTranslator: "en-US",
-          codeForSpeech: "en-US",
-          specialLetters: "€,-,$",
-        },
-        {
-          id: "2",
-          name: "Deutsch",
-          shortcut: "DEU",
-          hidden: false,
-          codeForTranslator: "de",
-          codeForSpeech: "de",
-          specialLetters: "Ä,ä,Ö,ö,Ü,ü,ß",
-        },
-        {
-          id: "3",
-          name: "Java",
-          shortcut: "JAVA",
-          hidden: false,
-          codeForTranslator: "",
-          codeForSpeech: "",
-          specialLetters: "",
-        },
-      ];
-      
-      await languageService.initialize(mockLanguages);
-      const languages = await languageService.getAll();
-      setLanguages(languages);
+      try {
+        const langs = await languageService.getLanguages(
+          undefined,
+          { sort: 'name', order: 'desc', singlePage: true }
+        );
+        setLanguages(langs);
+      } catch (e) {
+        console.error('Error fetching languages for sidebar', e);
+      }
     };
 
     loadLanguages();
-
-    // Listen for storage changes to update the list
-    const handleStorageChange = async () => {
-      const updated = await languageService.getAll();
-      setLanguages(updated);
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   return (

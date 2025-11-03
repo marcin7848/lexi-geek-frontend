@@ -1,5 +1,8 @@
 // Service for language operations
 
+import { HttpMethod, RequestBuilder, RequestService, type PageDto, type PageableRequest } from '@/services/requestService';
+import { throwIfError } from '@/services/requestError';
+
 export interface Language {
   id: string;
   name: string;
@@ -10,9 +13,70 @@ export interface Language {
   specialLetters?: string;
 }
 
+// Backend DTO and filter form (frontend representations)
+interface LanguageDto {
+  uuid: string;
+  name: string;
+  shortcut: string;
+  codeForSpeech: string;
+  codeForTranslator: string;
+  hidden: boolean;
+  specialLetters: string;
+}
+
+export interface LanguageFilterForm {
+  uuid?: string;
+  name?: string;
+  shortcut?: string;
+  codeForSpeech?: string;
+  codeForTranslator?: string;
+  hidden?: boolean;
+  specialLetters?: string;
+}
+
 const STORAGE_KEY = "languages";
 
 export const languageService = {
+  // New: fetch languages from backend with optional filter + pageable
+  getLanguages: async (
+    filter?: LanguageFilterForm | null,
+    pageable?: PageableRequest | null
+  ): Promise<Language[]> => {
+    const service = new RequestService();
+    const builder = new RequestBuilder<void>()
+      .url('/languages')
+      .method(HttpMethod.GET)
+      .pageable(pageable ?? undefined);
+
+    // Append filter params if provided
+    if (filter) {
+      if (filter.uuid) builder.param('uuid', String(filter.uuid));
+      if (filter.name) builder.param('name', filter.name);
+      if (filter.shortcut) builder.param('shortcut', filter.shortcut);
+      if (filter.codeForSpeech) builder.param('codeForSpeech', filter.codeForSpeech);
+      if (filter.codeForTranslator) builder.param('codeForTranslator', filter.codeForTranslator);
+      if (typeof filter.hidden === 'boolean') builder.param('hidden', String(filter.hidden));
+      if (filter.specialLetters) builder.param('specialLetters', filter.specialLetters);
+    }
+
+    const req = builder.build();
+    const res = await service.send<void, PageDto<LanguageDto>>(req);
+    throwIfError(res, 'Failed to load languages');
+
+    const page = res.body as PageDto<LanguageDto> | null;
+    const items = page?.items ?? [];
+    return items.map((l) => ({
+      id: l.uuid,
+      name: l.name,
+      shortcut: l.shortcut,
+      codeForTranslator: l.codeForTranslator,
+      codeForSpeech: l.codeForSpeech,
+      hidden: l.hidden,
+      specialLetters: l.specialLetters,
+    }));
+  },
+
+  // Legacy localStorage helpers kept for backward compatibility within the app
   getAll: async (): Promise<Language[]> => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
