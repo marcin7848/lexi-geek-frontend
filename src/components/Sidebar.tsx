@@ -171,7 +171,7 @@ export const Sidebar = () => {
             )}
           >
             <Home className="h-4 w-4" />
-            <span>{t("sidebar.languages")}</span>
+            <span>{t("sidebar.home")}</span>
           </Link>
 
           {/* Languages Section - Only visible for logged-in users */}
