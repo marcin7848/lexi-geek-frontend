@@ -34,6 +34,16 @@ export interface LanguageFilterForm {
   specialLetters?: string;
 }
 
+// Payload for creating a language (matches backend LanguageForm)
+export interface LanguageForm {
+  name: string;
+  shortcut: string;
+  codeForSpeech: string;
+  codeForTranslator: string;
+  hidden: boolean;
+  specialLetters: string;
+}
+
 const STORAGE_KEY = "languages";
 
 export const languageService = {
@@ -76,6 +86,21 @@ export const languageService = {
     }));
   },
 
+  // Create language via backend
+  createLanguage: async (form: LanguageForm): Promise<void> => {
+    const service = new RequestService();
+    const request = new RequestBuilder<LanguageForm>()
+      .url('/languages')
+      .method(HttpMethod.POST)
+      .contentTypeHeader('application/json')
+      .body(form)
+      .build();
+
+    const res = await service.send<LanguageForm, unknown>(request);
+    throwIfError(res, 'Failed to create language');
+    return;
+  },
+
   // Legacy localStorage helpers kept for backward compatibility within the app
   getAll: async (): Promise<Language[]> => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -88,13 +113,6 @@ export const languageService = {
   getById: async (id: string): Promise<Language | null> => {
     const languages = await languageService.getAll();
     return languages.find(lang => lang.id === id) || null;
-  },
-
-  create: async (language: Language): Promise<Language> => {
-    const languages = await languageService.getAll();
-    languages.push(language);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(languages));
-    return language;
   },
 
   update: async (id: string, updates: Partial<Language>): Promise<Language | null> => {

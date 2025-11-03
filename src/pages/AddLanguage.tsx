@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { ShortcutHints } from "@/components/ShortcutHints";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { languageService } from "@/services/languageService";
+import { RequestError, buildLocalizedErrorDescription } from "@/services/requestError";
 
 export default function AddLanguage() {
   const navigate = useNavigate();
@@ -64,16 +65,31 @@ export default function AddLanguage() {
       return;
     }
 
-    // Add new language with a unique ID
-    const newLanguage = {
-      id: Date.now().toString(),
-      ...formData,
-    };
+    try {
+      await languageService.createLanguage({
+        name: formData.name,
+        shortcut: formData.shortcut,
+        codeForSpeech: formData.codeForSpeech,
+        codeForTranslator: formData.codeForTranslator,
+        hidden: formData.hidden,
+        specialLetters: formData.specialLetters,
+      });
 
-    await languageService.create(newLanguage);
-
-    toast.success(t("addLanguage.successAdd"));
-    navigate("/");
+      toast.success(t("addLanguage.successAdd"));
+      navigate("/");
+    } catch (err) {
+      if (err instanceof RequestError) {
+        // Show a friendly localized error message
+        const desc = buildLocalizedErrorDescription(err, (k) => t(k));
+        toast.error(desc || t("addLanguage.errorCreate"));
+        // Map field errors back to form inputs if provided
+        if (err.fieldErrors) {
+          setErrors(err.fieldErrors);
+        }
+      } else {
+        toast.error(t("addLanguage.errorCreate"));
+      }
+    }
   };
 
   return (
