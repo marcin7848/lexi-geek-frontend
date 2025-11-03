@@ -80,7 +80,7 @@ export default function AddLanguage() {
     } catch (err) {
       if (err instanceof RequestError) {
         // Show a friendly localized error message
-        const desc = buildLocalizedErrorDescription(err, (k) => t(k));
+        const desc = buildLocalizedErrorDescription(err, t as unknown as (k: string) => string);
         toast.error(desc || t("addLanguage.errorCreate"));
         // Map field errors back to form inputs if provided
         if (err.fieldErrors) {

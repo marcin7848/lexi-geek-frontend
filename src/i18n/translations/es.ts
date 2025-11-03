@@ -227,6 +227,7 @@ const es = {
     "addLanguage.successUpdate": "Idioma actualizado correctamente",
     "addLanguage.successDelete": "Idioma eliminado correctamente",
     "addLanguage.notFound": "Idioma no encontrado",
+    "addLanguage.errorCreate": "No se pudo crear el idioma",
 
     // Language View
     "languageView.startRepeating": "Comenzar repetición",

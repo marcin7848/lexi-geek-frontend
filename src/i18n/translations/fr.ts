@@ -227,6 +227,7 @@ export const fr = {
     "addLanguage.successUpdate": "Langue mise à jour avec succès",
     "addLanguage.successDelete": "Langue supprimée avec succès",
     "addLanguage.notFound": "Langue introuvable",
+    "addLanguage.errorCreate": "Échec de la création de la langue",
 
     // Language View
     "languageView.startRepeating": "Commencer la répétition",
