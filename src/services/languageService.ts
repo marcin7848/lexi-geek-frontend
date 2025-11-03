@@ -101,6 +101,35 @@ export const languageService = {
     return;
   },
 
+  // Update language via backend
+  updateLanguage: async (uuid: string, form: LanguageForm): Promise<void> => {
+    const service = new RequestService();
+    const request = new RequestBuilder<LanguageForm>()
+      .url(`/languages/${uuid}`)
+      .method(HttpMethod.PUT)
+      .contentTypeHeader('application/json')
+      .body(form)
+      .build();
+
+    const res = await service.send<LanguageForm, unknown>(request);
+    throwIfError(res, 'Failed to update language');
+    return;
+  },
+
+  // Delete language via backend
+  deleteLanguage: async (uuid: string): Promise<void> => {
+    const service = new RequestService();
+    const request = new RequestBuilder<void>()
+      .url(`/languages/${uuid}`)
+      .method(HttpMethod.DELETE)
+      .responseAsVoid()
+      .build();
+
+    const res = await service.sendVoid(request);
+    throwIfError(res, 'Failed to delete language');
+    return;
+  },
+
   // Legacy localStorage helpers kept for backward compatibility within the app
   getAll: async (): Promise<Language[]> => {
     const stored = localStorage.getItem(STORAGE_KEY);

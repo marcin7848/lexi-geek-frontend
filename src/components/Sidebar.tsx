@@ -158,18 +158,18 @@ export const Sidebar = () => {
 
               {/* Languages List */}
               <div className="space-y-1">
-                {languages.map((language) => (
+                {languages.map((language, idx) => (
                   <div
                     key={language.id}
                     className={cn(
                       "flex items-center justify-between px-3 py-2 rounded-md transition-colors text-sm group",
-                      isActive(`/language/${language.id}`)
+                      isActive(`/language/${idx + 1}`)
                         ? "bg-sidebar-accent text-sidebar-primary font-medium"
                         : "text-sidebar-foreground/80 hover:bg-sidebar-accent/30"
                     )}
                   >
                     <Link
-                      to={`/language/${language.id}`}
+                      to={`/language/${idx + 1}`}
                       onClick={() => setIsOpen(false)}
                       className="flex-1"
                     >
@@ -180,7 +180,7 @@ export const Sidebar = () => {
                       size="icon"
                       onClick={(e) => {
                         e.preventDefault();
-                        navigate(`/language/${language.id}/edit`);
+                        navigate(`/language/${idx + 1}/edit`);
                         setIsOpen(false);
                       }}
                       className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
