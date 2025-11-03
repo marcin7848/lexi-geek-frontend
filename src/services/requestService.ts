@@ -29,6 +29,15 @@ export interface PageDto<K> {
   items: K[];
 }
 
+// Pageable request params aligned with backend API
+export interface PageableRequest {
+  page?: number | null;
+  pageSize?: number | null;
+  sort?: string | null;
+  order?: OrderString | null;
+  singlePage?: boolean | null;
+}
+
 export type QueryParameters = Record<string, string[]>;
 export type HeadersMap = Record<string, string>;
 
@@ -53,11 +62,6 @@ export class Request<T> {
     this.expectedResponse = init?.expectedResponse ?? 'json';
   }
 
-  setPaging(currentPage: number, pageSize: number): this {
-    this.parameters['page'] = [String(currentPage)];
-    this.parameters['page_size'] = [String(pageSize)];
-    return this;
-  }
 }
 
 export class RequestBuilder<T> {
@@ -92,6 +96,17 @@ export class RequestBuilder<T> {
       this.req.parameters[key] = [];
     }
     this.req.parameters[key].push(value);
+    return this;
+  }
+
+  pageable(pageable?: PageableRequest | null): this {
+    if (!pageable) return this;
+    const { page, pageSize, sort, order, singlePage } = pageable;
+    if (page != null) this.param('page', String(page));
+    if (pageSize != null) this.param('pageSize', String(pageSize));
+    if (sort != null) this.param('sort', String(sort));
+    if (order != null) this.param('order', String(order));
+    if (singlePage != null) this.param('singlePage', String(!!singlePage));
     return this;
   }
 
@@ -229,31 +244,5 @@ export class RequestService {
     return this.send<T, void>(request);
   }
 
-  async sendPaged<T, K = unknown>(request: Request<T>, pageSize: number): Promise<K[]> {
-    let currentPage = 1;
-    let totalItems = Number.MAX_SAFE_INTEGER;
-    const allItems: K[] = [];
-
-    while (allItems.length < totalItems) {
-      request.setPaging(currentPage, pageSize);
-      const response = await this.send<T, PageDto<K>>(request);
-      const pageDto = response.body;
-
-      const items = pageDto?.items ?? [];
-      if (!items.length) break;
-
-      allItems.push(...items);
-      totalItems = Math.max(0, pageDto?.total ?? allItems.length);
-      currentPage += 1;
-    }
-
-    return allItems;
-  }
 }
 
-// Convenient factory function similar to Lombok's @Builder
-export const RequestFactory = {
-  builder<T>() {
-    return new RequestBuilder<T>();
-  },
-};

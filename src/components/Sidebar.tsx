@@ -91,53 +91,19 @@ export const Sidebar = () => {
   }, []);
 
   useEffect(() => {
-    // Load languages
     const loadLanguages = async () => {
-      const mockLanguages: Language[] = [
-        {
-          id: "1",
-          name: "English",
-          shortcut: "ENG",
-          hidden: false,
-          codeForTranslator: "en-US",
-          codeForSpeech: "en-US",
-          specialLetters: "€,-,$",
-        },
-        {
-          id: "2",
-          name: "Deutsch",
-          shortcut: "DEU",
-          hidden: false,
-          codeForTranslator: "de",
-          codeForSpeech: "de",
-          specialLetters: "Ä,ä,Ö,ö,Ü,ü,ß",
-        },
-        {
-          id: "3",
-          name: "Java",
-          shortcut: "JAVA",
-          hidden: false,
-          codeForTranslator: "",
-          codeForSpeech: "",
-          specialLetters: "",
-        },
-      ];
-      
-      await languageService.initialize(mockLanguages);
-      const languages = await languageService.getAll();
-      setLanguages(languages);
+      try {
+        const langs = await languageService.getLanguages(
+          undefined,
+          { sort: 'name', order: 'desc', singlePage: true }
+        );
+        setLanguages(langs);
+      } catch (e) {
+        console.error('Error fetching languages for sidebar', e);
+      }
     };
 
     loadLanguages();
-
-    // Listen for storage changes to update the list
-    const handleStorageChange = async () => {
-      const updated = await languageService.getAll();
-      setLanguages(updated);
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   return (
@@ -171,7 +137,7 @@ export const Sidebar = () => {
             )}
           >
             <Home className="h-4 w-4" />
-            <span>{t("sidebar.languages")}</span>
+            <span>{t("sidebar.home")}</span>
           </Link>
 
           {/* Languages Section - Only visible for logged-in users */}
@@ -192,18 +158,18 @@ export const Sidebar = () => {
 
               {/* Languages List */}
               <div className="space-y-1">
-                {languages.map((language) => (
+                {languages.map((language, idx) => (
                   <div
                     key={language.id}
                     className={cn(
                       "flex items-center justify-between px-3 py-2 rounded-md transition-colors text-sm group",
-                      isActive(`/language/${language.id}`)
+                      isActive(`/language/${idx + 1}`)
                         ? "bg-sidebar-accent text-sidebar-primary font-medium"
                         : "text-sidebar-foreground/80 hover:bg-sidebar-accent/30"
                     )}
                   >
                     <Link
-                      to={`/language/${language.id}`}
+                      to={`/language/${idx + 1}`}
                       onClick={() => setIsOpen(false)}
                       className="flex-1"
                     >
@@ -214,7 +180,7 @@ export const Sidebar = () => {
                       size="icon"
                       onClick={(e) => {
                         e.preventDefault();
-                        navigate(`/language/${language.id}/edit`);
+                        navigate(`/language/${idx + 1}/edit`);
                         setIsOpen(false);
                       }}
                       className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"

@@ -20,16 +20,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ShortcutHints } from "@/components/ShortcutHints";
 import { useLanguage } from "@/i18n/LanguageProvider";
-
-type Language = {
-  id: string;
-  name: string;
-  shortcut: string;
-  hidden: boolean;
-  codeForTranslator: string;
-  codeForSpeech: string;
-  specialLetters?: string;
-};
+import { languageService, type Language, type LanguageForm } from "@/services/languageService";
+import { RequestError, buildLocalizedErrorDescription } from "@/services/requestError";
 
 export default function LanguageSettings() {
   const { languageId } = useParams();
@@ -41,15 +33,35 @@ export default function LanguageSettings() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    const languages = JSON.parse(localStorage.getItem("languages") || "[]");
-    const found = languages.find((lang: Language) => lang.id === languageId);
-    
-    if (found) {
-      setLanguage(found);
-    } else {
-      toast.error(t("addLanguage.notFound"));
-      navigate("/");
-    }
+    const load = async () => {
+      const idNum = Number(languageId);
+      if (!idNum || idNum < 1) {
+        toast.error(t("addLanguage.notFound"));
+        navigate("/", { replace: true });
+        return;
+      }
+      try {
+        const langs = await languageService.getLanguages(undefined, { sort: 'name', order: 'desc', singlePage: true });
+        const idx = idNum - 1;
+        const found = langs[idx];
+        if (found) {
+          // Optionally refetch specific language by UUID to ensure fresh data
+          try {
+            const precise = await languageService.getLanguages({ uuid: found.id }, { singlePage: true });
+            setLanguage(precise[0] ?? found);
+          } catch {
+            setLanguage(found);
+          }
+        } else {
+          toast.error(t("addLanguage.notFound"));
+          navigate("/", { replace: true });
+        }
+      } catch (e) {
+        toast.error(t("common.unexpectedError"));
+        navigate("/", { replace: true });
+      }
+    };
+    load();
   }, [languageId, navigate, t]);
 
   const validateForm = () => {
@@ -83,30 +95,51 @@ export default function LanguageSettings() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
+    if (!validateForm() || !language) {
       toast.error(t("addLanguage.errorValidation"));
       return;
     }
 
-    const languages = JSON.parse(localStorage.getItem("languages") || "[]");
-    const updatedLanguages = languages.map((lang: Language) =>
-      lang.id === languageId ? language : lang
-    );
-
-    localStorage.setItem("languages", JSON.stringify(updatedLanguages));
-    toast.success(t("addLanguage.successUpdate"));
+    try {
+      const form: LanguageForm = {
+        name: language.name,
+        shortcut: language.shortcut,
+        codeForSpeech: language.codeForSpeech,
+        codeForTranslator: language.codeForTranslator,
+        hidden: language.hidden,
+        specialLetters: language.specialLetters || "",
+      };
+      await languageService.updateLanguage(language.id, form);
+      toast.success(t("addLanguage.successUpdate"));
+      navigate("/");
+    } catch (err) {
+      if (err instanceof RequestError) {
+        const desc = buildLocalizedErrorDescription(err, t);
+        toast.error(desc || t("common.unexpectedError"));
+        if (err.fieldErrors) setErrors(err.fieldErrors);
+      } else {
+        toast.error(t("common.unexpectedError"));
+      }
+    }
   };
 
-  const handleDelete = () => {
-    const languages = JSON.parse(localStorage.getItem("languages") || "[]");
-    const filteredLanguages = languages.filter((lang: Language) => lang.id !== languageId);
-    
-    localStorage.setItem("languages", JSON.stringify(filteredLanguages));
-    toast.success(t("addLanguage.successDelete"));
-    navigate("/");
+  const handleDelete = async () => {
+    if (!language) return;
+    try {
+      await languageService.deleteLanguage(language.id);
+      toast.success(t("addLanguage.successDelete"));
+      navigate("/");
+    } catch (err) {
+      if (err instanceof RequestError) {
+        const desc = buildLocalizedErrorDescription(err, t);
+        toast.error(desc || t("common.unexpectedError"));
+      } else {
+        toast.error(t("common.unexpectedError"));
+      }
+    }
   };
 
   if (!language) {
