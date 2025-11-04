@@ -12,10 +12,10 @@ type CategoryNodeProps = {
   category: Category;
   categories: Category[];
   isExpanded: boolean;
-  expandedIds?: Set<number>;
-  onToggleExpand: (id: number) => void;
-  onEdit: (id: number, updates: Partial<Category>) => void;
-  onDelete: (id: number) => void;
+  expandedIds?: Set<string>;
+  onToggleExpand: (uuid: string) => void;
+  onEdit: (uuid: string, name: string, mode: Category["mode"], method: Category["method"]) => void;
+  onDelete: (uuid: string) => void;
   depth?: number;
   isOver?: boolean;
   isDragging?: boolean;
@@ -38,7 +38,7 @@ export const CategoryNode = ({
   const navigate = useNavigate();
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging: isSortableDragging, setActivatorNodeRef } = useSortable({
-    id: category.id,
+    id: category.uuid,
   });
 
   const style = {
@@ -48,13 +48,13 @@ export const CategoryNode = ({
   };
 
   const children = categories
-    .filter(cat => cat.id_parent === category.id)
-    .sort((a, b) => a.order - b.order);
+    .filter(cat => cat.parentUuid === category.uuid)
+    .sort((a, b) => a.position - b.position);
 
   const hasChildren = children.length > 0;
 
   const getModeIcon = () => {
-    return category.mode === "Dictionary" ? (
+    return category.mode === "DICTIONARY" ? (
       <span title="Dictionary">
         <Book className="h-4 w-4 text-primary" />
       </span>
@@ -67,11 +67,11 @@ export const CategoryNode = ({
 
   const getMethodIcon = () => {
     switch (category.method) {
-      case "QuestionToAnswer":
+      case "QUESTION_TO_ANSWER":
         return <span title="Question to Answer"><ArrowRight className="h-4 w-4 text-muted-foreground" /></span>;
-      case "AnswerToQuestion":
+      case "ANSWER_TO_QUESTION":
         return <span title="Answer to Question"><ArrowLeft className="h-4 w-4 text-muted-foreground" /></span>;
-      case "Both":
+      case "BOTH":
         return <span title="Both"><ArrowLeftRight className="h-4 w-4 text-muted-foreground" /></span>;
     }
   };
@@ -86,14 +86,14 @@ export const CategoryNode = ({
       // Single click - navigate to category page
       const timeout = setTimeout(() => {
         setClickTimeout(null);
-        navigate(`/category/${category.id}`);
+        navigate(`/category/${category.uuid}`);
       }, 250);
       setClickTimeout(timeout);
     }
   };
 
   const handleSave = (name: string, mode: Category["mode"], method: Category["method"]) => {
-    onEdit(category.id, { name, mode, method });
+    onEdit(category.uuid, name, mode, method);
     setIsEditing(false);
   };
 
@@ -122,7 +122,7 @@ export const CategoryNode = ({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onToggleExpand(category.id);
+              onToggleExpand(category.uuid);
             }}
             className="flex-shrink-0"
           >
@@ -153,23 +153,23 @@ export const CategoryNode = ({
           <CategoryEditForm
             category={category}
             onSave={handleSave}
-            onDelete={() => onDelete(category.id)}
+            onDelete={() => onDelete(category.uuid)}
             onCancel={() => setIsEditing(false)}
           />
         )}
       </div>
 
       {isExpanded && (
-        <SortableContext items={children.map(c => c.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext items={children.map(c => c.uuid)} strategy={verticalListSortingStrategy}>
           <div>
             {children.map(child => {
               const childIsOver = isOver && !isSortableDragging;
               return (
                 <CategoryNode
-                  key={child.id}
+                  key={child.uuid}
                   category={child}
                   categories={categories}
-                  isExpanded={expandedIds ? expandedIds.has(child.id) : true}
+                  isExpanded={expandedIds ? expandedIds.has(child.uuid) : true}
                   expandedIds={expandedIds}
                   onToggleExpand={onToggleExpand}
                   onEdit={onEdit}
@@ -179,7 +179,7 @@ export const CategoryNode = ({
                 />
               );
             })}
-            <DropZone id={`dropzone-parent-${category.id}`} />
+            <DropZone id={`dropzone-parent-${category.uuid}`} />
           </div>
         </SortableContext>
       )}

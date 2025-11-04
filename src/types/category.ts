@@ -1,11 +1,11 @@
-export type CategoryMode = "Dictionary" | "Exercise";
-export type CategoryMethod = "QuestionToAnswer" | "AnswerToQuestion" | "Both";
+export type CategoryMode = "DICTIONARY" | "EXERCISE";
+export type CategoryMethod = "QUESTION_TO_ANSWER" | "ANSWER_TO_QUESTION" | "BOTH";
 
 export type Category = {
-  id: number;
-  id_parent: number | null;
+  uuid: string;
+  parentUuid: string | null;
   name: string;
   mode: CategoryMode;
   method: CategoryMethod;
-  order: number;
+  position: number;
 };

@@ -50,7 +50,6 @@ export interface LanguageForm {
   specialLetters: string;
 }
 
-const STORAGE_KEY = "languages";
 
 export const languageService = {
   // New: fetch languages from backend with optional filter + pageable
@@ -155,45 +154,14 @@ export const languageService = {
     return;
   },
 
-  // Legacy localStorage helpers kept for backward compatibility within the app
+  // Fetch all languages from backend (convenience method)
   getAll: async (): Promise<Language[]> => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-    return [];
+    return await languageService.getLanguages(null, { singlePage: true });
   },
 
-  getById: async (id: string): Promise<Language | null> => {
-    const languages = await languageService.getAll();
-    return languages.find(lang => lang.id === id) || null;
+  // Fetch a single language by UUID from backend
+  getById: async (uuid: string): Promise<Language | null> => {
+    const languages = await languageService.getLanguages({ uuid }, { singlePage: true });
+    return languages.find(lang => lang.id === uuid) || null;
   },
-
-  update: async (id: string, updates: Partial<Language>): Promise<Language | null> => {
-    const languages = await languageService.getAll();
-    const index = languages.findIndex(lang => lang.id === id);
-    
-    if (index === -1) return null;
-    
-    languages[index] = { ...languages[index], ...updates };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(languages));
-    return languages[index];
-  },
-
-  delete: async (id: string): Promise<boolean> => {
-    const languages = await languageService.getAll();
-    const filtered = languages.filter(lang => lang.id !== id);
-    
-    if (filtered.length === languages.length) return false;
-    
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-    return true;
-  },
-
-  initialize: async (defaultLanguages: Language[]): Promise<void> => {
-    const existing = await languageService.getAll();
-    if (existing.length === 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultLanguages));
-    }
-  }
 };

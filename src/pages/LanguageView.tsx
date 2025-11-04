@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { CategoryTree } from "@/components/CategoryTree";
-import { mockCategoriesByLanguage } from "@/data/mockCategories";
 import { Category } from "@/types/category";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -30,47 +29,72 @@ export default function LanguageView() {
     const loadData = async () => {
       if (!languageId) return;
       
-      const found = await languageService.getById(languageId);
-      
-      if (found) {
-        setLanguage(found);
-        
-        // Initialize categories with mock data if needed
-        const languageCategories = mockCategoriesByLanguage[languageId || "1"] || [];
-        await categoryService.initialize(languageId, languageCategories);
-        
-        // Load categories
-        const categories = await categoryService.getAll(languageId);
-        setCategories(categories);
+      try {
+        // Check if languageId is a numeric index (e.g., "1", "2", "3")
+        const isNumericIndex = /^\d+$/.test(languageId);
+        let languageUuid: string;
+        let found: Language | null = null;
 
-        // Load repeat data
-        const storedRepeatData = await repeatService.getRepeatData(languageId);
-        
-        if (storedRepeatData) {
-          setRepeatData(storedRepeatData);
+        if (isNumericIndex) {
+          // Convert numeric index to UUID by fetching all languages
+          const allLanguages = await languageService.getAll();
+          const index = parseInt(languageId) - 1; // Convert to 0-based index
+
+          if (index >= 0 && index < allLanguages.length) {
+            found = allLanguages[index];
+            languageUuid = found.id; // This is the UUID
+          } else {
+            toast.error("Language not found");
+            navigate("/");
+            return;
+          }
         } else {
-          const initialRepeatData = { active: false, wordsLeft: 0 };
-          setRepeatData(initialRepeatData);
-          await repeatService.updateRepeatData(languageId, initialRepeatData);
+          // languageId is already a UUID
+          found = await languageService.getById(languageId);
+          languageUuid = languageId;
         }
-      } else {
-        toast.error("Language not found");
-        navigate("/");
+
+        if (found) {
+          setLanguage(found);
+
+          // Load categories from backend using UUID
+          const categories = await categoryService.getAll(languageUuid);
+          setCategories(categories);
+
+          // Load repeat data using the original languageId (for localStorage compatibility)
+          const storedRepeatData = await repeatService.getRepeatData(languageId);
+
+          if (storedRepeatData) {
+            setRepeatData(storedRepeatData);
+          } else {
+            const initialRepeatData = { active: false, wordsLeft: 0 };
+            setRepeatData(initialRepeatData);
+            await repeatService.updateRepeatData(languageId, initialRepeatData);
+          }
+        } else {
+          toast.error("Language not found");
+          navigate("/");
+        }
+      } catch (error) {
+        console.error("Error loading language data:", error);
+        toast.error("Failed to load language data");
       }
     };
     
     loadData();
   }, [languageId, navigate]);
 
-  const handleCategoriesUpdate = async (updatedCategories: Category[]) => {
-    setCategories(updatedCategories);
-    
-    // Persist - update all categories
-    if (languageId) {
-      // Clear and recreate all categories
-      const storageKey = `categories_${languageId}`;
-      localStorage.setItem(storageKey, JSON.stringify(updatedCategories));
-      toast.success("Categories updated");
+  const handleCategoriesUpdate = async () => {
+    // Reload categories from backend
+    if (languageId && language) {
+      try {
+        // Use the language.id which contains the UUID
+        const categories = await categoryService.getAll(language.id);
+        setCategories(categories);
+      } catch (error) {
+        console.error("Error reloading categories:", error);
+        toast.error("Failed to reload categories");
+      }
     }
   };
 
@@ -140,7 +164,7 @@ export default function LanguageView() {
             )}
           </div>
 
-          <CategoryTree categories={categories} onUpdate={handleCategoriesUpdate} />
+          <CategoryTree categories={categories} languageId={languageId!} onUpdate={handleCategoriesUpdate} />
         </div>
       </main>
       

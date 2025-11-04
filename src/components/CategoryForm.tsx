@@ -13,27 +13,27 @@ import {
 
 type CategoryFormProps = {
   categories: Category[];
-  onSubmit: (name: string, mode: CategoryMode, method: CategoryMethod, parentId: number | null) => void;
+  onSubmit: (name: string, mode: CategoryMode, method: CategoryMethod, parentUuid: string | null) => void;
   onCancel: () => void;
 };
 
 export const CategoryForm = ({ categories, onSubmit, onCancel }: CategoryFormProps) => {
   const [name, setName] = useState("");
-  const [mode, setMode] = useState<CategoryMode>("Dictionary");
-  const [method, setMethod] = useState<CategoryMethod>("Both");
-  const [parentId, setParentId] = useState<string>("none");
+  const [mode, setMode] = useState<CategoryMode>("DICTIONARY");
+  const [method, setMethod] = useState<CategoryMethod>("BOTH");
+  const [parentUuid, setParentUuid] = useState<string>("none");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const parentIdNum = parentId === "none" ? null : Number(parentId);
-    onSubmit(name, mode, method, parentIdNum);
-    
+    const parentUuidValue = parentUuid === "none" ? null : parentUuid;
+    onSubmit(name, mode, method, parentUuidValue);
+
     // Reset form
     if (name.trim()) {
       setName("");
-      setMode("Dictionary");
-      setMethod("Both");
-      setParentId("none");
+      setMode("DICTIONARY");
+      setMethod("BOTH");
+      setParentUuid("none");
     }
   };
 
@@ -41,14 +41,14 @@ export const CategoryForm = ({ categories, onSubmit, onCancel }: CategoryFormPro
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="parent">Parent Category</Label>
-        <Select value={parentId} onValueChange={setParentId}>
+        <Select value={parentUuid} onValueChange={setParentUuid}>
           <SelectTrigger id="parent">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">None (Root Category)</SelectItem>
             {categories.map(cat => (
-              <SelectItem key={cat.id} value={cat.id.toString()}>
+              <SelectItem key={cat.uuid} value={cat.uuid}>
                 {cat.name}
               </SelectItem>
             ))}
@@ -74,8 +74,8 @@ export const CategoryForm = ({ categories, onSubmit, onCancel }: CategoryFormPro
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Dictionary">Dictionary</SelectItem>
-            <SelectItem value="Exercise">Exercise</SelectItem>
+            <SelectItem value="DICTIONARY">Dictionary</SelectItem>
+            <SelectItem value="EXERCISE">Exercise</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -87,9 +87,9 @@ export const CategoryForm = ({ categories, onSubmit, onCancel }: CategoryFormPro
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="QuestionToAnswer">Question → Answer</SelectItem>
-            <SelectItem value="AnswerToQuestion">Answer → Question</SelectItem>
-            <SelectItem value="Both">Both</SelectItem>
+            <SelectItem value="QUESTION_TO_ANSWER">Question → Answer</SelectItem>
+            <SelectItem value="ANSWER_TO_QUESTION">Answer → Question</SelectItem>
+            <SelectItem value="BOTH">Both</SelectItem>
           </SelectContent>
         </Select>
       </div>

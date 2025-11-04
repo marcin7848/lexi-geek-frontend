@@ -1,106 +1,132 @@
 // Service for category operations
 
-import { Category } from "@/types/category";
+import { Category, CategoryMode, CategoryMethod } from "@/types/category";
+import { HttpMethod, RequestBuilder, RequestService, type PageDto, type PageableRequest } from '@/services/requestService';
+import { throwIfError } from '@/services/requestError';
 
-export interface CategoryFilters {
-  parentId?: number | null;
+// Backend DTO
+interface CategoryDto {
+  uuid: string;
+  parentUuid: string | null;
+  name: string;
+  mode: CategoryMode;
+  method: CategoryMethod;
+  position: number;
+}
+
+// Filter form for querying categories
+export interface CategoryFilterForm {
+  uuid?: string;
+  parentUuid?: string;
+  name?: string;
+  mode?: CategoryMode;
+  method?: CategoryMethod;
+  position?: number;
+}
+
+// Form for creating/updating categories
+export interface CategoryForm {
+  name: string;
+  mode: CategoryMode;
+  method: CategoryMethod;
+  parentUuid: string | null;
 }
 
 export const categoryService = {
-  getAll: async (languageId: string, filters?: CategoryFilters): Promise<Category[]> => {
-    const storageKey = `categories_${languageId}`;
-    const stored = localStorage.getItem(storageKey);
-    
-    if (!stored) return [];
-    
-    let categories: Category[] = JSON.parse(stored);
-    
-    // Apply filters
-    if (filters?.parentId !== undefined) {
-      categories = categories.filter(cat => cat.id_parent === filters.parentId);
+  // Get categories with optional filters and pagination
+  getCategories: async (
+    languageUuid: string,
+    filter?: CategoryFilterForm | null,
+    pageable?: PageableRequest | null
+  ): Promise<Category[]> => {
+    const service = new RequestService();
+    const builder = new RequestBuilder<void>()
+      .url(`/languages/${languageUuid}/categories`)
+      .method(HttpMethod.GET)
+      .pageable(pageable ?? undefined);
+
+    // Append filter params if provided
+    if (filter) {
+      if (filter.uuid) builder.param('uuid', filter.uuid);
+      if (filter.parentUuid) builder.param('parentUuid', filter.parentUuid);
+      if (filter.name) builder.param('name', filter.name);
+      if (filter.mode) builder.param('mode', filter.mode);
+      if (filter.method) builder.param('method', filter.method);
+      if (typeof filter.position === 'number') builder.param('position', String(filter.position));
     }
-    
-    return categories;
+
+    const req = builder.build();
+    const res = await service.send<void, PageDto<CategoryDto>>(req);
+    throwIfError(res, 'Failed to load categories');
+
+    const page = res.body as PageDto<CategoryDto> | null;
+    const items = page?.items ?? [];
+    return items.map((c) => ({
+      uuid: c.uuid,
+      parentUuid: c.parentUuid,
+      name: c.name,
+      mode: c.mode,
+      method: c.method,
+      position: c.position,
+    }));
   },
 
-  getById: async (languageId: string, categoryId: number): Promise<Category | null> => {
-    const categories = await categoryService.getAll(languageId);
-    return categories.find(cat => cat.id === categoryId) || null;
+  // Create a new category
+  createCategory: async (languageUuid: string, form: CategoryForm): Promise<void> => {
+    const service = new RequestService();
+    const request = new RequestBuilder<CategoryForm>()
+      .url(`/languages/${languageUuid}/categories`)
+      .method(HttpMethod.POST)
+      .contentTypeHeader('application/json')
+      .body(form)
+      .build();
+
+    const res = await service.send<CategoryForm, unknown>(request);
+    throwIfError(res, 'Failed to create category');
+    return;
   },
 
-  findCategoryInAllLanguages: async (categoryId: number): Promise<{ category: Category; languageId: string } | null> => {
-    const languages = JSON.parse(localStorage.getItem("languages") || "[]");
-    
-    for (const language of languages) {
-      const storageKey = `categories_${language.id}`;
-      const storedCategories = localStorage.getItem(storageKey);
-      
-      if (storedCategories) {
-        const categories: Category[] = JSON.parse(storedCategories);
-        const found = categories.find((cat) => cat.id === categoryId);
-        
-        if (found) {
-          return { category: found, languageId: language.id };
-        }
-      }
-    }
-    
-    return null;
+  // Update an existing category
+  updateCategory: async (languageUuid: string, categoryUuid: string, form: CategoryForm): Promise<void> => {
+    const service = new RequestService();
+    const request = new RequestBuilder<CategoryForm>()
+      .url(`/languages/${languageUuid}/categories/${categoryUuid}`)
+      .method(HttpMethod.PUT)
+      .contentTypeHeader('application/json')
+      .body(form)
+      .build();
+
+    const res = await service.send<CategoryForm, unknown>(request);
+    throwIfError(res, 'Failed to update category');
+    return;
   },
 
-  create: async (languageId: string, category: Category): Promise<Category> => {
-    const categories = await categoryService.getAll(languageId);
-    categories.push(category);
-    
-    const storageKey = `categories_${languageId}`;
-    localStorage.setItem(storageKey, JSON.stringify(categories));
-    
-    return category;
+  // Delete a category
+  deleteCategory: async (languageUuid: string, categoryUuid: string): Promise<void> => {
+    const service = new RequestService();
+    const request = new RequestBuilder<void>()
+      .url(`/languages/${languageUuid}/categories/${categoryUuid}`)
+      .method(HttpMethod.DELETE)
+      .responseAsVoid()
+      .build();
+
+    const res = await service.sendVoid(request);
+    throwIfError(res, 'Failed to delete category');
+    return;
   },
 
-  update: async (languageId: string, categoryId: number, updates: Partial<Category>): Promise<Category | null> => {
-    const categories = await categoryService.getAll(languageId);
-    const index = categories.findIndex(cat => cat.id === categoryId);
-    
-    if (index === -1) return null;
-    
-    categories[index] = { ...categories[index], ...updates };
-    
-    const storageKey = `categories_${languageId}`;
-    localStorage.setItem(storageKey, JSON.stringify(categories));
-    
-    return categories[index];
+  // Helper to get a single category by UUID
+  getById: async (languageUuid: string, categoryUuid: string): Promise<Category | null> => {
+    const categories = await categoryService.getCategories(
+      languageUuid,
+      { uuid: categoryUuid },
+      { singlePage: true }
+    );
+    return categories.find(cat => cat.uuid === categoryUuid) || null;
   },
 
-  delete: async (languageId: string, categoryId: number): Promise<boolean> => {
-    const categories = await categoryService.getAll(languageId);
-    const filtered = categories.filter(cat => cat.id !== categoryId);
-    
-    if (filtered.length === categories.length) return false;
-    
-    const storageKey = `categories_${languageId}`;
-    localStorage.setItem(storageKey, JSON.stringify(filtered));
-    
-    return true;
+  // Get all categories for a language (convenience method)
+  getAll: async (languageUuid: string): Promise<Category[]> => {
+    return await categoryService.getCategories(languageUuid, null, { singlePage: true });
   },
-
-  initialize: async (languageId: string, defaultCategories: Category[]): Promise<void> => {
-    const storageKey = `categories_${languageId}`;
-    const existing = localStorage.getItem(storageKey);
-    
-    if (!existing) {
-      localStorage.setItem(storageKey, JSON.stringify(defaultCategories));
-    }
-  },
-
-  updateRepeatData: async (languageId: string, repeatData: any): Promise<void> => {
-    const storageKey = `repeat_${languageId}`;
-    localStorage.setItem(storageKey, JSON.stringify(repeatData));
-  },
-
-  getRepeatData: async (languageId: string): Promise<any> => {
-    const storageKey = `repeat_${languageId}`;
-    const stored = localStorage.getItem(storageKey);
-    return stored ? JSON.parse(stored) : null;
-  }
 };

@@ -60,8 +60,8 @@ export const CategoryEditForm = ({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="Dictionary">Dictionary</SelectItem>
-          <SelectItem value="Exercise">Exercise</SelectItem>
+          <SelectItem value="DICTIONARY">Dictionary</SelectItem>
+          <SelectItem value="EXERCISE">Exercise</SelectItem>
         </SelectContent>
       </Select>
 
@@ -70,9 +70,9 @@ export const CategoryEditForm = ({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="QuestionToAnswer">Question → Answer</SelectItem>
-          <SelectItem value="AnswerToQuestion">Answer → Question</SelectItem>
-          <SelectItem value="Both">Both</SelectItem>
+          <SelectItem value="QUESTION_TO_ANSWER">Question → Answer</SelectItem>
+          <SelectItem value="ANSWER_TO_QUESTION">Answer → Question</SelectItem>
+          <SelectItem value="BOTH">Both</SelectItem>
         </SelectContent>
       </Select>
 
