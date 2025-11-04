@@ -1,43 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { useLanguage } from "@/i18n/LanguageProvider";
-
-interface ShortcutUsage {
-  shortcut: string;
-  name: string;
-  usage: number;
-}
-
-const getMockShortcutUsage = (): ShortcutUsage[] => {
-  const storageKey = "shortcutUsage";
-  const stored = localStorage.getItem(storageKey);
-  
-  if (stored) {
-    return JSON.parse(stored);
-  }
-  
-  // Initialize with mock data
-  const mockData: ShortcutUsage[] = [
-    { shortcut: "en", name: "English", usage: 150 },
-    { shortcut: "es", name: "Spanish", usage: 120 },
-    { shortcut: "fr", name: "French", usage: 95 },
-    { shortcut: "de", name: "German", usage: 85 },
-    { shortcut: "it", name: "Italian", usage: 70 },
-    { shortcut: "pt", name: "Portuguese", usage: 65 },
-    { shortcut: "ru", name: "Russian", usage: 55 },
-    { shortcut: "ja", name: "Japanese", usage: 50 },
-    { shortcut: "zh", name: "Chinese", usage: 45 },
-    { shortcut: "ko", name: "Korean", usage: 40 },
-    { shortcut: "ar", name: "Arabic", usage: 35 },
-    { shortcut: "hi", name: "Hindi", usage: 30 },
-    { shortcut: "pl", name: "Polish", usage: 25 },
-    { shortcut: "nl", name: "Dutch", usage: 20 },
-    { shortcut: "sv", name: "Swedish", usage: 15 },
-  ];
-  
-  localStorage.setItem(storageKey, JSON.stringify(mockData));
-  return mockData;
-};
+import { languageService, type ShortcutDto } from "@/services/languageService";
 
 interface ShortcutHintsProps {
   value: string;
@@ -47,27 +11,23 @@ interface ShortcutHintsProps {
 }
 
 export function ShortcutHints({ value, onSelect, onHide, inputRef }: ShortcutHintsProps) {
-  const [shortcuts, setShortcuts] = useState<ShortcutUsage[]>([]);
+  const [shortcuts, setShortcuts] = useState<ShortcutDto[]>([]);
   const hintsRef = useRef<HTMLDivElement>(null);
   const { t } = useLanguage();
 
   useEffect(() => {
-    const allShortcuts = getMockShortcutUsage();
-    
-    if (value === "") {
-      // Show top 10 most popular shortcuts
-      const topShortcuts = [...allShortcuts]
-        .sort((a, b) => b.usage - a.usage)
-        .slice(0, 10);
-      setShortcuts(topShortcuts);
-    } else {
-      // Filter shortcuts that contain the typed letters
-      const filtered = allShortcuts
-        .filter(s => s.shortcut.toLowerCase().includes(value.toLowerCase()))
-        .sort((a, b) => b.usage - a.usage)
-        .slice(0, 10);
-      setShortcuts(filtered);
-    }
+    const loadShortcuts = async () => {
+      try {
+        // Pass the filter value to the API - if empty, backend will return all popular shortcuts
+        const data = await languageService.getPopularShortcuts(value || undefined);
+        setShortcuts(data);
+      } catch (error) {
+        console.error("Failed to load shortcuts:", error);
+        setShortcuts([]);
+      }
+    };
+
+    loadShortcuts();
   }, [value]);
 
   useEffect(() => {

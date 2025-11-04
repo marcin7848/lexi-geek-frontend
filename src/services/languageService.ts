@@ -24,6 +24,12 @@ interface LanguageDto {
   specialLetters: string;
 }
 
+export interface ShortcutDto {
+  name: string;
+  shortcut: string;
+  usage: number;
+}
+
 export interface LanguageFilterForm {
   uuid?: string;
   name?: string;
@@ -84,6 +90,25 @@ export const languageService = {
       hidden: l.hidden,
       specialLetters: l.specialLetters,
     }));
+  },
+
+  // Get popular shortcuts with optional filter
+  getPopularShortcuts: async (shortcut?: string): Promise<ShortcutDto[]> => {
+    const service = new RequestService();
+    const builder = new RequestBuilder<void>()
+      .url('/languages/shortcuts')
+      .method(HttpMethod.GET);
+
+    // Add shortcut filter parameter if provided
+    if (shortcut) {
+      builder.param('shortcut', shortcut);
+    }
+
+    const req = builder.build();
+    const res = await service.send<void, ShortcutDto[]>(req);
+    throwIfError(res, 'Failed to load popular shortcuts');
+
+    return res.body as ShortcutDto[] ?? [];
   },
 
   // Create language via backend
