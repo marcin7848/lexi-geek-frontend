@@ -44,7 +44,7 @@ function clearMockSession() {
 }
 
 export const authService = {
-  login: async (email: string, password: string, rememberMe: boolean = false): Promise<void> => {
+  login: async (email: string, password: string, rememberMe: boolean = false): Promise<AuthUser | null> => {
     const service = new RequestService();
     const request = new RequestBuilder<{ email: string; password: string; rememberMe: boolean }>()
       .url('/login')
@@ -56,12 +56,9 @@ export const authService = {
     const res = await service.send(request);
     throwIfError(res, 'Login failed');
 
-    // After successful login (cookies set), fetch account and mirror into localStorage
-    await authService.initializeFromAccount();
-    return;
+    return await authService.initializeFromAccount();
   },
 
-  // Fetch current account from backend and mirror into legacy localStorage used by UI
   initializeFromAccount: async (): Promise<AuthUser | null> => {
     try {
       const account = await authService.getAccount();

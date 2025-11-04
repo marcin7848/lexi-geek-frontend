@@ -9,6 +9,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { authService } from "@/services/authService";
+import { authStateService } from "@/services/authStateService";
 import { useLanguage } from "@/i18n/LanguageProvider";
 
 const registerSchemaFactory = (t: (k: string, ...args: unknown[]) => string) => z.object({
@@ -75,14 +76,18 @@ export default function Register() {
     setLoading(true);
     
     try {
-      await authService.register(formData.email, formData.password, formData.username);
+      const user = await authService.register(formData.email, formData.password, formData.username);
+
+      if (user) {
+        authStateService.setUser(user);
+      }
 
       toast({
         title: t("auth.registerSuccessTitle") as unknown as string,
         description: t("auth.registerSuccessDesc") as unknown as string,
       });
       
-      navigate("/login");
+      navigate("/");
     } catch (error) {
       let description: string = t("common.unexpectedError");
       try {

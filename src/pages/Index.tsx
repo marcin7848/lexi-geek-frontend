@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
-import { supabase, type AuthUser } from "@/lib/supabase";
-import { authService } from "@/services/authService";
+import type { AuthUser } from "@/lib/supabase";
+import { authStateService } from "@/services/authStateService";
 import { dashboardService } from "@/services/dashboardService";
 import { RecentActivitySection } from "@/components/dashboard/RecentActivity";
 import { DailyTasks } from "@/components/dashboard/DailyTasks";
@@ -17,65 +17,45 @@ const Index = () => {
   const { t } = useLanguage();
 
   useEffect(() => {
-    loadUserData();
-
-    // Initialize from backend account if authenticated
     (async () => {
-      const serverUser = await authService.initializeFromAccount();
+      const serverUser = await authStateService.initialize();
+      setUser(serverUser as AuthUser);
+      setLoading(false);
+
       if (serverUser) {
-        setUser(serverUser as AuthUser);
-        setLoading(false);
+        loadUserData();
       }
-
-      // Check for mocked session first
-      const checkMockedSession = () => {
-        const u = authService.getCurrentUser();
-        if (u) {
-          setUser(u as AuthUser);
-          setLoading(false);
-          return true;
-        }
-        return false;
-      };
-
-      // Listen for storage changes (logout/login events)
-      const handleStorageChange = () => {
-        if (!checkMockedSession()) {
-          setUser(null);
-          setLoading(false);
-        }
-      };
-
-      window.addEventListener('storage', handleStorageChange);
-
-      if (checkMockedSession()) {
-        return () => window.removeEventListener('storage', handleStorageChange);
-      }
-
-      // Set up auth state listener
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        (event, session) => {
-          setUser(session?.user as AuthUser | null);
-          setLoading(false);
-        }
-      );
-
-      // Check for existing session
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        setUser(session?.user as AuthUser | null);
-        setLoading(false);
-      });
-
-      return () => {
-        subscription.unsubscribe();
-        window.removeEventListener('storage', handleStorageChange);
-      };
     })();
+
+    const unsubscribe = authStateService.subscribe((newUser) => {
+      setUser(newUser as AuthUser);
+      if (newUser) {
+        loadUserData();
+      } else {
+        setStars(0);
+      }
+    });
+
+    const handleStorageChange = () => {
+      const u = authStateService.getCurrentUser();
+      setUser(u as AuthUser);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const loadUserData = async () => {
-    const userData = await dashboardService.getUserData();
-    setStars(userData.stars);
+    try {
+      const userData = await dashboardService.getUserData();
+      setStars(userData.stars);
+    } catch (error) {
+      console.error('Failed to load user data:', error);
+    }
   };
 
   return (
