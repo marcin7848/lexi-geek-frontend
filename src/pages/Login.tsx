@@ -10,6 +10,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { authService } from "@/services/authService";
+import { authStateService } from "@/services/authStateService";
 import { useLanguage } from "@/i18n/LanguageProvider";
 
 export default function Login() {
@@ -57,13 +58,18 @@ export default function Login() {
     setLoading(true);
     
     try {
-      await authService.login(email, password, rememberMe);
+      const user = await authService.login(email, password, rememberMe);
+
+      // Update centralized auth state to notify all components
+      if (user) {
+        authStateService.setUser(user);
+      }
 
       toast({
         title: t("auth.loginSuccessTitle"),
         description: t("auth.loginSuccessDesc"),
       });
-      
+
       navigate("/");
     } catch (error) {
       let description = t("common.unexpectedError");

@@ -8,6 +8,7 @@ import { useTheme } from "@/components/ThemeProvider";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { languageOptions } from "@/i18n/languageConfig";
 import { authService } from "@/services/authService";
+import { authStateService } from "@/services/authStateService";
 import { dashboardService } from "@/services/dashboardService";
 import {
   Select,
@@ -28,55 +29,44 @@ export const Header = () => {
   const { language, setLanguage, t } = useLanguage();
 
   useEffect(() => {
-    loadUserData();
+    const currentUser = authStateService.getCurrentUser();
+    setUser(currentUser as AuthUser);
+    setLoading(!authStateService.isInitialized());
 
-    // Try to initialize from backend account and mirror to localStorage
-    (async () => {
-      const serverUser = await authService.initializeFromAccount();
-      if (serverUser) {
-        setUser(serverUser as AuthUser);
-        setLoading(false);
-        return; // already initialized
+    if (currentUser) {
+      loadUserData();
+    }
+
+    const unsubscribe = authStateService.subscribe((newUser) => {
+      setUser(newUser as AuthUser);
+      setLoading(false);
+      if (newUser) {
+        loadUserData();
+      } else {
+        setStars(0);
       }
+    });
 
-      // Fallback to mocked session (if any)
-      const mocked = authService.getCurrentUser();
-      if (mocked) {
-        setUser(mocked as AuthUser);
-        setLoading(false);
-        return;
-      }
-
-      // Set up auth state listener
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        (event, session) => {
-          setUser(session?.user as AuthUser | null);
-          setLoading(false);
-        }
-      );
-
-      // Check for existing session
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        setUser(session?.user as AuthUser | null);
-        setLoading(false);
-      });
-
-      // Cleanup on unmount
-      return () => subscription.unsubscribe();
-    })();
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const loadUserData = async () => {
-    const userData = await dashboardService.getUserData();
-    setStars(userData.stars);
+    try {
+      const userData = await dashboardService.getUserData();
+      setStars(userData.stars);
+    } catch (error) {
+      console.error('Failed to load user data:', error);
+    }
   };
 
   const handleLogout = async () => {
     try {
       await authService.logout();
       await supabase.auth.signOut();
-      setUser(null);
-      
+      authStateService.reset();
+
       toast({
         title: t("header.logoutSuccess"),
         description: t("header.logoutSuccessDesc"),
