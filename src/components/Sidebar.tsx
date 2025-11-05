@@ -25,6 +25,25 @@ export const Sidebar = () => {
     const currentUser = authStateService.getCurrentUser();
     setUser(currentUser as AuthUser);
 
+    // Track if languages have been loaded to prevent duplicate calls
+    let languagesLoaded = false;
+    let previousUserId = currentUser?.id || null;
+
+    // Load languages initially if user is authenticated
+    const isAuthPage = () => {
+      return location.pathname === '/login' || location.pathname === '/register';
+    };
+
+    const loadLanguagesOnce = async () => {
+      if (languagesLoaded) return;
+      languagesLoaded = true;
+      await loadLanguages();
+    };
+
+    if (currentUser && !isAuthPage()) {
+      loadLanguagesOnce();
+    }
+
     // Helper: redirect to home when becoming unauthenticated
     const isPublicAuthRoute = (path: string) => path === '/login' || path === '/register';
     const redirectToHome = () => {
@@ -37,17 +56,23 @@ export const Sidebar = () => {
       }
     };
 
-    const isAuthPage = () => {
-      return location.pathname === '/login' || location.pathname === '/register';
-    };
-
     const unsubscribe = authStateService.subscribe((newUser) => {
+      const newUserId = newUser?.id || null;
+
+      // Only react to actual user changes (different user ID)
+      if (previousUserId === newUserId) {
+        return;
+      }
+
+      previousUserId = newUserId;
       setUser(newUser as AuthUser);
+
       if (!newUser) {
         setLanguages([]);
+        languagesLoaded = false;
         redirectToHome();
       } else if (!isAuthPage()) {
-        loadLanguages();
+        loadLanguagesOnce();
       }
     });
 
