@@ -13,8 +13,9 @@ import {
   DialogTrigger,
 } from "./ui/dialog";
 import { CategoryForm } from "./CategoryForm";
-import { DndContext, DragStartEvent, DragEndEvent, DragOverEvent, DragOverlay, pointerWithin, closestCenter, CollisionDetection } from "@dnd-kit/core";
+import { DndContext, DragStartEvent, DragEndEvent, DragOverlay, pointerWithin, closestCenter, CollisionDetection } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 type CategoryTreeProps = {
   categories: Category[];
@@ -23,6 +24,7 @@ type CategoryTreeProps = {
 };
 
 export const CategoryTree = ({ categories, languageId, onUpdate }: CategoryTreeProps) => {
+  const { t } = useLanguage();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(
     new Set()
   );
@@ -57,22 +59,22 @@ export const CategoryTree = ({ categories, languageId, onUpdate }: CategoryTreeP
         parentUuid: category.parentUuid,
       });
 
-      toast.success("Category updated");
+      toast.success(t("categoryEditForm.updated"));
       onUpdate();
     } catch (error) {
       console.error("Error updating category:", error);
-      toast.error("Failed to update category");
+      toast.error(t("categoryEditForm.errorUpdate"));
     }
   };
 
   const handleDelete = async (uuid: string) => {
     try {
       await categoryService.deleteCategory(languageId, uuid);
-      toast.success("Category deleted");
+      toast.success(t("categoryEditForm.deleted"));
       onUpdate();
     } catch (error) {
       console.error("Error deleting category:", error);
-      toast.error("Failed to delete category");
+      toast.error(t("categoryEditForm.errorDelete"));
     }
   };
 
@@ -85,12 +87,12 @@ export const CategoryTree = ({ categories, languageId, onUpdate }: CategoryTreeP
         parentUuid,
       });
 
-      toast.success("Category created");
+      toast.success(t("categoryEditForm.created"));
       setIsAddDialogOpen(false);
       onUpdate();
     } catch (error) {
       console.error("Error creating category:", error);
-      toast.error("Failed to create category");
+      toast.error(t("categoryEditForm.errorCreate"));
     }
   };
 
@@ -123,7 +125,7 @@ export const CategoryTree = ({ categories, languageId, onUpdate }: CategoryTreeP
     setActiveId(String(event.active.id));
   };
 
-  const handleDragOver = (event: DragOverEvent) => {
+  const handleDragOver = () => {
     // Track drag over events if needed for visual feedback
   };
 
@@ -179,7 +181,7 @@ export const CategoryTree = ({ categories, languageId, onUpdate }: CategoryTreeP
       let checkParent: Category | undefined = categories.find(c => c.uuid === newParentUuid);
       while (checkParent) {
         if (checkParent.uuid === draggedUuid) {
-          toast.error("Cannot move a category into its own descendant");
+          toast.error(t("categoryTree.errorDescendant"));
           return;
         }
         checkParent = categories.find(c => c.uuid === checkParent?.parentUuid);
@@ -192,11 +194,11 @@ export const CategoryTree = ({ categories, languageId, onUpdate }: CategoryTreeP
         position: newPosition,
       });
 
-      toast.success("Category moved successfully");
+      toast.success(t("categoryTree.moved"));
       onUpdate();
     } catch (error) {
       console.error("Error moving category:", error);
-      toast.error("Failed to move category");
+      toast.error(t("categoryTree.errorMove"));
     }
   };
 
@@ -205,17 +207,17 @@ export const CategoryTree = ({ categories, languageId, onUpdate }: CategoryTreeP
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">Categories</h2>
+        <h2 className="text-2xl font-semibold">{t("categoryTree.categories")}</h2>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              Add Category
+              {t("categoryTree.addCategory")}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add New Category</DialogTitle>
+              <DialogTitle>{t("categoryTree.addNewCategory")}</DialogTitle>
             </DialogHeader>
             <CategoryForm
               categories={categories}

@@ -8,6 +8,7 @@ import { useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { CategoryEditForm } from "./CategoryEditForm";
 import { DropZone } from "@/components/dnd/DropZone";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 type CategoryNodeProps = {
   category: Category;
@@ -32,6 +33,7 @@ export const CategoryNode = ({
   depth = 0,
   isLastChild = false,
 }: CategoryNodeProps) => {
+  const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [clickTimeout, setClickTimeout] = useState<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
@@ -61,11 +63,11 @@ export const CategoryNode = ({
 
   const getModeIcon = () => {
     return category.mode === "DICTIONARY" ? (
-      <span title="Dictionary">
+      <span title={t("categoryNode.dictionary")}>
         <Book className="h-4 w-4 text-primary" />
       </span>
     ) : (
-      <span title="Exercise">
+      <span title={t("categoryNode.exercise")}>
         <Dumbbell className="h-4 w-4 fill-orange-500 text-orange-500" />
       </span>
     );
@@ -74,11 +76,11 @@ export const CategoryNode = ({
   const getMethodIcon = () => {
     switch (category.method) {
       case "QUESTION_TO_ANSWER":
-        return <span title="Question to Answer"><ArrowRight className="h-4 w-4 text-muted-foreground" /></span>;
+        return <span title={t("categoryNode.questionToAnswer")}><ArrowRight className="h-4 w-4 text-muted-foreground" /></span>;
       case "ANSWER_TO_QUESTION":
-        return <span title="Answer to Question"><ArrowLeft className="h-4 w-4 text-muted-foreground" /></span>;
+        return <span title={t("categoryNode.answerToQuestion")}><ArrowLeft className="h-4 w-4 text-muted-foreground" /></span>;
       case "BOTH":
-        return <span title="Both"><ArrowLeftRight className="h-4 w-4 text-muted-foreground" /></span>;
+        return <span title={t("categoryNode.both")}><ArrowLeftRight className="h-4 w-4 text-muted-foreground" /></span>;
     }
   };
 
@@ -116,7 +118,7 @@ export const CategoryNode = ({
           {isOverAsParent && !isSortableDragging && (
             <div className="absolute inset-0 border-2 border-dashed border-green-500 bg-green-500/10 rounded-md pointer-events-none z-10">
               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xs text-green-600 font-medium bg-white/90 px-2 py-1 rounded">
-                Make child
+                {t("categoryNode.makeChild")}
               </div>
             </div>
           )}

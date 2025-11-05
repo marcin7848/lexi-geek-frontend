@@ -1,5 +1,6 @@
 import { useDroppable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 type DropZoneProps = {
   id: string;
@@ -7,6 +8,7 @@ type DropZoneProps = {
 };
 
 export const DropZone = ({ id, depth = 0 }: DropZoneProps) => {
+  const { t } = useLanguage();
   const { isOver, setNodeRef } = useDroppable({ id });
 
   return (
@@ -19,11 +21,11 @@ export const DropZone = ({ id, depth = 0 }: DropZoneProps) => {
           : "h-2 hover:h-4 hover:bg-accent/30"
       )}
       style={{ marginLeft: `${depth * 24 + 12}px`, marginRight: "12px" }}
-      aria-label="Drop here"
+      aria-label={t("dropZone.dropHere")}
     >
       {isOver && (
         <div className="absolute inset-0 flex items-center justify-center text-xs text-primary font-medium">
-          Drop here
+          {t("dropZone.dropHere")}
         </div>
       )}
     </div>

@@ -10,6 +10,7 @@ import StartRepeatingModal from "@/components/StartRepeatingModal";
 import { repeatService } from "@/services/repeatService";
 import { languageService, type Language } from "@/services/languageService";
 import { categoryService } from "@/services/categoryService";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 
 type RepeatData = {
@@ -20,6 +21,7 @@ type RepeatData = {
 export default function LanguageView() {
   const { languageId } = useParams();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [language, setLanguage] = useState<Language | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [repeatData, setRepeatData] = useState<RepeatData>({ active: false, wordsLeft: 0 });
@@ -44,7 +46,7 @@ export default function LanguageView() {
             found = allLanguages[index];
             languageUuid = found.id; // This is the UUID
           } else {
-            toast.error("Language not found");
+            toast.error(t("addLanguage.notFound"));
             navigate("/");
             return;
           }
@@ -72,17 +74,17 @@ export default function LanguageView() {
             await repeatService.updateRepeatData(languageId, initialRepeatData);
           }
         } else {
-          toast.error("Language not found");
+          toast.error(t("addLanguage.notFound"));
           navigate("/");
         }
       } catch (error) {
         console.error("Error loading language data:", error);
-        toast.error("Failed to load language data");
+        toast.error(t("common.error"));
       }
     };
     
     loadData();
-  }, [languageId, navigate]);
+  }, [languageId, navigate, t]);
 
   const handleCategoriesUpdate = async () => {
     // Reload categories from backend
@@ -93,7 +95,7 @@ export default function LanguageView() {
         setCategories(categories);
       } catch (error) {
         console.error("Error reloading categories:", error);
-        toast.error("Failed to reload categories");
+        toast.error(t("common.error"));
       }
     }
   };
@@ -112,7 +114,7 @@ export default function LanguageView() {
     const newRepeatData = { active: false, wordsLeft: 0 };
     setRepeatData(newRepeatData);
     await repeatService.updateRepeatData(languageId, newRepeatData);
-    toast.success("Repeating reset");
+    toast.success(t("languageView.successReset"));
   };
 
   const handleStartRepeatSubmit = async (data: {
@@ -152,13 +154,13 @@ export default function LanguageView() {
           
           <div className="flex items-center gap-4">
             <Button onClick={handleStartRepeating} size="lg">
-              {repeatData.active ? "Back to repeating" : "Start repeating"}
+              {repeatData.active ? t("languageView.backToRepeating") : t("languageView.startRepeating")}
             </Button>
             {repeatData.active && (
               <>
-                <span className="text-lg">Words left: {repeatData.wordsLeft}</span>
+                <span className="text-lg">{t("languageView.wordsLeft").replace("{count}", String(repeatData.wordsLeft))}</span>
                 <Button onClick={handleResetRepeating} variant="outline">
-                  Reset repeating
+                  {t("languageView.resetRepeating")}
                 </Button>
               </>
             )}

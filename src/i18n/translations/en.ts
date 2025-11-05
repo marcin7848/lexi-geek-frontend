@@ -236,6 +236,37 @@ export const en = {
     "languageView.wordsLeft": "Words left: {count}",
     "languageView.successReset": "Repeating reset",
 
+    // Category Tree
+    "categoryTree.categories": "Categories",
+    "categoryTree.addCategory": "Add Category",
+    "categoryTree.addNewCategory": "Add New Category",
+    "categoryTree.moved": "Category moved successfully",
+    "categoryTree.errorMove": "Failed to move category",
+    "categoryTree.errorDescendant": "Cannot move a category into its own descendant",
+
+    // Category Node
+    "categoryNode.dictionary": "Dictionary",
+    "categoryNode.exercise": "Exercise",
+    "categoryNode.questionToAnswer": "Question to Answer",
+    "categoryNode.answerToQuestion": "Answer to Question",
+    "categoryNode.both": "Both",
+    "categoryNode.makeChild": "Make child",
+
+    // Drop Zone
+    "dropZone.dropHere": "Drop here",
+
+    // Category Edit Form
+    "categoryEditForm.save": "Save",
+    "categoryEditForm.cancel": "Cancel",
+    "categoryEditForm.delete": "Delete Category?",
+    "categoryEditForm.deleteDesc": "This will permanently delete \"{name}\" and all its subcategories. This action cannot be undone.",
+    "categoryEditForm.updated": "Category updated",
+    "categoryEditForm.errorUpdate": "Failed to update category",
+    "categoryEditForm.deleted": "Category deleted",
+    "categoryEditForm.errorDelete": "Failed to delete category",
+    "categoryEditForm.created": "Category created",
+    "categoryEditForm.errorCreate": "Failed to create category",
+
     // Category Form
     "categoryForm.parentCategory": "Parent Category",
     "categoryForm.parentNone": "None (Root Category)",
@@ -245,9 +276,9 @@ export const en = {
     "categoryForm.modeDictionary": "Dictionary",
     "categoryForm.modeExercise": "Exercise",
     "categoryForm.method": "Method",
-    "categoryForm.methodFirstToSecond": "First → Second",
-    "categoryForm.methodSecondToFirst": "Second → First",
-    "categoryForm.methodBothSides": "Both Sides",
+    "categoryForm.methodQuestionToAnswer": "Question → Answer",
+    "categoryForm.methodAnswerToQuestion": "Answer → Question",
+    "categoryForm.methodBoth": "Both",
     "categoryForm.addButton": "Add Category",
 
     // Category View

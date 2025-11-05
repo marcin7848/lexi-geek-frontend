@@ -21,6 +21,7 @@ import {
   AlertDialogTrigger,
 } from "./ui/alert-dialog";
 import { Trash2 } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 type CategoryEditFormProps = {
   category: Category;
@@ -35,6 +36,7 @@ export const CategoryEditForm = ({
   onDelete,
   onCancel,
 }: CategoryEditFormProps) => {
+  const { t } = useLanguage();
   const [name, setName] = useState(category.name);
   const [mode, setMode] = useState<CategoryMode>(category.mode);
   const [method, setMethod] = useState<CategoryMethod>(category.method);
@@ -60,8 +62,8 @@ export const CategoryEditForm = ({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="DICTIONARY">Dictionary</SelectItem>
-          <SelectItem value="EXERCISE">Exercise</SelectItem>
+          <SelectItem value="DICTIONARY">{t("categoryForm.modeDictionary")}</SelectItem>
+          <SelectItem value="EXERCISE">{t("categoryForm.modeExercise")}</SelectItem>
         </SelectContent>
       </Select>
 
@@ -70,18 +72,18 @@ export const CategoryEditForm = ({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="QUESTION_TO_ANSWER">Question → Answer</SelectItem>
-          <SelectItem value="ANSWER_TO_QUESTION">Answer → Question</SelectItem>
-          <SelectItem value="BOTH">Both</SelectItem>
+          <SelectItem value="QUESTION_TO_ANSWER">{t("categoryForm.methodQuestionToAnswer")}</SelectItem>
+          <SelectItem value="ANSWER_TO_QUESTION">{t("categoryForm.methodAnswerToQuestion")}</SelectItem>
+          <SelectItem value="BOTH">{t("categoryForm.methodBoth")}</SelectItem>
         </SelectContent>
       </Select>
 
       <div className="flex gap-1">
         <Button type="submit" size="sm" className="h-8">
-          Save
+          {t("categoryEditForm.save")}
         </Button>
         <Button type="button" size="sm" variant="outline" className="h-8" onClick={onCancel}>
-          Cancel
+          {t("categoryEditForm.cancel")}
         </Button>
         <AlertDialog>
           <AlertDialogTrigger asChild>
@@ -91,14 +93,14 @@ export const CategoryEditForm = ({
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete Category?</AlertDialogTitle>
+              <AlertDialogTitle>{t("categoryEditForm.delete")}</AlertDialogTitle>
               <AlertDialogDescription>
-                This will permanently delete "{category.name}" and all its subcategories. This action cannot be undone.
+                {t("categoryEditForm.deleteDesc").replace("{name}", category.name)}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={onDelete}>Delete</AlertDialogAction>
+              <AlertDialogCancel>{t("categoryEditForm.cancel")}</AlertDialogCancel>
+              <AlertDialogAction onClick={onDelete}>{t("common.delete")}</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

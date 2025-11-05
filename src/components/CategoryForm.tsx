@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 type CategoryFormProps = {
   categories: Category[];
@@ -18,6 +19,7 @@ type CategoryFormProps = {
 };
 
 export const CategoryForm = ({ categories, onSubmit, onCancel }: CategoryFormProps) => {
+  const { t } = useLanguage();
   const [name, setName] = useState("");
   const [mode, setMode] = useState<CategoryMode>("DICTIONARY");
   const [method, setMethod] = useState<CategoryMethod>("BOTH");
@@ -40,13 +42,13 @@ export const CategoryForm = ({ categories, onSubmit, onCancel }: CategoryFormPro
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="parent">Parent Category</Label>
+        <Label htmlFor="parent">{t("categoryForm.parentCategory")}</Label>
         <Select value={parentUuid} onValueChange={setParentUuid}>
           <SelectTrigger id="parent">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">None (Root Category)</SelectItem>
+            <SelectItem value="none">{t("categoryForm.parentNone")}</SelectItem>
             {categories.map(cat => (
               <SelectItem key={cat.uuid} value={cat.uuid}>
                 {cat.name}
@@ -57,48 +59,48 @@ export const CategoryForm = ({ categories, onSubmit, onCancel }: CategoryFormPro
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="name">Name</Label>
+        <Label htmlFor="name">{t("categoryForm.name")}</Label>
         <Input
           id="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Category name"
+          placeholder={t("categoryForm.namePlaceholder")}
           required
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="mode">Mode</Label>
+        <Label htmlFor="mode">{t("categoryForm.mode")}</Label>
         <Select value={mode} onValueChange={(v) => setMode(v as CategoryMode)}>
           <SelectTrigger id="mode">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="DICTIONARY">Dictionary</SelectItem>
-            <SelectItem value="EXERCISE">Exercise</SelectItem>
+            <SelectItem value="DICTIONARY">{t("categoryForm.modeDictionary")}</SelectItem>
+            <SelectItem value="EXERCISE">{t("categoryForm.modeExercise")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="method">Method</Label>
+        <Label htmlFor="method">{t("categoryForm.method")}</Label>
         <Select value={method} onValueChange={(v) => setMethod(v as CategoryMethod)}>
           <SelectTrigger id="method">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="QUESTION_TO_ANSWER">Question → Answer</SelectItem>
-            <SelectItem value="ANSWER_TO_QUESTION">Answer → Question</SelectItem>
-            <SelectItem value="BOTH">Both</SelectItem>
+            <SelectItem value="QUESTION_TO_ANSWER">{t("categoryForm.methodQuestionToAnswer")}</SelectItem>
+            <SelectItem value="ANSWER_TO_QUESTION">{t("categoryForm.methodAnswerToQuestion")}</SelectItem>
+            <SelectItem value="BOTH">{t("categoryForm.methodBoth")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div className="flex gap-2 justify-end">
         <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
+          {t("common.cancel")}
         </Button>
-        <Button type="submit">Add Category</Button>
+        <Button type="submit">{t("categoryForm.addButton")}</Button>
       </div>
     </form>
   );
