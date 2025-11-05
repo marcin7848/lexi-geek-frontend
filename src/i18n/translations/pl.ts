@@ -236,6 +236,37 @@ export const pl = {
     "languageView.wordsLeft": "Pozostało słów: {count}",
     "languageView.successReset": "Powtarzanie zresetowane",
 
+    // Category Tree
+    "categoryTree.categories": "Kategorie",
+    "categoryTree.addCategory": "Dodaj Kategorię",
+    "categoryTree.addNewCategory": "Dodaj Nową Kategorię",
+    "categoryTree.moved": "Kategoria przeniesiona pomyślnie",
+    "categoryTree.errorMove": "Nie udało się przenieść kategorii",
+    "categoryTree.errorDescendant": "Nie można przenieść kategorii do jej własnego potomka",
+
+    // Category Node
+    "categoryNode.dictionary": "Słownik",
+    "categoryNode.exercise": "Ćwiczenie",
+    "categoryNode.questionToAnswer": "Pytanie do Odpowiedzi",
+    "categoryNode.answerToQuestion": "Odpowiedź do Pytania",
+    "categoryNode.both": "Obie",
+    "categoryNode.makeChild": "Uczyń dzieckiem",
+
+    // Drop Zone
+    "dropZone.dropHere": "Upuść tutaj",
+
+    // Category Edit Form
+    "categoryEditForm.save": "Zapisz",
+    "categoryEditForm.cancel": "Anuluj",
+    "categoryEditForm.delete": "Usunąć Kategorię?",
+    "categoryEditForm.deleteDesc": "To trwale usunie \"{name}\" i wszystkie jej podkategorie. Tej akcji nie można cofnąć.",
+    "categoryEditForm.updated": "Kategoria zaktualizowana",
+    "categoryEditForm.errorUpdate": "Nie udało się zaktualizować kategorii",
+    "categoryEditForm.deleted": "Kategoria usunięta",
+    "categoryEditForm.errorDelete": "Nie udało się usunąć kategorii",
+    "categoryEditForm.created": "Kategoria utworzona",
+    "categoryEditForm.errorCreate": "Nie udało się utworzyć kategorii",
+
     // Category Form
     "categoryForm.parentCategory": "Kategoria Nadrzędna",
     "categoryForm.parentNone": "Brak (Kategoria Główna)",
@@ -245,9 +276,9 @@ export const pl = {
     "categoryForm.modeDictionary": "Słownik",
     "categoryForm.modeExercise": "Ćwiczenie",
     "categoryForm.method": "Metoda",
-    "categoryForm.methodFirstToSecond": "Pierwszy → Drugi",
-    "categoryForm.methodSecondToFirst": "Drugi → Pierwszy",
-    "categoryForm.methodBothSides": "Obie Strony",
+    "categoryForm.methodQuestionToAnswer": "Pytanie → Odpowiedź",
+    "categoryForm.methodAnswerToQuestion": "Odpowiedź → Pytanie",
+    "categoryForm.methodBoth": "Obie",
     "categoryForm.addButton": "Dodaj Kategorię",
 
     // Category View

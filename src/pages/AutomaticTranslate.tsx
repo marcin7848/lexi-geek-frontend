@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -7,8 +7,10 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
-import { mockCategories } from "@/data/mockCategories";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { Category } from "@/types/category";
+import { categoryService } from "@/services/categoryService";
+import { languageService } from "@/services/languageService";
 
 const AutomaticTranslate = () => {
   const { categoryId } = useParams();
@@ -16,9 +18,34 @@ const AutomaticTranslate = () => {
   const { t } = useLanguage();
   const [method, setMethod] = useState("GOOGLE_TRANSLATOR");
   const [text, setText] = useState("");
+  const [category, setCategory] = useState<Category | null>(null);
 
-  const category = mockCategories.find(cat => cat.id === Number(categoryId));
   const categoryName = category?.name || "Unknown Category";
+
+  useEffect(() => {
+    const loadCategory = async () => {
+      if (!categoryId) return;
+
+      try {
+        // Find category from all languages
+        const languages = await languageService.getAll();
+
+        for (const language of languages) {
+          const categories = await categoryService.getAll(language.id);
+          const found = categories.find((cat) => cat.uuid === categoryId);
+
+          if (found) {
+            setCategory(found);
+            break;
+          }
+        }
+      } catch (error) {
+        console.error("Error loading category:", error);
+      }
+    };
+
+    loadCategory();
+  }, [categoryId]);
 
   const handleAutoTranslate = () => {
     // Currently just redirects back to category page

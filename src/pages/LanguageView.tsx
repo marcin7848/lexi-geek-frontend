@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { CategoryTree } from "@/components/CategoryTree";
-import { mockCategoriesByLanguage } from "@/data/mockCategories";
 import { Category } from "@/types/category";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import StartRepeatingModal from "@/components/StartRepeatingModal";
 import { repeatService } from "@/services/repeatService";
 import { languageService, type Language } from "@/services/languageService";
 import { categoryService } from "@/services/categoryService";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 
 type RepeatData = {
@@ -21,6 +21,7 @@ type RepeatData = {
 export default function LanguageView() {
   const { languageId } = useParams();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [language, setLanguage] = useState<Language | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [repeatData, setRepeatData] = useState<RepeatData>({ active: false, wordsLeft: 0 });
@@ -30,47 +31,72 @@ export default function LanguageView() {
     const loadData = async () => {
       if (!languageId) return;
       
-      const found = await languageService.getById(languageId);
-      
-      if (found) {
-        setLanguage(found);
-        
-        // Initialize categories with mock data if needed
-        const languageCategories = mockCategoriesByLanguage[languageId || "1"] || [];
-        await categoryService.initialize(languageId, languageCategories);
-        
-        // Load categories
-        const categories = await categoryService.getAll(languageId);
-        setCategories(categories);
+      try {
+        // Check if languageId is a numeric index (e.g., "1", "2", "3")
+        const isNumericIndex = /^\d+$/.test(languageId);
+        let languageUuid: string;
+        let found: Language | null = null;
 
-        // Load repeat data
-        const storedRepeatData = await repeatService.getRepeatData(languageId);
-        
-        if (storedRepeatData) {
-          setRepeatData(storedRepeatData);
+        if (isNumericIndex) {
+          // Convert numeric index to UUID by fetching all languages
+          const allLanguages = await languageService.getAll();
+          const index = parseInt(languageId) - 1; // Convert to 0-based index
+
+          if (index >= 0 && index < allLanguages.length) {
+            found = allLanguages[index];
+            languageUuid = found.id; // This is the UUID
+          } else {
+            toast.error(t("addLanguage.notFound"));
+            navigate("/");
+            return;
+          }
         } else {
-          const initialRepeatData = { active: false, wordsLeft: 0 };
-          setRepeatData(initialRepeatData);
-          await repeatService.updateRepeatData(languageId, initialRepeatData);
+          // languageId is already a UUID
+          found = await languageService.getById(languageId);
+          languageUuid = languageId;
         }
-      } else {
-        toast.error("Language not found");
-        navigate("/");
+
+        if (found) {
+          setLanguage(found);
+
+          // Load categories from backend using UUID
+          const categories = await categoryService.getAll(languageUuid);
+          setCategories(categories);
+
+          // Load repeat data using the original languageId (for localStorage compatibility)
+          const storedRepeatData = await repeatService.getRepeatData(languageId);
+
+          if (storedRepeatData) {
+            setRepeatData(storedRepeatData);
+          } else {
+            const initialRepeatData = { active: false, wordsLeft: 0 };
+            setRepeatData(initialRepeatData);
+            await repeatService.updateRepeatData(languageId, initialRepeatData);
+          }
+        } else {
+          toast.error(t("addLanguage.notFound"));
+          navigate("/");
+        }
+      } catch (error) {
+        console.error("Error loading language data:", error);
+        toast.error(t("common.error"));
       }
     };
     
     loadData();
-  }, [languageId, navigate]);
+  }, [languageId, navigate, t]);
 
-  const handleCategoriesUpdate = async (updatedCategories: Category[]) => {
-    setCategories(updatedCategories);
-    
-    // Persist - update all categories
-    if (languageId) {
-      // Clear and recreate all categories
-      const storageKey = `categories_${languageId}`;
-      localStorage.setItem(storageKey, JSON.stringify(updatedCategories));
-      toast.success("Categories updated");
+  const handleCategoriesUpdate = async () => {
+    // Reload categories from backend
+    if (languageId && language) {
+      try {
+        // Use the language.id which contains the UUID
+        const categories = await categoryService.getAll(language.id);
+        setCategories(categories);
+      } catch (error) {
+        console.error("Error reloading categories:", error);
+        toast.error(t("common.error"));
+      }
     }
   };
 
@@ -88,7 +114,7 @@ export default function LanguageView() {
     const newRepeatData = { active: false, wordsLeft: 0 };
     setRepeatData(newRepeatData);
     await repeatService.updateRepeatData(languageId, newRepeatData);
-    toast.success("Repeating reset");
+    toast.success(t("languageView.successReset"));
   };
 
   const handleStartRepeatSubmit = async (data: {
@@ -128,19 +154,19 @@ export default function LanguageView() {
           
           <div className="flex items-center gap-4">
             <Button onClick={handleStartRepeating} size="lg">
-              {repeatData.active ? "Back to repeating" : "Start repeating"}
+              {repeatData.active ? t("languageView.backToRepeating") : t("languageView.startRepeating")}
             </Button>
             {repeatData.active && (
               <>
-                <span className="text-lg">Words left: {repeatData.wordsLeft}</span>
+                <span className="text-lg">{t("languageView.wordsLeft").replace("{count}", String(repeatData.wordsLeft))}</span>
                 <Button onClick={handleResetRepeating} variant="outline">
-                  Reset repeating
+                  {t("languageView.resetRepeating")}
                 </Button>
               </>
             )}
           </div>
 
-          <CategoryTree categories={categories} onUpdate={handleCategoriesUpdate} />
+          <CategoryTree categories={categories} languageId={language.id} onUpdate={handleCategoriesUpdate} />
         </div>
       </main>
       

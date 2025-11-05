@@ -3,6 +3,8 @@ import { Category, CategoryMode, CategoryMethod } from "@/types/category";
 import { CategoryNode } from "./CategoryNode";
 import { Button } from "./ui/button";
 import { Plus } from "lucide-react";
+import { categoryService } from "@/services/categoryService";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -11,173 +13,192 @@ import {
   DialogTrigger,
 } from "./ui/dialog";
 import { CategoryForm } from "./CategoryForm";
-import { DndContext, DragStartEvent, DragEndEvent, DragOverEvent, DragOverlay, pointerWithin } from "@dnd-kit/core";
+import { DndContext, DragStartEvent, DragEndEvent, DragOverlay, pointerWithin, closestCenter, CollisionDetection } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { DropZone } from "./dnd/DropZone";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 type CategoryTreeProps = {
   categories: Category[];
-  onUpdate: (categories: Category[]) => void;
+  languageId: string;
+  onUpdate: () => void;
 };
 
-export const CategoryTree = ({ categories, onUpdate }: CategoryTreeProps) => {
-  const [expandedIds, setExpandedIds] = useState<Set<number>>(
+export const CategoryTree = ({ categories, languageId, onUpdate }: CategoryTreeProps) => {
+  const { t } = useLanguage();
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(
     new Set()
   );
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [activeId, setActiveId] = useState<number | null>(null);
-  const [overId, setOverId] = useState<number | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
-  const buildTree = (parentId: number | null = null): Category[] => {
+  const buildTree = (parentUuid: string | null = null): Category[] => {
     return categories
-      .filter(cat => cat.id_parent === parentId)
-      .sort((a, b) => a.order - b.order);
+      .filter(cat => cat.parentUuid === parentUuid)
+      .sort((a, b) => a.position - b.position);
   };
 
-  const toggleExpand = (id: number) => {
+  const toggleExpand = (uuid: string) => {
     const newExpanded = new Set(expandedIds);
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id);
+    if (newExpanded.has(uuid)) {
+      newExpanded.delete(uuid);
     } else {
-      newExpanded.add(id);
+      newExpanded.add(uuid);
     }
     setExpandedIds(newExpanded);
   };
 
-  const handleEdit = (id: number, updates: Partial<Category>) => {
-    const updated = categories.map(cat =>
-      cat.id === id ? { ...cat, ...updates } : cat
-    );
-    onUpdate(updated);
+  const handleEdit = async (uuid: string, name: string, mode: CategoryMode, method: CategoryMethod) => {
+    try {
+      const category = categories.find(cat => cat.uuid === uuid);
+      if (!category) return;
+
+      await categoryService.updateCategory(languageId, uuid, {
+        name,
+        mode,
+        method,
+        parentUuid: category.parentUuid,
+      });
+
+      toast.success(t("categoryEditForm.updated"));
+      onUpdate();
+    } catch (error) {
+      console.error("Error updating category:", error);
+      toast.error(t("categoryEditForm.errorUpdate"));
+    }
   };
 
-  const handleDelete = (id: number) => {
-    const deleteRecursive = (catId: number): number[] => {
-      const children = categories.filter(c => c.id_parent === catId);
-      return [catId, ...children.flatMap(c => deleteRecursive(c.id))];
-    };
-    
-    const idsToDelete = deleteRecursive(id);
-    const updated = categories.filter(cat => !idsToDelete.includes(cat.id));
-    onUpdate(updated);
+  const handleDelete = async (uuid: string) => {
+    try {
+      await categoryService.deleteCategory(languageId, uuid);
+      toast.success(t("categoryEditForm.deleted"));
+      onUpdate();
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      toast.error(t("categoryEditForm.errorDelete"));
+    }
   };
 
-  const handleAdd = (name: string, mode: CategoryMode, method: CategoryMethod, parentId: number | null) => {
-    const maxId = Math.max(...categories.map(c => c.id), 0);
-    const siblings = categories.filter(c => c.id_parent === parentId);
-    const maxOrder = siblings.length > 0 ? Math.max(...siblings.map(c => c.order)) : 0;
-    
-    const newCategory: Category = {
-      id: maxId + 1,
-      id_parent: parentId,
-      name,
-      mode,
-      method,
-      order: maxOrder + 1,
-    };
-    
-    onUpdate([...categories, newCategory]);
-    setIsAddDialogOpen(false);
+  const handleAdd = async (name: string, mode: CategoryMode, method: CategoryMethod, parentUuid: string | null) => {
+    try {
+      await categoryService.createCategory(languageId, {
+        name,
+        mode,
+        method,
+        parentUuid,
+      });
+
+      toast.success(t("categoryEditForm.created"));
+      setIsAddDialogOpen(false);
+      onUpdate();
+    } catch (error) {
+      console.error("Error creating category:", error);
+      toast.error(t("categoryEditForm.errorCreate"));
+    }
+  };
+
+  // Custom collision detection that prioritizes drop zones
+  const customCollisionDetection: CollisionDetection = (args) => {
+    // First try pointerWithin for precise detection
+    const pointerCollisions = pointerWithin(args);
+
+    if (pointerCollisions.length > 0) {
+      // Prioritize drop zones (drop-before, drop-after, drop-as-child) over sortable items
+      const dropZones = pointerCollisions.filter(collision => {
+        const id = String(collision.id);
+        return id.startsWith('drop-before-') ||
+               id.startsWith('drop-after-') ||
+               id.startsWith('drop-as-child-');
+      });
+
+      if (dropZones.length > 0) {
+        return dropZones;
+      }
+
+      return pointerCollisions;
+    }
+
+    // Fallback to closestCenter if pointer detection fails
+    return closestCenter(args);
   };
 
   const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(Number(event.active.id));
+    setActiveId(String(event.active.id));
   };
 
-  const handleDragOver = (event: DragOverEvent) => {
-    const { over } = event;
-    if (over) {
-      const n = Number(over.id);
-      setOverId(Number.isFinite(n) ? n : null);
-    } else {
-      setOverId(null);
-    }
+  const handleDragOver = () => {
+    // Track drag over events if needed for visual feedback
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     
     setActiveId(null);
-    setOverId(null);
-    
+
     if (!over || active.id === over.id) return;
 
-    const draggedId = Number(active.id);
+    const draggedUuid = String(active.id);
+    const draggedCategory = categories.find(c => c.uuid === draggedUuid);
+    if (!draggedCategory) return;
 
-    // Handle explicit dropzones (e.g., end of a list or root)
-    if (typeof over.id === "string" && (over.id as string).startsWith("dropzone-parent-")) {
-      const key = (over.id as string).replace("dropzone-parent-", "");
-      const newParentId = key === "null" ? null : Number(key);
-      const siblings = categories.filter(c => c.id_parent === newParentId);
-      const maxOrder = siblings.length > 0 ? Math.max(...siblings.map(c => c.order)) : 0;
+    const overId = String(over.id);
+    let newParentUuid: string | null = null;
+    let newPosition = 0;
 
-      const updated = categories.map(cat =>
-        cat.id === draggedId
-          ? { ...cat, id_parent: newParentId, order: maxOrder + 1 }
-          : cat
-      );
+    // Handle different drop zone types
+    if (overId.startsWith("drop-before-")) {
+      // Dropped BEFORE a specific node
+      const targetUuid = overId.replace("drop-before-", "");
+      const targetCategory = categories.find(c => c.uuid === targetUuid);
+      if (!targetCategory) return;
 
-      onUpdate(updated);
-      if (newParentId !== null) {
-        setExpandedIds(prev => new Set([...prev, newParentId]));
-      }
+      newParentUuid = targetCategory.parentUuid;
+      newPosition = targetCategory.position;
+
+    } else if (overId.startsWith("drop-after-")) {
+      // Dropped AFTER a specific node
+      const targetUuid = overId.replace("drop-after-", "");
+      const targetCategory = categories.find(c => c.uuid === targetUuid);
+      if (!targetCategory) return;
+
+      newParentUuid = targetCategory.parentUuid;
+      newPosition = targetCategory.position + 1;
+
+    } else if (overId.startsWith("drop-as-child-")) {
+      // Dropped ON a node to make it a child
+      newParentUuid = overId.replace("drop-as-child-", "");
+
+      // Place at the end of children
+      const siblings = categories.filter(c => c.parentUuid === newParentUuid);
+      newPosition = siblings.length > 0 ? Math.max(...siblings.map(s => s.position)) + 1 : 0;
+
+    } else {
+      // Unknown drop zone format, ignore
       return;
     }
 
-    const targetId = Number(over.id);
-    const draggedCategory = categories.find(c => c.id === draggedId);
-    const targetCategory = categories.find(c => c.id === targetId);
-    
-    if (!draggedCategory || !targetCategory) return;
+    // Prevent making a category its own descendant
+    if (newParentUuid) {
+      let checkParent: Category | undefined = categories.find(c => c.uuid === newParentUuid);
+      while (checkParent) {
+        if (checkParent.uuid === draggedUuid) {
+          toast.error(t("categoryTree.errorDescendant"));
+          return;
+        }
+        checkParent = categories.find(c => c.uuid === checkParent?.parentUuid);
+      }
+    }
 
-    // Prevent dropping a parent into its own child
-    const isDescendant = (parentId: number, childId: number): boolean => {
-      const children = categories.filter(c => c.id_parent === parentId);
-      if (children.some(c => c.id === childId)) return true;
-      return children.some(c => isDescendant(c.id, childId));
-    };
-
-    if (isDescendant(draggedId, targetId)) return;
-
-    // Determine if we should make it a sibling or child
-    // If target is expanded and has children, or if same parent, treat as sibling
-    const targetHasChildren = categories.some(c => c.id_parent === targetId);
-    const targetIsExpanded = expandedIds.has(targetId);
-    const shouldMakeSibling = !targetIsExpanded || !targetHasChildren || draggedCategory.id_parent === targetCategory.id_parent;
-
-    if (shouldMakeSibling) {
-      // Make it a sibling - same parent as target
-      const newParentId = targetCategory.id_parent;
-      const siblings = categories.filter(c => c.id_parent === newParentId && c.id !== draggedId);
-      const targetIndex = siblings.findIndex(c => c.id === targetId);
-      
-      // Insert after target
-      const reordered = [
-        ...siblings.slice(0, targetIndex + 1),
-        { ...draggedCategory, id_parent: newParentId, order: 0 },
-        ...siblings.slice(targetIndex + 1)
-      ].map((cat, idx) => ({ ...cat, order: idx + 1 }));
-      
-      const updated = categories.map(cat => {
-        const reorderedCat = reordered.find(r => r.id === cat.id);
-        return reorderedCat || cat;
+    try {
+      await categoryService.updateCategoryPosition(languageId, draggedUuid, {
+        parentUuid: newParentUuid,
+        position: newPosition,
       });
-      
-      onUpdate(updated);
-    } else {
-      // Make it a child of the target
-      const newSiblings = categories.filter(c => c.id_parent === targetId);
-      const maxOrder = newSiblings.length > 0 ? Math.max(...newSiblings.map(c => c.order)) : 0;
-      
-      const updated = categories.map(cat =>
-        cat.id === draggedId
-          ? { ...cat, id_parent: targetId, order: maxOrder + 1 }
-          : cat
-      );
-      
-      onUpdate(updated);
-      // Auto-expand the target category to show the new child
-      setExpandedIds(prev => new Set([...prev, targetId]));
+
+      toast.success(t("categoryTree.moved"));
+      onUpdate();
+    } catch (error) {
+      console.error("Error moving category:", error);
+      toast.error(t("categoryTree.errorMove"));
     }
   };
 
@@ -186,17 +207,17 @@ export const CategoryTree = ({ categories, onUpdate }: CategoryTreeProps) => {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">Categories</h2>
+        <h2 className="text-2xl font-semibold">{t("categoryTree.categories")}</h2>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              Add Category
+              {t("categoryTree.addCategory")}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add New Category</DialogTitle>
+              <DialogTitle>{t("categoryTree.addNewCategory")}</DialogTitle>
             </DialogHeader>
             <CategoryForm
               categories={categories}
@@ -208,34 +229,32 @@ export const CategoryTree = ({ categories, onUpdate }: CategoryTreeProps) => {
       </div>
 
       <DndContext 
-        collisionDetection={pointerWithin} 
+        collisionDetection={customCollisionDetection}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext items={rootCategories.map(c => c.id)} strategy={verticalListSortingStrategy}>
-          <div className="space-y-1">
-            {rootCategories.map(category => (
+        <SortableContext items={rootCategories.map(c => c.uuid)} strategy={verticalListSortingStrategy}>
+          <div>
+            {rootCategories.map((category, index) => (
               <CategoryNode
-                key={category.id}
+                key={category.uuid}
                 category={category}
                 categories={categories}
-                isExpanded={expandedIds.has(category.id)}
+                isExpanded={expandedIds.has(category.uuid)}
                 expandedIds={expandedIds}
                 onToggleExpand={toggleExpand}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
-                isOver={overId === category.id}
-                isDragging={activeId === category.id}
+                isLastChild={index === rootCategories.length - 1}
               />
             ))}
-            <DropZone id="dropzone-parent-null" />
           </div>
         </SortableContext>
         <DragOverlay>
           {activeId ? (
             <div className="py-2 px-3 rounded-md bg-accent border-2 border-dashed border-primary opacity-50">
-              {categories.find(c => c.id === activeId)?.name}
+              {categories.find(c => c.uuid === activeId)?.name}
             </div>
           ) : null}
         </DragOverlay>

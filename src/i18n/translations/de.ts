@@ -236,6 +236,37 @@ export const de = {
     "languageView.wordsLeft": "Wörter übrig: {count}",
     "languageView.successReset": "Wiederholung zurückgesetzt",
 
+    // Category Tree
+    "categoryTree.categories": "Kategorien",
+    "categoryTree.addCategory": "Kategorie hinzufügen",
+    "categoryTree.addNewCategory": "Neue Kategorie hinzufügen",
+    "categoryTree.moved": "Kategorie erfolgreich verschoben",
+    "categoryTree.errorMove": "Kategorie konnte nicht verschoben werden",
+    "categoryTree.errorDescendant": "Eine Kategorie kann nicht in ihren eigenen Nachfahren verschoben werden",
+
+    // Category Node
+    "categoryNode.dictionary": "Wörterbuch",
+    "categoryNode.exercise": "Übung",
+    "categoryNode.questionToAnswer": "Frage zu Antwort",
+    "categoryNode.answerToQuestion": "Antwort zu Frage",
+    "categoryNode.both": "Beide",
+    "categoryNode.makeChild": "Zu Kind machen",
+
+    // Drop Zone
+    "dropZone.dropHere": "Hier ablegen",
+
+    // Category Edit Form
+    "categoryEditForm.save": "Speichern",
+    "categoryEditForm.cancel": "Abbrechen",
+    "categoryEditForm.delete": "Kategorie löschen?",
+    "categoryEditForm.deleteDesc": "Dies wird \"{name}\" und alle Unterkategorien dauerhaft löschen. Diese Aktion kann nicht rückgängig gemacht werden.",
+    "categoryEditForm.updated": "Kategorie aktualisiert",
+    "categoryEditForm.errorUpdate": "Kategorie konnte nicht aktualisiert werden",
+    "categoryEditForm.deleted": "Kategorie gelöscht",
+    "categoryEditForm.errorDelete": "Kategorie konnte nicht gelöscht werden",
+    "categoryEditForm.created": "Kategorie erstellt",
+    "categoryEditForm.errorCreate": "Kategorie konnte nicht erstellt werden",
+
     // Category Form
     "categoryForm.parentCategory": "Übergeordnete Kategorie",
     "categoryForm.parentNone": "Keine (Hauptkategorie)",
@@ -245,9 +276,9 @@ export const de = {
     "categoryForm.modeDictionary": "Wörterbuch",
     "categoryForm.modeExercise": "Übung",
     "categoryForm.method": "Methode",
-    "categoryForm.methodFirstToSecond": "Erste → Zweite",
-    "categoryForm.methodSecondToFirst": "Zweite → Erste",
-    "categoryForm.methodBothSides": "Beide Seiten",
+    "categoryForm.methodQuestionToAnswer": "Frage → Antwort",
+    "categoryForm.methodAnswerToQuestion": "Antwort → Frage",
+    "categoryForm.methodBoth": "Beide",
     "categoryForm.addButton": "Kategorie hinzufügen",
 
     // Category View

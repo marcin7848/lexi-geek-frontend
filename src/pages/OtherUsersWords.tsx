@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Check, X, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
-import { mockCategories } from "@/data/mockCategories";
 import { Word, Mechanism } from "@/types/word";
+import { Category } from "@/types/category";
+import { categoryService } from "@/services/categoryService";
+import { languageService } from "@/services/languageService";
 import {
   Table,
   TableBody,
@@ -133,13 +135,36 @@ const OtherUsersWords = () => {
   const [textFilter, setTextFilter] = useState("");
   const [mechanismFilter, setMechanismFilter] = useState<Mechanism | "ALL">("ALL");
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [category, setCategory] = useState<Category | null>(null);
 
-  const category = mockCategories.find(cat => cat.id === Number(categoryId));
   const categoryName = category?.name || "Unknown Category";
 
   useEffect(() => {
     setOtherUsersWords(getMockOtherUsersWords());
-  }, []);
+
+    const loadCategory = async () => {
+      if (!categoryId) return;
+
+      try {
+        // Find category from all languages
+        const languages = await languageService.getAll();
+
+        for (const language of languages) {
+          const categories = await categoryService.getAll(language.id);
+          const found = categories.find((cat) => cat.uuid === categoryId);
+
+          if (found) {
+            setCategory(found);
+            break;
+          }
+        }
+      } catch (error) {
+        console.error("Error loading category:", error);
+      }
+    };
+
+    loadCategory();
+  }, [categoryId]);
 
   const getWordText = (wordParts: Word["wordParts"]) => {
     const sortedParts = [...wordParts].sort((a, b) => a.position - b.position);

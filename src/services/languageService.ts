@@ -50,46 +50,101 @@ export interface LanguageForm {
   specialLetters: string;
 }
 
-const STORAGE_KEY = "languages";
+// Cache for languages to prevent duplicate API calls
+let languagesCache: Language[] | null = null;
+let languagesCacheTime: number = 0;
+let languagesLoadingPromise: Promise<Language[]> | null = null;
+const CACHE_DURATION = 5000; // 5 seconds cache
 
 export const languageService = {
+  // Clear the cache (useful after creating/updating/deleting languages)
+  clearCache: () => {
+    languagesCache = null;
+    languagesCacheTime = 0;
+    languagesLoadingPromise = null;
+  },
+
   // New: fetch languages from backend with optional filter + pageable
   getLanguages: async (
     filter?: LanguageFilterForm | null,
-    pageable?: PageableRequest | null
+    pageable?: PageableRequest | null,
+    skipCache: boolean = false
   ): Promise<Language[]> => {
-    const service = new RequestService();
-    const builder = new RequestBuilder<void>()
-      .url('/languages')
-      .method(HttpMethod.GET)
-      .pageable(pageable ?? undefined);
+    // Check if we can use cached data (only for full list without filters)
+    const now = Date.now();
+    const isCacheable = !skipCache &&
+                        !filter &&
+                        pageable?.singlePage === true &&
+                        !pageable?.sort;
 
-    // Append filter params if provided
-    if (filter) {
-      if (filter.uuid) builder.param('uuid', String(filter.uuid));
-      if (filter.name) builder.param('name', filter.name);
-      if (filter.shortcut) builder.param('shortcut', filter.shortcut);
-      if (filter.codeForSpeech) builder.param('codeForSpeech', filter.codeForSpeech);
-      if (filter.codeForTranslator) builder.param('codeForTranslator', filter.codeForTranslator);
-      if (typeof filter.hidden === 'boolean') builder.param('hidden', String(filter.hidden));
-      if (filter.specialLetters) builder.param('specialLetters', filter.specialLetters);
+    const canUseCache = isCacheable &&
+                        languagesCache !== null &&
+                        (now - languagesCacheTime) < CACHE_DURATION;
+
+    if (canUseCache) {
+      return languagesCache!;
     }
 
-    const req = builder.build();
-    const res = await service.send<void, PageDto<LanguageDto>>(req);
-    throwIfError(res, 'Failed to load languages');
+    // If a request is already in progress for cacheable data, wait for it
+    if (isCacheable && languagesLoadingPromise !== null) {
+      return languagesLoadingPromise;
+    }
 
-    const page = res.body as PageDto<LanguageDto> | null;
-    const items = page?.items ?? [];
-    return items.map((l) => ({
-      id: l.uuid,
-      name: l.name,
-      shortcut: l.shortcut,
-      codeForTranslator: l.codeForTranslator,
-      codeForSpeech: l.codeForSpeech,
-      hidden: l.hidden,
-      specialLetters: l.specialLetters,
-    }));
+
+    const makeRequest = async (): Promise<Language[]> => {
+      const service = new RequestService();
+      const builder = new RequestBuilder<void>()
+        .url('/languages')
+        .method(HttpMethod.GET)
+        .pageable(pageable ?? undefined);
+
+      // Append filter params if provided
+      if (filter) {
+        if (filter.uuid) builder.param('uuid', String(filter.uuid));
+        if (filter.name) builder.param('name', filter.name);
+        if (filter.shortcut) builder.param('shortcut', filter.shortcut);
+        if (filter.codeForSpeech) builder.param('codeForSpeech', filter.codeForSpeech);
+        if (filter.codeForTranslator) builder.param('codeForTranslator', filter.codeForTranslator);
+        if (typeof filter.hidden === 'boolean') builder.param('hidden', String(filter.hidden));
+        if (filter.specialLetters) builder.param('specialLetters', filter.specialLetters);
+      }
+
+      const req = builder.build();
+      const res = await service.send<void, PageDto<LanguageDto>>(req);
+      throwIfError(res, 'Failed to load languages');
+
+      const page = res.body as PageDto<LanguageDto> | null;
+      const items = page?.items ?? [];
+      const languages = items.map((l) => ({
+        id: l.uuid,
+        name: l.name,
+        shortcut: l.shortcut,
+        codeForTranslator: l.codeForTranslator,
+        codeForSpeech: l.codeForSpeech,
+        hidden: l.hidden,
+        specialLetters: l.specialLetters,
+      }));
+
+      // Cache the result if it's a full list without filters
+      if (isCacheable) {
+        languagesCache = languages;
+        languagesCacheTime = now;
+      }
+
+      return languages;
+    };
+
+    // Store the promise for cacheable requests to prevent concurrent calls
+    if (isCacheable) {
+      languagesLoadingPromise = makeRequest();
+      try {
+        return await languagesLoadingPromise;
+      } finally {
+        languagesLoadingPromise = null;
+      }
+    } else {
+      return makeRequest();
+    }
   },
 
   // Get popular shortcuts with optional filter
@@ -123,6 +178,7 @@ export const languageService = {
 
     const res = await service.send<LanguageForm, unknown>(request);
     throwIfError(res, 'Failed to create language');
+    languageService.clearCache();
     return;
   },
 
@@ -138,6 +194,7 @@ export const languageService = {
 
     const res = await service.send<LanguageForm, unknown>(request);
     throwIfError(res, 'Failed to update language');
+    languageService.clearCache();
     return;
   },
 
@@ -152,48 +209,18 @@ export const languageService = {
 
     const res = await service.sendVoid(request);
     throwIfError(res, 'Failed to delete language');
+    languageService.clearCache();
     return;
   },
 
-  // Legacy localStorage helpers kept for backward compatibility within the app
+  // Fetch all languages from backend (convenience method)
   getAll: async (): Promise<Language[]> => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-    return [];
+    return await languageService.getLanguages(null, { singlePage: true });
   },
 
-  getById: async (id: string): Promise<Language | null> => {
-    const languages = await languageService.getAll();
-    return languages.find(lang => lang.id === id) || null;
+  // Fetch a single language by UUID from backend
+  getById: async (uuid: string): Promise<Language | null> => {
+    const languages = await languageService.getLanguages({ uuid }, { singlePage: true });
+    return languages.find(lang => lang.id === uuid) || null;
   },
-
-  update: async (id: string, updates: Partial<Language>): Promise<Language | null> => {
-    const languages = await languageService.getAll();
-    const index = languages.findIndex(lang => lang.id === id);
-    
-    if (index === -1) return null;
-    
-    languages[index] = { ...languages[index], ...updates };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(languages));
-    return languages[index];
-  },
-
-  delete: async (id: string): Promise<boolean> => {
-    const languages = await languageService.getAll();
-    const filtered = languages.filter(lang => lang.id !== id);
-    
-    if (filtered.length === languages.length) return false;
-    
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-    return true;
-  },
-
-  initialize: async (defaultLanguages: Language[]): Promise<void> => {
-    const existing = await languageService.getAll();
-    if (existing.length === 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultLanguages));
-    }
-  }
 };

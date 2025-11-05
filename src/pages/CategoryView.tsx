@@ -4,8 +4,9 @@ import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { Category } from "@/types/category";
 import { Word, Mechanism } from "@/types/word";
-import { mockWordsByCategory } from "@/data/mockWords";
 import { toast } from "sonner";
+import { categoryService } from "@/services/categoryService";
+import { languageService } from "@/services/languageService";
 import WordFormModal from "@/components/WordFormModal";
 import ManageCategoriesModal from "@/components/ManageCategoriesModal";
 import {
@@ -65,57 +66,59 @@ export default function CategoryView() {
   const [allCategories, setAllCategories] = useState<Category[]>([]);
 
   useEffect(() => {
-    // Find category from all languages
-    const languages = JSON.parse(localStorage.getItem("languages") || "[]");
-    let foundCategory: Category | null = null;
-    let foundLanguageId: string | null = null;
+    const loadData = async () => {
+      if (!categoryId) return;
 
-    for (const language of languages) {
-      const storageKey = `categories_${language.id}`;
-      const storedCategories = localStorage.getItem(storageKey);
-      
-      if (storedCategories) {
-        const categories: Category[] = JSON.parse(storedCategories);
-        const found = categories.find((cat) => cat.id === Number(categoryId));
-        
-        if (found) {
-          foundCategory = found;
-          foundLanguageId = language.id;
-          setSpecialLetters(language.specialLetters || "");
-          break;
-        }
-      }
-    }
+      try {
+        // Find category from all languages
+        const languages = await languageService.getAll();
+        let foundCategory: Category | null = null;
+        let foundLanguageId: string | null = null;
 
-    if (foundCategory) {
-      setCategory(foundCategory);
-      setLanguageId(foundLanguageId);
-      
-      // Load all categories for the language
-      if (foundLanguageId) {
-        const storageKey = `categories_${foundLanguageId}`;
-        const storedCategories = localStorage.getItem(storageKey);
-        if (storedCategories) {
-          setAllCategories(JSON.parse(storedCategories));
+        for (const language of languages) {
+          const categories = await categoryService.getAll(language.id);
+          const found = categories.find((cat) => cat.uuid === categoryId);
+
+          if (found) {
+            foundCategory = found;
+            foundLanguageId = language.id;
+            setSpecialLetters(language.specialLetters || "");
+            break;
+          }
         }
+
+        if (foundCategory) {
+          setCategory(foundCategory);
+          setLanguageId(foundLanguageId);
+
+          // Load all categories for the language
+          if (foundLanguageId) {
+            const categories = await categoryService.getAll(foundLanguageId);
+            setAllCategories(categories);
+          }
+
+          // Load words from localStorage or initialize with mock data
+          const storageKey = `words_${categoryId}`;
+          const storedWords = localStorage.getItem(storageKey);
+
+          if (storedWords) {
+            setWords(JSON.parse(storedWords));
+          } else {
+            // Initialize with empty words array (mock data no longer used)
+            setWords([]);
+          }
+        } else {
+          toast.error("Category not found");
+          navigate(-1);
+        }
+      } catch (error) {
+        console.error("Error loading category:", error);
+        toast.error("Failed to load category");
+        navigate(-1);
       }
-      
-      // Load words from localStorage or initialize with mock data
-      const storageKey = `words_${categoryId}`;
-      const storedWords = localStorage.getItem(storageKey);
-      
-      if (storedWords) {
-        setWords(JSON.parse(storedWords));
-      } else {
-        // Initialize with mock data for this category
-        const categoryWords = mockWordsByCategory[Number(categoryId)] || [];
-        setWords(categoryWords);
-        localStorage.setItem(storageKey, JSON.stringify(categoryWords));
-      }
-    } else {
-      toast.error("Category not found");
-      navigate(-1);
-    }
+    };
+
+    loadData();
   }, [categoryId, navigate]);
 
   const handleChosenChange = (wordId: number, checked: boolean) => {
@@ -374,21 +377,21 @@ export default function CategoryView() {
               <span className="flex items-center gap-2">
                 Mode: 
                 <Badge variant="outline" className="flex items-center gap-1">
-                  {category.mode === "Dictionary" ? (
+                  {category.mode === "DICTIONARY" ? (
                     <Book className="h-4 w-4 text-primary" />
                   ) : (
                     <Dumbbell className="h-4 w-4 fill-orange-500 text-orange-500" />
                   )}
-                  {category.mode}
+                  {category.mode === "DICTIONARY" ? "Dictionary" : "Exercise"}
                 </Badge>
               </span>
               <span className="flex items-center gap-2">
                 Method: 
                 <Badge variant="outline" className="flex items-center gap-1">
-                  {category.method === "QuestionToAnswer" && <ArrowRight className="h-4 w-4" />}
-                  {category.method === "AnswerToQuestion" && <ArrowLeft className="h-4 w-4" />}
-                  {category.method === "Both" && <ArrowLeftRight className="h-4 w-4" />}
-                  {category.method}
+                  {category.method === "QUESTION_TO_ANSWER" && <ArrowRight className="h-4 w-4" />}
+                  {category.method === "ANSWER_TO_QUESTION" && <ArrowLeft className="h-4 w-4" />}
+                  {category.method === "BOTH" && <ArrowLeftRight className="h-4 w-4" />}
+                  {category.method === "QUESTION_TO_ANSWER" ? "Question → Answer" : category.method === "ANSWER_TO_QUESTION" ? "Answer → Question" : "Both"}
                 </Badge>
               </span>
             </div>
