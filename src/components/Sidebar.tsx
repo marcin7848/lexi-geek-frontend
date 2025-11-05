@@ -73,7 +73,7 @@ export const Sidebar = () => {
     try {
       const langs = await languageService.getLanguages(
         undefined,
-        { sort: 'name', order: 'desc', singlePage: true }
+        { singlePage: true }
       );
       setLanguages(langs);
     } catch (e) {
