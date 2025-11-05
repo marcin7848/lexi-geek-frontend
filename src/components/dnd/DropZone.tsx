@@ -13,10 +13,10 @@ export const DropZone = ({ id, depth = 0 }: DropZoneProps) => {
     <div
       ref={setNodeRef}
       className={cn(
-        "transition-all relative rounded-md my-0.5",
+        "transition-all relative rounded-md",
         isOver
-          ? "h-12 bg-primary/20 border-2 border-dashed border-primary"
-          : "h-4 hover:h-6 hover:bg-accent/30"
+          ? "h-10 bg-primary/20 border-2 border-dashed border-primary my-1"
+          : "h-2 hover:h-4 hover:bg-accent/30"
       )}
       style={{ marginLeft: `${depth * 24 + 12}px`, marginRight: "12px" }}
       aria-label="Drop here"

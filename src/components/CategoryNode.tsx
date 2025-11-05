@@ -123,7 +123,7 @@ export const CategoryNode = ({
 
           <div
             className={cn(
-              "flex items-center gap-2 py-2 px-3 rounded-md hover:bg-accent group transition-colors",
+              "flex items-center gap-2 py-1 px-3 rounded-md hover:bg-accent group transition-colors",
               isSortableDragging && "opacity-30"
             )}
             style={{ paddingLeft: `${depth * 24 + 12}px` }}
