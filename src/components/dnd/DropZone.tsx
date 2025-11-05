@@ -18,7 +18,7 @@ export const DropZone = ({ id, depth = 0 }: DropZoneProps) => {
         "transition-all relative rounded-md",
         isOver
           ? "h-10 bg-primary/20 border-2 border-dashed border-primary my-1"
-          : "h-2 hover:h-4 hover:bg-accent/30"
+          : "h-2"
       )}
       style={{ marginLeft: `${depth * 24 + 12}px`, marginRight: "12px" }}
       aria-label={t("dropZone.dropHere")}
