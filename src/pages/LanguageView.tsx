@@ -164,7 +164,7 @@ export default function LanguageView() {
             )}
           </div>
 
-          <CategoryTree categories={categories} languageId={languageId!} onUpdate={handleCategoriesUpdate} />
+          <CategoryTree categories={categories} languageId={language.id} onUpdate={handleCategoriesUpdate} />
         </div>
       </main>
       
