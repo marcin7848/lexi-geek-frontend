@@ -13,9 +13,8 @@ import {
   DialogTrigger,
 } from "./ui/dialog";
 import { CategoryForm } from "./CategoryForm";
-import { DndContext, DragStartEvent, DragEndEvent, DragOverEvent, DragOverlay, pointerWithin } from "@dnd-kit/core";
+import { DndContext, DragStartEvent, DragEndEvent, DragOverEvent, DragOverlay, pointerWithin, closestCenter, CollisionDetection } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { DropZone } from "./dnd/DropZone";
 
 type CategoryTreeProps = {
   categories: Category[];
@@ -29,7 +28,6 @@ export const CategoryTree = ({ categories, languageId, onUpdate }: CategoryTreeP
   );
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [overId, setOverId] = useState<string | null>(null);
 
   const buildTree = (parentUuid: string | null = null): Category[] => {
     return categories
@@ -96,31 +94,44 @@ export const CategoryTree = ({ categories, languageId, onUpdate }: CategoryTreeP
     }
   };
 
+  // Custom collision detection that prioritizes drop zones
+  const customCollisionDetection: CollisionDetection = (args) => {
+    // First try pointerWithin for precise detection
+    const pointerCollisions = pointerWithin(args);
+
+    if (pointerCollisions.length > 0) {
+      // Prioritize drop zones (drop-before, drop-after, drop-as-child) over sortable items
+      const dropZones = pointerCollisions.filter(collision => {
+        const id = String(collision.id);
+        return id.startsWith('drop-before-') ||
+               id.startsWith('drop-after-') ||
+               id.startsWith('drop-as-child-');
+      });
+
+      if (dropZones.length > 0) {
+        return dropZones;
+      }
+
+      return pointerCollisions;
+    }
+
+    // Fallback to closestCenter if pointer detection fails
+    return closestCenter(args);
+  };
+
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(String(event.active.id));
   };
 
   const handleDragOver = (event: DragOverEvent) => {
-    const { over } = event;
-    if (over) {
-      const id = String(over.id);
-      // Check if it's a dropzone or a category UUID
-      if (id.startsWith("dropzone-parent-")) {
-        setOverId(null);
-      } else {
-        setOverId(id);
-      }
-    } else {
-      setOverId(null);
-    }
+    // Track drag over events if needed for visual feedback
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     
     setActiveId(null);
-    setOverId(null);
-    
+
     if (!over || active.id === over.id) return;
 
     const draggedUuid = String(active.id);
@@ -131,25 +142,36 @@ export const CategoryTree = ({ categories, languageId, onUpdate }: CategoryTreeP
     let newParentUuid: string | null = null;
     let newPosition = 0;
 
-    // Check if dropped on a dropzone (makes it a child of parent or root)
-    if (overId.startsWith("dropzone-parent-")) {
-      const parentPart = overId.replace("dropzone-parent-", "");
-      newParentUuid = parentPart === "null" ? null : parentPart;
-
-      // Calculate position - place at the end of siblings
-      const siblings = categories.filter(c => c.parentUuid === newParentUuid);
-      newPosition = siblings.length > 0 ? Math.max(...siblings.map(s => s.position)) : 0;
-    } else {
-      // Dropped on another category - determine if it should be a sibling or child
-      const targetCategory = categories.find(c => c.uuid === overId);
+    // Handle different drop zone types
+    if (overId.startsWith("drop-before-")) {
+      // Dropped BEFORE a specific node
+      const targetUuid = overId.replace("drop-before-", "");
+      const targetCategory = categories.find(c => c.uuid === targetUuid);
       if (!targetCategory) return;
 
-      // Make it a sibling of the target (same parent, position after target)
       newParentUuid = targetCategory.parentUuid;
       newPosition = targetCategory.position;
 
-      // Shift positions of categories that come after
-      // Note: Backend should handle this reordering
+    } else if (overId.startsWith("drop-after-")) {
+      // Dropped AFTER a specific node
+      const targetUuid = overId.replace("drop-after-", "");
+      const targetCategory = categories.find(c => c.uuid === targetUuid);
+      if (!targetCategory) return;
+
+      newParentUuid = targetCategory.parentUuid;
+      newPosition = targetCategory.position + 1;
+
+    } else if (overId.startsWith("drop-as-child-")) {
+      // Dropped ON a node to make it a child
+      newParentUuid = overId.replace("drop-as-child-", "");
+
+      // Place at the end of children
+      const siblings = categories.filter(c => c.parentUuid === newParentUuid);
+      newPosition = siblings.length > 0 ? Math.max(...siblings.map(s => s.position)) + 1 : 0;
+
+    } else {
+      // Unknown drop zone format, ignore
+      return;
     }
 
     // Prevent making a category its own descendant
@@ -205,14 +227,14 @@ export const CategoryTree = ({ categories, languageId, onUpdate }: CategoryTreeP
       </div>
 
       <DndContext 
-        collisionDetection={pointerWithin} 
+        collisionDetection={customCollisionDetection}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
         <SortableContext items={rootCategories.map(c => c.uuid)} strategy={verticalListSortingStrategy}>
-          <div className="space-y-1">
-            {rootCategories.map(category => (
+          <div>
+            {rootCategories.map((category, index) => (
               <CategoryNode
                 key={category.uuid}
                 category={category}
@@ -222,11 +244,9 @@ export const CategoryTree = ({ categories, languageId, onUpdate }: CategoryTreeP
                 onToggleExpand={toggleExpand}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
-                isOver={overId === category.uuid}
-                isDragging={activeId === category.uuid}
+                isLastChild={index === rootCategories.length - 1}
               />
             ))}
-            <DropZone id="dropzone-parent-null" />
           </div>
         </SortableContext>
         <DragOverlay>

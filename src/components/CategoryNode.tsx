@@ -4,6 +4,7 @@ import { Category } from "@/types/category";
 import { ChevronDown, ChevronRight, Book, Dumbbell, ArrowRight, ArrowLeft, ArrowLeftRight, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { CategoryEditForm } from "./CategoryEditForm";
 import { DropZone } from "@/components/dnd/DropZone";
@@ -17,8 +18,7 @@ type CategoryNodeProps = {
   onEdit: (uuid: string, name: string, mode: Category["mode"], method: Category["method"]) => void;
   onDelete: (uuid: string) => void;
   depth?: number;
-  isOver?: boolean;
-  isDragging?: boolean;
+  isLastChild?: boolean;
 };
 
 export const CategoryNode = ({
@@ -30,8 +30,7 @@ export const CategoryNode = ({
   onEdit,
   onDelete,
   depth = 0,
-  isOver = false,
-  isDragging = false,
+  isLastChild = false,
 }: CategoryNodeProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [clickTimeout, setClickTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -39,6 +38,13 @@ export const CategoryNode = ({
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging: isSortableDragging, setActivatorNodeRef } = useSortable({
     id: category.uuid,
+  });
+
+  // Make the node itself droppable to accept children
+  // This needs to be on a separate container that wraps the content
+  const { isOver: isOverAsParent, setNodeRef: setDroppableRef } = useDroppable({
+    id: `drop-as-child-${category.uuid}`,
+    disabled: isSortableDragging, // Don't allow dropping on self while dragging
   });
 
   const style = {
@@ -98,73 +104,86 @@ export const CategoryNode = ({
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="relative">
-      {isOver && !isSortableDragging && (
-        <div className="absolute inset-0 border-2 border-dashed border-primary bg-primary/5 rounded-md pointer-events-none z-10" />
-      )}
-      <div
-        className={cn(
-          "flex items-center gap-2 py-2 px-3 rounded-md hover:bg-accent group transition-colors",
-          isSortableDragging && "opacity-30"
-        )}
-        style={{ paddingLeft: `${depth * 24 + 12}px` }}
-      >
-        <div 
-          ref={setActivatorNodeRef}
-          {...attributes} 
-          {...listeners} 
-          className="cursor-grab active:cursor-grabbing"
-        >
-          <GripVertical className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+    <>
+      {/* Drop zone BEFORE this node */}
+      <DropZone id={`drop-before-${category.uuid}`} depth={depth} />
+
+      {/* Sortable wrapper for drag functionality */}
+      <div ref={setNodeRef} style={style} className="relative">
+        {/* Droppable wrapper for making this a parent */}
+        <div ref={setDroppableRef} className="relative">
+          {/* Highlight when this node is a drop target for making items children */}
+          {isOverAsParent && !isSortableDragging && (
+            <div className="absolute inset-0 border-2 border-dashed border-green-500 bg-green-500/10 rounded-md pointer-events-none z-10">
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xs text-green-600 font-medium bg-white/90 px-2 py-1 rounded">
+                Make child
+              </div>
+            </div>
+          )}
+
+          <div
+            className={cn(
+              "flex items-center gap-2 py-2 px-3 rounded-md hover:bg-accent group transition-colors",
+              isSortableDragging && "opacity-30"
+            )}
+            style={{ paddingLeft: `${depth * 24 + 12}px` }}
+          >
+            <div
+              ref={setActivatorNodeRef}
+              {...attributes}
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing"
+            >
+              <GripVertical className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+
+            {hasChildren && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleExpand(category.uuid);
+                }}
+                className="flex-shrink-0"
+              >
+                {isExpanded ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </button>
+            )}
+
+            {!hasChildren && <div className="w-4" />}
+
+            {!isEditing ? (
+              <>
+                <span
+                  onClick={handleCategoryClick}
+                  className="flex-1 cursor-pointer select-none"
+                >
+                  {category.name}
+                </span>
+                <div className="flex items-center gap-2">
+                  {getModeIcon()}
+                  {getMethodIcon()}
+                </div>
+              </>
+            ) : (
+              <CategoryEditForm
+                category={category}
+                onSave={handleSave}
+                onDelete={() => onDelete(category.uuid)}
+                onCancel={() => setIsEditing(false)}
+              />
+            )}
+          </div>
         </div>
 
-        {hasChildren && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleExpand(category.uuid);
-            }}
-            className="flex-shrink-0"
-          >
-            {isExpanded ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
-            )}
-          </button>
-        )}
-
-        {!hasChildren && <div className="w-4" />}
-
-        {!isEditing ? (
-          <>
-            <span
-              onClick={handleCategoryClick}
-              className="flex-1 cursor-pointer select-none"
-            >
-              {category.name}
-            </span>
-            <div className="flex items-center gap-2">
-              {getModeIcon()}
-              {getMethodIcon()}
-            </div>
-          </>
-        ) : (
-          <CategoryEditForm
-            category={category}
-            onSave={handleSave}
-            onDelete={() => onDelete(category.uuid)}
-            onCancel={() => setIsEditing(false)}
-          />
-        )}
-      </div>
-
-      {isExpanded && (
-        <SortableContext items={children.map(c => c.uuid)} strategy={verticalListSortingStrategy}>
-          <div>
-            {children.map(child => {
-              const childIsOver = isOver && !isSortableDragging;
-              return (
+        {/* Children */}
+        {isExpanded && hasChildren && (
+          <SortableContext items={children.map(c => c.uuid)} strategy={verticalListSortingStrategy}>
+            <div>
+              {children.map((child, index) => (
                 <CategoryNode
                   key={child.uuid}
                   category={child}
@@ -175,14 +194,16 @@ export const CategoryNode = ({
                   onEdit={onEdit}
                   onDelete={onDelete}
                   depth={depth + 1}
-                  isOver={childIsOver}
+                  isLastChild={index === children.length - 1}
                 />
-              );
-            })}
-            <DropZone id={`dropzone-parent-${category.uuid}`} />
-          </div>
-        </SortableContext>
-      )}
-    </div>
+              ))}
+            </div>
+          </SortableContext>
+        )}
+      </div>
+
+      {/* Drop zone AFTER this node (only for last child) */}
+      {isLastChild && <DropZone id={`drop-after-${category.uuid}`} depth={depth} />}
+    </>
   );
 };
