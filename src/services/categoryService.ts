@@ -129,4 +129,26 @@ export const categoryService = {
   getAll: async (languageUuid: string): Promise<Category[]> => {
     return await categoryService.getCategories(languageUuid, null, { singlePage: true });
   },
+
+  // Update category position and/or parent (for drag and drop)
+  updateCategoryPosition: async (
+    languageUuid: string,
+    categoryUuid: string,
+    data: {
+      parentUuid: string | null;
+      position: number;
+    }
+  ): Promise<void> => {
+    const service = new RequestService();
+    const request = new RequestBuilder<typeof data>()
+      .url(`/languages/${languageUuid}/categories/${categoryUuid}/position`)
+      .method(HttpMethod.PATCH)
+      .contentTypeHeader('application/json')
+      .body(data)
+      .build();
+
+    const res = await service.send<typeof data, unknown>(request);
+    throwIfError(res, 'Failed to update category position');
+    return;
+  },
 };

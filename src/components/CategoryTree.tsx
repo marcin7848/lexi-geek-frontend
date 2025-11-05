@@ -123,17 +123,59 @@ export const CategoryTree = ({ categories, languageId, onUpdate }: CategoryTreeP
     
     if (!over || active.id === over.id) return;
 
-    // Note: Drag and drop reordering would require a backend endpoint to update positions
-    // For now, this is disabled. You can implement position updates via API later.
-    toast.info("Drag and drop reordering will be available once backend supports position updates");
+    const draggedUuid = String(active.id);
+    const draggedCategory = categories.find(c => c.uuid === draggedUuid);
+    if (!draggedCategory) return;
 
-    // TODO: Implement when backend supports position/parent updates
-    // const draggedUuid = String(active.id);
-    // const draggedCategory = categories.find(c => c.uuid === draggedUuid);
-    // if (!draggedCategory) return;
+    const overId = String(over.id);
+    let newParentUuid: string | null = null;
+    let newPosition = 0;
 
-    // Handle explicit dropzones or make it a child of target category
-    // Then call categoryService.updateCategory with new parentUuid
+    // Check if dropped on a dropzone (makes it a child of parent or root)
+    if (overId.startsWith("dropzone-parent-")) {
+      const parentPart = overId.replace("dropzone-parent-", "");
+      newParentUuid = parentPart === "null" ? null : parentPart;
+
+      // Calculate position - place at the end of siblings
+      const siblings = categories.filter(c => c.parentUuid === newParentUuid);
+      newPosition = siblings.length > 0 ? Math.max(...siblings.map(s => s.position)) : 0;
+    } else {
+      // Dropped on another category - determine if it should be a sibling or child
+      const targetCategory = categories.find(c => c.uuid === overId);
+      if (!targetCategory) return;
+
+      // Make it a sibling of the target (same parent, position after target)
+      newParentUuid = targetCategory.parentUuid;
+      newPosition = targetCategory.position;
+
+      // Shift positions of categories that come after
+      // Note: Backend should handle this reordering
+    }
+
+    // Prevent making a category its own descendant
+    if (newParentUuid) {
+      let checkParent: Category | undefined = categories.find(c => c.uuid === newParentUuid);
+      while (checkParent) {
+        if (checkParent.uuid === draggedUuid) {
+          toast.error("Cannot move a category into its own descendant");
+          return;
+        }
+        checkParent = categories.find(c => c.uuid === checkParent?.parentUuid);
+      }
+    }
+
+    try {
+      await categoryService.updateCategoryPosition(languageId, draggedUuid, {
+        parentUuid: newParentUuid,
+        position: newPosition,
+      });
+
+      toast.success("Category moved successfully");
+      onUpdate();
+    } catch (error) {
+      console.error("Error moving category:", error);
+      toast.error("Failed to move category");
+    }
   };
 
   const rootCategories = buildTree(null);
