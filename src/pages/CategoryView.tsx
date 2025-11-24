@@ -406,7 +406,7 @@ export default function CategoryView() {
             if (part.separatorType === "ENTER") {
               return <div key={index} className="w-full" />;
             } else if (part.separatorType === "TAB") {
-              return <span key={index} className="inline-block w-8">{part.basicWord}</span>;
+              return <span key={index} className="inline-block w-8"></span>;
             } else if (part.separatorType === "MULTI_DASH") {
               return <span key={index} className="mx-1">{part.basicWord}</span>;
             }
