@@ -319,6 +319,28 @@ export const wordService = {
     return mapWordDtoToWord(res.body);
   },
 
+  // Choose a word (mark as chosen)
+    chooseWord: async (
+    languageUuid: string,
+    categoryUuid: string,
+    wordUuid: string
+  ): Promise<Word> => {
+    const service = new RequestService();
+    const request = new RequestBuilder<void>()
+      .url(`/languages/${languageUuid}/categories/${categoryUuid}/words/${wordUuid}/choose`)
+      .method(HttpMethod.PATCH)
+      .build();
+
+    const res = await service.send<void, WordDto>(request);
+    throwIfError(res, 'Failed to choose word');
+
+    if (!res.body) {
+      throw new Error('No response body received');
+    }
+
+    return mapWordDtoToWord(res.body);
+  },
+
   // Convenience method: Get all words for a category (no pagination)
   getAll: async (
     languageUuid: string,
