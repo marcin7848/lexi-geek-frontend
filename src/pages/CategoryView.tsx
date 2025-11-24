@@ -7,7 +7,7 @@ import { Word, Mechanism } from "@/types/word";
 import { toast } from "sonner";
 import { categoryService } from "@/services/categoryService";
 import { languageService } from "@/services/languageService";
-import { wordService, type WordForm } from "@/services/wordService";
+import { wordService, type WordForm, type WordFilters, type PaginationParams, type SortParams } from "@/services/wordService";
 import WordFormModal from "@/components/WordFormModal";
 import ManageCategoriesModal from "@/components/ManageCategoriesModal";
 import {
@@ -40,6 +40,8 @@ export default function CategoryView() {
   const navigate = useNavigate();
   const [category, setCategory] = useState<Category | null>(null);
   const [words, setWords] = useState<Word[]>([]);
+  const [totalWords, setTotalWords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [customPageSize, setCustomPageSize] = useState("");
@@ -49,6 +51,9 @@ export default function CategoryView() {
   const [mechanismFilter, setMechanismFilter] = useState<Mechanism | "ALL">("ALL");
 
   // Unaccepted words states
+  const [unacceptedWords, setUnacceptedWords] = useState<Word[]>([]);
+  const [unacceptedTotalWords, setUnacceptedTotalWords] = useState(0);
+  const [unacceptedTotalPages, setUnacceptedTotalPages] = useState(1);
   const [unacceptedCurrentPage, setUnacceptedCurrentPage] = useState(1);
   const [unacceptedPageSize, setUnacceptedPageSize] = useState(20);
   const [unacceptedCustomPageSize, setUnacceptedCustomPageSize] = useState("");
@@ -96,10 +101,6 @@ export default function CategoryView() {
           if (foundLanguageId) {
             const categories = await categoryService.getAll(foundLanguageId);
             setAllCategories(categories);
-
-            // Load words from API
-            const response = await wordService.getWords(foundLanguageId, categoryId);
-            setWords(response.words);
           }
         } else {
           toast.error("Category not found");
@@ -114,6 +115,162 @@ export default function CategoryView() {
 
     loadData();
   }, [categoryId, navigate]);
+
+  // Load accepted words when filters, sorting, or pagination changes
+  useEffect(() => {
+    const loadAcceptedWords = async () => {
+      if (!languageId || !categoryId) return;
+
+      try {
+        const filters: WordFilters = {
+          accepted: true,
+          mechanism: mechanismFilter,
+          searchText: textFilter || undefined,
+        };
+
+        const pagination: PaginationParams = {
+          page: currentPage,
+          pageSize: pageSize,
+        };
+
+        const sort: SortParams | undefined = sortColumn
+          ? { column: sortColumn, direction: sortDirection }
+          : undefined;
+
+        const response = await wordService.getWords(
+          languageId,
+          categoryId,
+          filters,
+          pagination,
+          sort
+        );
+
+        setWords(response.words);
+        setTotalWords(response.total);
+        setTotalPages(response.totalPages);
+      } catch (error) {
+        console.error("Error loading accepted words:", error);
+        toast.error("Failed to load words");
+      }
+    };
+
+    loadAcceptedWords();
+  }, [languageId, categoryId, currentPage, pageSize, sortColumn, sortDirection, textFilter, mechanismFilter]);
+
+  // Load unaccepted words when filters, sorting, or pagination changes
+  useEffect(() => {
+    const loadUnacceptedWords = async () => {
+      if (!languageId || !categoryId) return;
+
+      try {
+        const filters: WordFilters = {
+          accepted: false,
+          mechanism: unacceptedMechanismFilter,
+          searchText: unacceptedTextFilter || undefined,
+        };
+
+        const pagination: PaginationParams = {
+          page: unacceptedCurrentPage,
+          pageSize: unacceptedPageSize,
+        };
+
+        const sort: SortParams | undefined = unacceptedSortColumn
+          ? { column: unacceptedSortColumn, direction: unacceptedSortDirection }
+          : undefined;
+
+        const response = await wordService.getWords(
+          languageId,
+          categoryId,
+          filters,
+          pagination,
+          sort
+        );
+
+        setUnacceptedWords(response.words);
+        setUnacceptedTotalWords(response.total);
+        setUnacceptedTotalPages(response.totalPages);
+      } catch (error) {
+        console.error("Error loading unaccepted words:", error);
+        toast.error("Failed to load unaccepted words");
+      }
+    };
+
+    loadUnacceptedWords();
+  }, [languageId, categoryId, unacceptedCurrentPage, unacceptedPageSize, unacceptedSortColumn, unacceptedSortDirection, unacceptedTextFilter, unacceptedMechanismFilter]);
+
+  // Helper function to reload accepted words
+  const reloadAcceptedWords = async () => {
+    if (!languageId || !categoryId) return;
+
+    try {
+      const filters: WordFilters = {
+        accepted: true,
+        mechanism: mechanismFilter,
+        searchText: textFilter || undefined,
+      };
+
+      const pagination: PaginationParams = {
+        page: currentPage,
+        pageSize: pageSize,
+      };
+
+      const sort: SortParams | undefined = sortColumn
+        ? { column: sortColumn, direction: sortDirection }
+        : undefined;
+
+      const response = await wordService.getWords(
+        languageId,
+        categoryId,
+        filters,
+        pagination,
+        sort
+      );
+
+      setWords(response.words);
+      setTotalWords(response.total);
+      setTotalPages(response.totalPages);
+    } catch (error) {
+      console.error("Error reloading accepted words:", error);
+      toast.error("Failed to reload words");
+    }
+  };
+
+  // Helper function to reload unaccepted words
+  const reloadUnacceptedWords = async () => {
+    if (!languageId || !categoryId) return;
+
+    try {
+      const filters: WordFilters = {
+        accepted: false,
+        mechanism: unacceptedMechanismFilter,
+        searchText: unacceptedTextFilter || undefined,
+      };
+
+      const pagination: PaginationParams = {
+        page: unacceptedCurrentPage,
+        pageSize: unacceptedPageSize,
+      };
+
+      const sort: SortParams | undefined = unacceptedSortColumn
+        ? { column: unacceptedSortColumn, direction: unacceptedSortDirection }
+        : undefined;
+
+      const response = await wordService.getWords(
+        languageId,
+        categoryId,
+        filters,
+        pagination,
+        sort
+      );
+
+      setUnacceptedWords(response.words);
+      setUnacceptedTotalWords(response.total);
+      setUnacceptedTotalPages(response.totalPages);
+    } catch (error) {
+      console.error("Error reloading unaccepted words:", error);
+      toast.error("Failed to reload unaccepted words");
+    }
+  };
 
   const handleChosenChange = async (wordId: number, checked: boolean) => {
     if (!languageId || !categoryId) return;
@@ -143,11 +300,8 @@ export default function CategoryView() {
         await wordService.updateWord(languageId, categoryId, word.uuid, wordForm);
       }
 
-      // Update local state
-      const updatedWords = words.map((w) =>
-        w.id === wordId ? { ...w, chosen: checked } : w
-      );
-      setWords(updatedWords);
+      // Reload data from backend
+      await reloadAcceptedWords();
     } catch (error) {
       console.error("Error updating word:", error);
       toast.error("Failed to update word");
@@ -157,17 +311,14 @@ export default function CategoryView() {
   const handleAcceptWord = async (wordId: number) => {
     if (!languageId || !categoryId) return;
 
-    const word = words.find((w) => w.id === wordId);
+    const word = unacceptedWords.find((w) => w.id === wordId);
     if (!word || !word.uuid) return;
 
     try {
       await wordService.acceptWord(languageId, categoryId, word.uuid);
 
-      // Update local state
-      const updatedWords = words.map((w) =>
-        w.id === wordId ? { ...w, accepted: true } : w
-      );
-      setWords(updatedWords);
+      // Reload both tables since word moved from unaccepted to accepted
+      await Promise.all([reloadAcceptedWords(), reloadUnacceptedWords()]);
       toast.success("Word accepted");
     } catch (error) {
       console.error("Error accepting word:", error);
@@ -178,15 +329,14 @@ export default function CategoryView() {
   const handleRejectWord = async (wordId: number) => {
     if (!languageId || !categoryId) return;
 
-    const word = words.find((w) => w.id === wordId);
+    const word = unacceptedWords.find((w) => w.id === wordId);
     if (!word || !word.uuid) return;
 
     try {
       await wordService.deleteWord(languageId, categoryId, word.uuid);
 
-      // Update local state
-      const updatedWords = words.filter((w) => w.id !== wordId);
-      setWords(updatedWords);
+      // Reload unaccepted words table
+      await reloadUnacceptedWords();
       toast.success("Word removed");
     } catch (error) {
       console.error("Error removing word:", error);
@@ -203,9 +353,8 @@ export default function CategoryView() {
     try {
       await wordService.deleteWord(languageId, categoryId, word.uuid);
 
-      // Update local state
-      const updatedWords = words.filter((w) => w.id !== wordId);
-      setWords(updatedWords);
+      // Reload accepted words table
+      await reloadAcceptedWords();
       toast.success("Word deleted");
     } catch (error) {
       console.error("Error deleting word:", error);
@@ -255,19 +404,24 @@ export default function CategoryView() {
 
       if (editingWord && editingWord.uuid) {
         // Update existing word
-        const updatedWord = await wordService.updateWord(
+        await wordService.updateWord(
           languageId,
           categoryId,
           editingWord.uuid,
           wordForm
         );
-        const updatedWords = words.map((w) => (w.id === editingWord.id ? updatedWord : w));
-        setWords(updatedWords);
+        // Reload appropriate table based on word's accepted status
+        if (editingWord.accepted) {
+          await reloadAcceptedWords();
+        } else {
+          await reloadUnacceptedWords();
+        }
         toast.success("Word updated");
       } else {
         // Create new word
-        const newWord = await wordService.createWord(languageId, categoryId, wordForm);
-        setWords([...words, newWord]);
+        await wordService.createWord(languageId, categoryId, wordForm);
+        // New words are typically unaccepted, but reload both to be safe
+        await Promise.all([reloadAcceptedWords(), reloadUnacceptedWords()]);
         toast.success("Word added");
       }
     } catch (error) {
@@ -293,92 +447,18 @@ export default function CategoryView() {
       setSortColumn(column);
       setSortDirection("asc");
     }
+    setCurrentPage(1); // Reset to first page when sorting changes
   };
 
-  const getWordText = (wordParts: Word["wordParts"]) => {
-    const sortedParts = [...wordParts].sort((a, b) => a.position - b.position);
-    return sortedParts.map((part) => part.word).join(" ");
-  };
-
-  const filteredAndSortedWords = (accepted: boolean = true) => {
-    let filtered = words.filter((word) => word.accepted === accepted);
-
-    // Apply text filter
-    const currentTextFilter = accepted ? textFilter : unacceptedTextFilter;
-    if (currentTextFilter) {
-      filtered = filtered.filter((word) => {
-        const wordText = getWordText(word.wordParts).toLowerCase();
-        const commentText = word.comment.toLowerCase();
-        const filterText = currentTextFilter.toLowerCase();
-        return wordText.includes(filterText) || commentText.includes(filterText);
-      });
+  const handleUnacceptedSort = (column: SortColumn) => {
+    if (unacceptedSortColumn === column) {
+      setUnacceptedSortDirection(unacceptedSortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setUnacceptedSortColumn(column);
+      setUnacceptedSortDirection("asc");
     }
-
-    // Apply mechanism filter
-    const currentMechanismFilter = accepted ? mechanismFilter : unacceptedMechanismFilter;
-    if (currentMechanismFilter !== "ALL") {
-      filtered = filtered.filter((word) => word.mechanism === currentMechanismFilter);
-    }
-
-    // Apply sorting
-    const currentSortColumn = accepted ? sortColumn : unacceptedSortColumn;
-    if (currentSortColumn) {
-      const currentSortDirection = accepted ? sortDirection : unacceptedSortDirection;
-      filtered.sort((a, b) => {
-        let aValue: string | number;
-        let bValue: string | number;
-
-        switch (currentSortColumn) {
-          case "word":
-            aValue = getWordText(a.wordParts).toLowerCase();
-            bValue = getWordText(b.wordParts).toLowerCase();
-            break;
-          case "comment":
-            aValue = a.comment.toLowerCase();
-            bValue = b.comment.toLowerCase();
-            break;
-          case "mechanism":
-            aValue = a.mechanism;
-            bValue = b.mechanism;
-            break;
-          case "chosen":
-            aValue = a.chosen ? 1 : 0;
-            bValue = b.chosen ? 1 : 0;
-            break;
-          case "repeated":
-            aValue = a.repeated;
-            bValue = b.repeated;
-            break;
-          case "lastTimestampRepeated":
-            aValue = a.lastTimestampRepeated || 0;
-            bValue = b.lastTimestampRepeated || 0;
-            break;
-          case "created":
-            aValue = a.created;
-            bValue = b.created;
-            break;
-        }
-
-        if (aValue < bValue) return currentSortDirection === "asc" ? -1 : 1;
-        if (aValue > bValue) return currentSortDirection === "asc" ? 1 : -1;
-        return 0;
-      });
-    }
-
-    return filtered;
+    setUnacceptedCurrentPage(1); // Reset to first page when sorting changes
   };
-
-  const paginatedWords = (accepted: boolean = true) => {
-    const filtered = filteredAndSortedWords(accepted);
-    const currentPg = accepted ? currentPage : unacceptedCurrentPage;
-    const currentPgSize = accepted ? pageSize : unacceptedPageSize;
-    const startIndex = (currentPg - 1) * currentPgSize;
-    const endIndex = startIndex + currentPgSize;
-    return filtered.slice(startIndex, endIndex);
-  };
-
-  const totalPages = Math.ceil(filteredAndSortedWords(true).length / pageSize);
-  const unacceptedTotalPages = Math.ceil(filteredAndSortedWords(false).length / unacceptedPageSize);
 
   const handlePageSizeChange = (value: string) => {
     if (value === "custom") {
@@ -632,8 +712,8 @@ export default function CategoryView() {
                    </TableRow>
                  </TableHeader>
                   <TableBody>
-                    {paginatedWords(true).map((word) => (
-                     <TableRow 
+                    {words.map((word) => (
+                     <TableRow
                        key={word.id}
                        onDoubleClick={() => handleOpenEditModal(word)}
                        className="cursor-pointer"
@@ -766,7 +846,7 @@ export default function CategoryView() {
 
                <div className="flex items-center gap-2">
                  <span className="text-sm text-muted-foreground">
-                   Page {currentPage} of {totalPages || 1} ({filteredAndSortedWords(true).length} total items)
+                   Page {currentPage} of {totalPages || 1} ({totalWords} total items)
                  </span>
                  <Button
                    variant="outline"
@@ -833,14 +913,7 @@ export default function CategoryView() {
                         <TableHead className="w-auto">
                           <Button
                             variant="ghost"
-                            onClick={() => {
-                              if (unacceptedSortColumn === "word") {
-                                setUnacceptedSortDirection(unacceptedSortDirection === "asc" ? "desc" : "asc");
-                              } else {
-                                setUnacceptedSortColumn("word");
-                                setUnacceptedSortDirection("asc");
-                              }
-                            }}
+                            onClick={() => handleUnacceptedSort("word")}
                             className="flex items-center gap-1"
                           >
                             Word
@@ -850,14 +923,7 @@ export default function CategoryView() {
                         <TableHead className="w-48">
                           <Button
                             variant="ghost"
-                            onClick={() => {
-                              if (unacceptedSortColumn === "comment") {
-                                setUnacceptedSortDirection(unacceptedSortDirection === "asc" ? "desc" : "asc");
-                              } else {
-                                setUnacceptedSortColumn("comment");
-                                setUnacceptedSortDirection("asc");
-                              }
-                            }}
+                            onClick={() => handleUnacceptedSort("comment")}
                             className="flex items-center gap-1"
                           >
                             Comment
@@ -867,14 +933,7 @@ export default function CategoryView() {
                         <TableHead className="w-32 text-center">
                           <Button
                             variant="ghost"
-                            onClick={() => {
-                              if (unacceptedSortColumn === "mechanism") {
-                                setUnacceptedSortDirection(unacceptedSortDirection === "asc" ? "desc" : "asc");
-                              } else {
-                                setUnacceptedSortColumn("mechanism");
-                                setUnacceptedSortDirection("asc");
-                              }
-                            }}
+                            onClick={() => handleUnacceptedSort("mechanism")}
                             className="flex items-center gap-1 w-full justify-center"
                           >
                             Mechanism
@@ -885,14 +944,7 @@ export default function CategoryView() {
                          <TableHead className="w-52 text-center">
                            <Button
                              variant="ghost"
-                             onClick={() => {
-                               if (unacceptedSortColumn === "created") {
-                                 setUnacceptedSortDirection(unacceptedSortDirection === "asc" ? "desc" : "asc");
-                               } else {
-                                 setUnacceptedSortColumn("created");
-                                 setUnacceptedSortDirection("asc");
-                               }
-                             }}
+                             onClick={() => handleUnacceptedSort("created")}
                              className="flex items-center gap-1 w-full justify-center"
                            >
                              Created
@@ -903,8 +955,8 @@ export default function CategoryView() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                       {paginatedWords(false).map((word) => (
-                         <TableRow 
+                       {unacceptedWords.map((word) => (
+                         <TableRow
                            key={word.id}
                            onDoubleClick={() => handleOpenEditModal(word)}
                            className={`cursor-pointer ${word.inCategories.length > 0 ? 'bg-primary/5' : ''}`}
@@ -1033,7 +1085,7 @@ export default function CategoryView() {
 
                  <div className="flex items-center gap-2">
                    <span className="text-sm text-muted-foreground">
-                     Page {unacceptedCurrentPage} of {unacceptedTotalPages || 1} ({filteredAndSortedWords(false).length} total items)
+                     Page {unacceptedCurrentPage} of {unacceptedTotalPages || 1} ({unacceptedTotalWords} total items)
                    </span>
                    <Button
                      variant="outline"
