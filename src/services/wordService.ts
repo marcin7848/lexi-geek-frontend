@@ -1,6 +1,67 @@
 // Service for word operations
 
-import { Word, Mechanism } from "@/types/word";
+import { Word, Mechanism, WordPart, WordStat, Method, SeparatorType } from "@/types/word";
+import { HttpMethod, RequestBuilder, RequestService, type PageDto, type PageableRequest } from '@/services/requestService';
+import { throwIfError } from '@/services/requestError';
+
+// Backend DTOs
+interface WordPartDto {
+  uuid?: string;
+  answer: boolean;
+  basicWord: string | null;
+  position: number;
+  toSpeech: boolean;
+  separator: boolean;
+  separatorType: string | null;
+  word: string | null;
+}
+
+interface WordStatsDto {
+  uuid: string;
+  answered: number;
+  toAnswer: number;
+  method: string;
+}
+
+interface WordDto {
+  uuid: string;
+  accepted: boolean;
+  chosen: boolean;
+  comment: string | null;
+  created: string;
+  lastTimeRepeated: string | null;
+  mechanism: Mechanism;
+  resetTime: string | null;
+  toRepeat: boolean;
+  wordParts: WordPartDto[];
+  wordStats: WordStatsDto[];
+  categoryNames: string[];
+}
+
+// Request form for creating/updating words
+export interface WordForm {
+  comment?: string | null;
+  mechanism: Mechanism;
+  wordParts: {
+    answer: boolean;
+    basicWord?: string | null;
+    position: number;
+    toSpeech: boolean;
+    separator: boolean;
+    separatorType?: string | null;
+    word?: string | null;
+  }[];
+}
+
+// Filter form for querying words
+export interface WordFilterForm {
+  uuid?: string;
+  accepted?: boolean;
+  chosen?: boolean;
+  searchText?: string;
+  mechanism?: Mechanism;
+  toRepeat?: boolean;
+}
 
 export interface WordFilters {
   accepted?: boolean;
@@ -27,186 +88,243 @@ export interface WordsResponse {
   totalPages: number;
 }
 
-const getWordText = (wordParts: Word["wordParts"]) => {
-  const sortedParts = [...wordParts].sort((a, b) => a.position - b.position);
-  return sortedParts.map((part) => part.word).join(" ");
+// Helper to convert ISO date string to timestamp
+const parseISOToTimestamp = (isoString: string | null): number | null => {
+  if (!isoString) return null;
+  return new Date(isoString).getTime();
+};
+
+// Helper to convert WordDto to Word
+const mapWordDtoToWord = (dto: WordDto): Word => {
+  return {
+    id: parseInt(dto.uuid.split('-')[0], 16), // Generate numeric ID from UUID
+    uuid: dto.uuid,
+    accepted: dto.accepted,
+    chosen: dto.chosen,
+    comment: dto.comment || "",
+    resetTimestamp: parseISOToTimestamp(dto.resetTime),
+    mechanism: dto.mechanism,
+    toRepeat: dto.toRepeat,
+    repeated: dto.wordStats.reduce((sum, stat) => sum + stat.answered, 0),
+    lastTimestampRepeated: parseISOToTimestamp(dto.lastTimeRepeated),
+    created: parseISOToTimestamp(dto.created) || Date.now(),
+    wordParts: dto.wordParts.map((part) => ({
+      answer: part.answer,
+      basicWord: part.basicWord || "",
+      position: part.position,
+      toSpeech: part.toSpeech,
+      word: part.word || "",
+      isSeparator: part.separator,
+      separatorType: part.separatorType as SeparatorType | undefined,
+    })),
+    wordStats: dto.wordStats.map((stat) => ({
+      timestampRepeated: 0, // Not provided by backend
+      toAnswer: stat.toAnswer,
+      answered: stat.answered,
+      method: (stat.method === "QUESTION_TO_ANSWER" ? "QuestionToAnswer" : "AnswerToQuestion") as Method,
+    })),
+    inCategories: dto.categoryNames || [],
+  };
+};
+
+// Helper to convert Word to WordForm
+const mapWordToWordForm = (word: Word): WordForm => {
+  return {
+    comment: word.comment || null,
+    mechanism: word.mechanism,
+    wordParts: word.wordParts.map((part) => ({
+      answer: part.answer,
+      basicWord: part.basicWord || null,
+      position: part.position,
+      toSpeech: part.toSpeech,
+      separator: part.isSeparator || false,
+      separatorType: part.separatorType || null,
+      word: part.word || null,
+    })),
+  };
 };
 
 export const wordService = {
+  // Get words with optional filters and pagination
   getWords: async (
-    categoryId: string,
+    languageUuid: string,
+    categoryUuid: string,
     filters?: WordFilters,
     pagination?: PaginationParams,
     sort?: SortParams
   ): Promise<WordsResponse> => {
-    const storageKey = `words_${categoryId}`;
-    const stored = localStorage.getItem(storageKey);
-    
-    let words: Word[] = stored ? JSON.parse(stored) : [];
-    
-    // Apply filters
-    if (filters?.accepted !== undefined) {
-      words = words.filter(word => word.accepted === filters.accepted);
-    }
-    
-    if (filters?.mechanism && filters.mechanism !== "ALL") {
-      words = words.filter(word => word.mechanism === filters.mechanism);
-    }
-    
-    if (filters?.searchText) {
-      const searchLower = filters.searchText.toLowerCase();
-      words = words.filter(word => {
-        const wordText = getWordText(word.wordParts).toLowerCase();
-        const commentText = word.comment.toLowerCase();
-        return wordText.includes(searchLower) || commentText.includes(searchLower);
-      });
-    }
-    
-    if (filters?.chosen !== undefined) {
-      words = words.filter(word => word.chosen === filters.chosen);
-    }
-    
-    // Apply sorting
+    const service = new RequestService();
+    const builder = new RequestBuilder<void>()
+      .url(`/languages/${languageUuid}/categories/${categoryUuid}/words`)
+      .method(HttpMethod.GET);
+
+    // Build pageable request
+    const pageable: PageableRequest = {
+      page: pagination?.page || 1,
+      pageSize: pagination?.pageSize || 20,
+      singlePage: !pagination,
+    };
+
+    // Add sorting if provided
     if (sort?.column) {
-      words.sort((a, b) => {
-        let aValue: any;
-        let bValue: any;
-        
-        switch (sort.column) {
-          case "word":
-            aValue = getWordText(a.wordParts).toLowerCase();
-            bValue = getWordText(b.wordParts).toLowerCase();
-            break;
-          case "comment":
-            aValue = a.comment.toLowerCase();
-            bValue = b.comment.toLowerCase();
-            break;
-          case "mechanism":
-            aValue = a.mechanism;
-            bValue = b.mechanism;
-            break;
-          case "chosen":
-            aValue = a.chosen ? 1 : 0;
-            bValue = b.chosen ? 1 : 0;
-            break;
-          case "repeated":
-            aValue = a.repeated;
-            bValue = b.repeated;
-            break;
-          case "lastTimestampRepeated":
-            aValue = a.lastTimestampRepeated || 0;
-            bValue = b.lastTimestampRepeated || 0;
-            break;
-          case "created":
-            aValue = a.created;
-            bValue = b.created;
-            break;
-          default:
-            return 0;
-        }
-        
-        if (aValue < bValue) return sort.direction === "asc" ? -1 : 1;
-        if (aValue > bValue) return sort.direction === "asc" ? 1 : -1;
-        return 0;
-      });
+      pageable.sort = sort.column;
+      pageable.order = sort.direction || 'asc';
     }
-    
-    const total = words.length;
-    
-    // Apply pagination
-    if (pagination) {
-      const startIndex = (pagination.page - 1) * pagination.pageSize;
-      const endIndex = startIndex + pagination.pageSize;
-      words = words.slice(startIndex, endIndex);
+
+    builder.pageable(pageable);
+
+    // Apply filters
+    if (filters) {
+      if (filters.accepted !== undefined) {
+        builder.param('accepted', String(filters.accepted));
+      }
+      if (filters.mechanism && filters.mechanism !== "ALL") {
+        builder.param('mechanism', filters.mechanism);
+      }
+      if (filters.searchText) {
+        builder.param('searchText', filters.searchText);
+      }
+      if (filters.chosen !== undefined) {
+        builder.param('chosen', String(filters.chosen));
+      }
     }
-    
+
+    const req = builder.build();
+    const res = await service.send<void, PageDto<WordDto>>(req);
+    throwIfError(res, 'Failed to load words');
+
+    const page = res.body as PageDto<WordDto> | null;
+    const items = page?.items ?? [];
+    const words = items.map(mapWordDtoToWord);
+
     return {
       words,
-      total,
-      page: pagination?.page || 1,
-      pageSize: pagination?.pageSize || total,
-      totalPages: pagination ? Math.ceil(total / pagination.pageSize) : 1
+      total: Number(page?.total ?? 0),
+      page: page?.page ?? 1,
+      pageSize: page?.pageSize ?? 20,
+      totalPages: page ? Math.ceil(Number(page.total) / page.pageSize) : 1
     };
   },
 
-  getById: async (categoryId: string, wordId: number): Promise<Word | null> => {
-    const storageKey = `words_${categoryId}`;
-    const stored = localStorage.getItem(storageKey);
-    
-    if (!stored) return null;
-    
-    const words: Word[] = JSON.parse(stored);
-    return words.find(word => word.id === wordId) || null;
-  },
+  // Get a single word by UUID
+  getById: async (
+    languageUuid: string,
+    categoryUuid: string,
+    wordUuid: string
+  ): Promise<Word | null> => {
+    const service = new RequestService();
+    const request = new RequestBuilder<void>()
+      .url(`/languages/${languageUuid}/categories/${categoryUuid}/words/${wordUuid}`)
+      .method(HttpMethod.GET)
+      .build();
 
-  addWord: async (categoryId: string, word: Word): Promise<Word> => {
-    const storageKey = `words_${categoryId}`;
-    const stored = localStorage.getItem(storageKey);
-    const words: Word[] = stored ? JSON.parse(stored) : [];
-    
-    words.push(word);
-    localStorage.setItem(storageKey, JSON.stringify(words));
-    
-    return word;
-  },
+    const res = await service.send<void, WordDto>(request);
 
-  updateWord: async (categoryId: string, wordId: number, updates: Partial<Word>): Promise<Word | null> => {
-    const storageKey = `words_${categoryId}`;
-    const stored = localStorage.getItem(storageKey);
-    
-    if (!stored) return null;
-    
-    const words: Word[] = JSON.parse(stored);
-    const index = words.findIndex(word => word.id === wordId);
-    
-    if (index === -1) return null;
-    
-    words[index] = { ...words[index], ...updates };
-    localStorage.setItem(storageKey, JSON.stringify(words));
-    
-    return words[index];
-  },
-
-  deleteWord: async (categoryId: string, wordId: number): Promise<boolean> => {
-    const storageKey = `words_${categoryId}`;
-    const stored = localStorage.getItem(storageKey);
-    
-    if (!stored) return false;
-    
-    const words: Word[] = JSON.parse(stored);
-    const filtered = words.filter(word => word.id !== wordId);
-    
-    if (filtered.length === words.length) return false;
-    
-    localStorage.setItem(storageKey, JSON.stringify(filtered));
-    return true;
-  },
-
-  initialize: async (categoryId: string, defaultWords: Word[]): Promise<void> => {
-    const storageKey = `words_${categoryId}`;
-    const existing = localStorage.getItem(storageKey);
-    
-    if (!existing) {
-      localStorage.setItem(storageKey, JSON.stringify(defaultWords));
+    if (res.statusCode === 404) {
+      return null;
     }
+
+    throwIfError(res, 'Failed to load word');
+
+    if (!res.body) return null;
+
+    return mapWordDtoToWord(res.body);
   },
 
-  // Batch operations
-  updateMultiple: async (categoryId: string, updates: Array<{ id: number; data: Partial<Word> }>): Promise<void> => {
-    const storageKey = `words_${categoryId}`;
-    const stored = localStorage.getItem(storageKey);
-    
-    if (!stored) return;
-    
-    let words: Word[] = JSON.parse(stored);
-    
-    updates.forEach(({ id, data }) => {
-      const index = words.findIndex(word => word.id === id);
-      if (index !== -1) {
-        words[index] = { ...words[index], ...data };
-      }
-    });
-    
-    localStorage.setItem(storageKey, JSON.stringify(words));
+  // Create a new word
+  createWord: async (
+    languageUuid: string,
+    categoryUuid: string,
+    form: WordForm
+  ): Promise<Word> => {
+    const service = new RequestService();
+    const request = new RequestBuilder<WordForm>()
+      .url(`/languages/${languageUuid}/categories/${categoryUuid}/words`)
+      .method(HttpMethod.POST)
+      .contentTypeHeader('application/json')
+      .body(form)
+      .build();
+
+    const res = await service.send<WordForm, WordDto>(request);
+    throwIfError(res, 'Failed to create word');
+
+    if (!res.body) {
+      throw new Error('No response body received');
+    }
+
+    return mapWordDtoToWord(res.body);
+  },
+
+  // Update an existing word
+  updateWord: async (
+    languageUuid: string,
+    categoryUuid: string,
+    wordUuid: string,
+    form: WordForm
+  ): Promise<Word> => {
+    const service = new RequestService();
+    const request = new RequestBuilder<WordForm>()
+      .url(`/languages/${languageUuid}/categories/${categoryUuid}/words/${wordUuid}`)
+      .method(HttpMethod.PUT)
+      .contentTypeHeader('application/json')
+      .body(form)
+      .build();
+
+    const res = await service.send<WordForm, WordDto>(request);
+    throwIfError(res, 'Failed to update word');
+
+    if (!res.body) {
+      throw new Error('No response body received');
+    }
+
+    return mapWordDtoToWord(res.body);
+  },
+
+  // Delete a word
+  deleteWord: async (
+    languageUuid: string,
+    categoryUuid: string,
+    wordUuid: string
+  ): Promise<void> => {
+    const service = new RequestService();
+    const request = new RequestBuilder<void>()
+      .url(`/languages/${languageUuid}/categories/${categoryUuid}/words/${wordUuid}`)
+      .method(HttpMethod.DELETE)
+      .responseAsVoid()
+      .build();
+
+    const res = await service.sendVoid(request);
+    throwIfError(res, 'Failed to delete word');
+  },
+
+  // Accept a word
+  acceptWord: async (
+    languageUuid: string,
+    categoryUuid: string,
+    wordUuid: string
+  ): Promise<Word> => {
+    const service = new RequestService();
+    const request = new RequestBuilder<void>()
+      .url(`/languages/${languageUuid}/categories/${categoryUuid}/words/${wordUuid}/accept`)
+      .method(HttpMethod.PATCH)
+      .build();
+
+    const res = await service.send<void, WordDto>(request);
+    throwIfError(res, 'Failed to accept word');
+
+    if (!res.body) {
+      throw new Error('No response body received');
+    }
+
+    return mapWordDtoToWord(res.body);
+  },
+
+  // Convenience method: Get all words for a category (no pagination)
+  getAll: async (
+    languageUuid: string,
+    categoryUuid: string
+  ): Promise<Word[]> => {
+    const response = await wordService.getWords(languageUuid, categoryUuid);
+    return response.words;
   }
 };

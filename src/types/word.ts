@@ -21,6 +21,7 @@ export interface WordStat {
 
 export interface Word {
   id: number;
+  uuid?: string; // UUID from backend
   accepted: boolean;
   comment: string;
   resetTimestamp: number | null;

@@ -7,6 +7,7 @@ import { Word, Mechanism } from "@/types/word";
 import { toast } from "sonner";
 import { categoryService } from "@/services/categoryService";
 import { languageService } from "@/services/languageService";
+import { wordService, type WordForm } from "@/services/wordService";
 import WordFormModal from "@/components/WordFormModal";
 import ManageCategoriesModal from "@/components/ManageCategoriesModal";
 import {
@@ -95,17 +96,10 @@ export default function CategoryView() {
           if (foundLanguageId) {
             const categories = await categoryService.getAll(foundLanguageId);
             setAllCategories(categories);
-          }
 
-          // Load words from localStorage or initialize with mock data
-          const storageKey = `words_${categoryId}`;
-          const storedWords = localStorage.getItem(storageKey);
-
-          if (storedWords) {
-            setWords(JSON.parse(storedWords));
-          } else {
-            // Initialize with empty words array (mock data no longer used)
-            setWords([]);
+            // Load words from API
+            const response = await wordService.getWords(foundLanguageId, categoryId);
+            setWords(response.words);
           }
         } else {
           toast.error("Category not found");
@@ -121,42 +115,98 @@ export default function CategoryView() {
     loadData();
   }, [categoryId, navigate]);
 
-  const handleChosenChange = (wordId: number, checked: boolean) => {
-    const updatedWords = words.map((word) =>
-      word.id === wordId ? { ...word, chosen: checked } : word
-    );
-    setWords(updatedWords);
-    
-    // Persist to localStorage
-    const storageKey = `words_${categoryId}`;
-    localStorage.setItem(storageKey, JSON.stringify(updatedWords));
+  const handleChosenChange = async (wordId: number, checked: boolean) => {
+    if (!languageId || !categoryId) return;
+
+    const word = words.find((w) => w.id === wordId);
+    if (!word || !word.uuid) return;
+
+    try {
+      // Update word via API
+      const wordForm: WordForm = {
+        comment: word.comment || null,
+        mechanism: word.mechanism,
+        wordParts: word.wordParts.map((part) => ({
+          answer: part.answer,
+          basicWord: part.basicWord || null,
+          position: part.position,
+          toSpeech: part.toSpeech,
+          separator: part.isSeparator || false,
+          separatorType: part.separatorType || null,
+          word: part.word || null,
+        })),
+      };
+
+      await wordService.updateWord(languageId, categoryId, word.uuid, wordForm);
+
+      // Update local state
+      const updatedWords = words.map((w) =>
+        w.id === wordId ? { ...w, chosen: checked } : w
+      );
+      setWords(updatedWords);
+    } catch (error) {
+      console.error("Error updating word:", error);
+      toast.error("Failed to update word");
+    }
   };
 
-  const handleAcceptWord = (wordId: number) => {
-    const updatedWords = words.map((word) =>
-      word.id === wordId ? { ...word, accepted: true } : word
-    );
-    setWords(updatedWords);
-    
-    const storageKey = `words_${categoryId}`;
-    localStorage.setItem(storageKey, JSON.stringify(updatedWords));
-    toast.success("Word accepted");
+  const handleAcceptWord = async (wordId: number) => {
+    if (!languageId || !categoryId) return;
+
+    const word = words.find((w) => w.id === wordId);
+    if (!word || !word.uuid) return;
+
+    try {
+      await wordService.acceptWord(languageId, categoryId, word.uuid);
+
+      // Update local state
+      const updatedWords = words.map((w) =>
+        w.id === wordId ? { ...w, accepted: true } : w
+      );
+      setWords(updatedWords);
+      toast.success("Word accepted");
+    } catch (error) {
+      console.error("Error accepting word:", error);
+      toast.error("Failed to accept word");
+    }
   };
 
-  const handleRejectWord = (wordId: number) => {
-    const updatedWords = words.filter((word) => word.id !== wordId);
-    setWords(updatedWords);
-    
-    const storageKey = `words_${categoryId}`;
-    localStorage.setItem(storageKey, JSON.stringify(updatedWords));
-    toast.success("Word removed");
+  const handleRejectWord = async (wordId: number) => {
+    if (!languageId || !categoryId) return;
+
+    const word = words.find((w) => w.id === wordId);
+    if (!word || !word.uuid) return;
+
+    try {
+      await wordService.deleteWord(languageId, categoryId, word.uuid);
+
+      // Update local state
+      const updatedWords = words.filter((w) => w.id !== wordId);
+      setWords(updatedWords);
+      toast.success("Word removed");
+    } catch (error) {
+      console.error("Error removing word:", error);
+      toast.error("Failed to remove word");
+    }
   };
 
-  const handleDeleteWord = (wordId: number) => {
-    const updatedWords = words.filter((w) => w.id !== wordId);
-    setWords(updatedWords);
-    localStorage.setItem(`words_${categoryId}`, JSON.stringify(updatedWords));
-    toast.success("Word deleted");
+  const handleDeleteWord = async (wordId: number) => {
+    if (!languageId || !categoryId) return;
+
+    const word = words.find((w) => w.id === wordId);
+    if (!word || !word.uuid) return;
+
+    try {
+      await wordService.deleteWord(languageId, categoryId, word.uuid);
+
+      // Update local state
+      const updatedWords = words.filter((w) => w.id !== wordId);
+      setWords(updatedWords);
+      toast.success("Word deleted");
+    } catch (error) {
+      console.error("Error deleting word:", error);
+      toast.error("Failed to delete word");
+    }
   };
 
   const handleOpenCategoriesModal = (word: Word) => {
@@ -164,33 +214,62 @@ export default function CategoryView() {
     setIsCategoriesModalOpen(true);
   };
 
-  const handleSaveCategories = (categoryNames: string[]) => {
-    if (!categoriesModalWord) return;
+  const handleSaveCategories = async (categoryNames: string[]) => {
+    if (!categoriesModalWord || !languageId || !categoryId) return;
 
+    // Note: The API doesn't have a direct endpoint for updating word categories
+    // This functionality might need to be implemented on the backend
+    // For now, we'll update the local state only
     const updatedWords = words.map((w) =>
       w.id === categoriesModalWord.id
         ? { ...w, inCategories: categoryNames }
         : w
     );
     setWords(updatedWords);
-    localStorage.setItem(`words_${categoryId}`, JSON.stringify(updatedWords));
-    toast.success("Categories updated");
+    toast.info("Category update - note: this may need backend support");
+
+    // TODO: Implement API endpoint for updating word categories if available
   };
 
-  const handleWordAdded = (word: Word) => {
-    let updatedWords: Word[];
-    
-    if (editingWord) {
-      // Update existing word
-      updatedWords = words.map((w) => (w.id === word.id ? word : w));
-    } else {
-      // Add new word
-      updatedWords = [...words, word];
+  const handleWordAdded = async (word: Word) => {
+    if (!languageId || !categoryId) return;
+
+    try {
+      const wordForm: WordForm = {
+        comment: word.comment || null,
+        mechanism: word.mechanism,
+        wordParts: word.wordParts.map((part) => ({
+          answer: part.answer,
+          basicWord: part.basicWord || null,
+          position: part.position,
+          toSpeech: part.toSpeech,
+          separator: part.isSeparator || false,
+          separatorType: part.separatorType || null,
+          word: part.word || null,
+        })),
+      };
+
+      if (editingWord && editingWord.uuid) {
+        // Update existing word
+        const updatedWord = await wordService.updateWord(
+          languageId,
+          categoryId,
+          editingWord.uuid,
+          wordForm
+        );
+        const updatedWords = words.map((w) => (w.id === editingWord.id ? updatedWord : w));
+        setWords(updatedWords);
+        toast.success("Word updated");
+      } else {
+        // Create new word
+        const newWord = await wordService.createWord(languageId, categoryId, wordForm);
+        setWords([...words, newWord]);
+        toast.success("Word added");
+      }
+    } catch (error) {
+      console.error("Error saving word:", error);
+      toast.error("Failed to save word");
     }
-    
-    setWords(updatedWords);
-    const storageKey = `words_${categoryId}`;
-    localStorage.setItem(storageKey, JSON.stringify(updatedWords));
   };
 
   const handleOpenAddModal = () => {
@@ -242,8 +321,8 @@ export default function CategoryView() {
     if (currentSortColumn) {
       const currentSortDirection = accepted ? sortDirection : unacceptedSortDirection;
       filtered.sort((a, b) => {
-        let aValue: any;
-        let bValue: any;
+        let aValue: string | number;
+        let bValue: string | number;
 
         switch (currentSortColumn) {
           case "word":
