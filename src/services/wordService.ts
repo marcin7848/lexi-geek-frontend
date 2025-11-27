@@ -319,8 +319,8 @@ export const wordService = {
     return mapWordDtoToWord(res.body);
   },
 
-  // Choose a word (mark as chosen)
-    chooseWord: async (
+  // Choose a word (toggle chosen status)
+  chooseWord: async (
     languageUuid: string,
     categoryUuid: string,
     wordUuid: string
@@ -332,7 +332,7 @@ export const wordService = {
       .build();
 
     const res = await service.send<void, WordDto>(request);
-    throwIfError(res, 'Failed to choose word');
+    throwIfError(res, 'Failed to toggle chosen status');
 
     if (!res.body) {
       throw new Error('No response body received');

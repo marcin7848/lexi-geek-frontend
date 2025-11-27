@@ -279,26 +279,8 @@ export default function CategoryView() {
     if (!word || !word.uuid) return;
 
     try {
-      if (checked) {
-        // Use the choose endpoint to mark word as chosen
-        await wordService.chooseWord(languageId, categoryId, word.uuid);
-      } else {
-        // For unchecking, we need to use full update since there's no "unchoose" endpoint
-        const wordForm: WordForm = {
-          comment: word.comment || null,
-          mechanism: word.mechanism,
-          wordParts: word.wordParts.map((part) => ({
-            answer: part.answer,
-            basicWord: part.basicWord || null,
-            position: part.position,
-            toSpeech: part.toSpeech,
-            separator: part.isSeparator || false,
-            separatorType: part.separatorType || null,
-            word: part.word || null,
-          })),
-        };
-        await wordService.updateWord(languageId, categoryId, word.uuid, wordForm);
-      }
+      // The /choose endpoint works as a toggle, so we just call it regardless of checked state
+      await wordService.chooseWord(languageId, categoryId, word.uuid);
 
       // Reload data from backend
       await reloadAcceptedWords();
