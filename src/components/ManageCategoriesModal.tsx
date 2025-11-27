@@ -36,9 +36,28 @@ export default function ManageCategoriesModal({
     }
 
     const searchTerm = filterText.toLowerCase();
-    return allCategories.filter(cat =>
-      cat.name.toLowerCase().includes(searchTerm)
-    );
+    const matchingUuids = new Set<string>();
+
+    // First pass: find all categories that match the filter
+    allCategories.forEach(cat => {
+      if (cat.name.toLowerCase().includes(searchTerm)) {
+        matchingUuids.add(cat.uuid);
+      }
+    });
+
+    // Second pass: add all parent categories of matching categories
+    matchingUuids.forEach(uuid => {
+      const category = allCategories.find(c => c.uuid === uuid);
+      if (category && category.parentUuid) {
+        let parent = allCategories.find(c => c.uuid === category.parentUuid);
+        while (parent) {
+          matchingUuids.add(parent.uuid);
+          parent = parent.parentUuid ? allCategories.find(c => c.uuid === parent?.parentUuid) : null;
+        }
+      }
+    });
+
+    return allCategories.filter(cat => matchingUuids.has(cat.uuid));
   }, [allCategories, filterText]);
 
   // Memoize loadCategories
