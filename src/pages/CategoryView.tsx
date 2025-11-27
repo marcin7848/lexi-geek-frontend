@@ -620,24 +620,10 @@ export default function CategoryView() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-auto">
-                      <Button
-                        variant="ghost"
-                        onClick={() => handleSort("word")}
-                        className="flex items-center gap-1"
-                      >
-                        Word
-                        <ArrowUpDown className="h-4 w-4" />
-                      </Button>
+                      Word
                     </TableHead>
                     <TableHead className="w-48">
-                      <Button
-                        variant="ghost"
-                        onClick={() => handleSort("comment")}
-                        className="flex items-center gap-1"
-                      >
-                        Comment
-                        <ArrowUpDown className="h-4 w-4" />
-                      </Button>
+                      Comment
                     </TableHead>
                     <TableHead className="w-32 text-center">
                       <Button
@@ -893,24 +879,10 @@ export default function CategoryView() {
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-auto">
-                          <Button
-                            variant="ghost"
-                            onClick={() => handleUnacceptedSort("word")}
-                            className="flex items-center gap-1"
-                          >
-                            Word
-                            <ArrowUpDown className="h-4 w-4" />
-                          </Button>
+                          Word
                         </TableHead>
                         <TableHead className="w-48">
-                          <Button
-                            variant="ghost"
-                            onClick={() => handleUnacceptedSort("comment")}
-                            className="flex items-center gap-1"
-                          >
-                            Comment
-                            <ArrowUpDown className="h-4 w-4" />
-                          </Button>
+                          Comment
                         </TableHead>
                         <TableHead className="w-32 text-center">
                           <Button
