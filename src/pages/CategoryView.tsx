@@ -7,8 +7,10 @@ import { Word, Mechanism } from "@/types/word";
 import { toast } from "sonner";
 import { categoryService } from "@/services/categoryService";
 import { languageService } from "@/services/languageService";
+import { wordService, type WordForm, type WordFilters, type PaginationParams, type SortParams } from "@/services/wordService";
 import WordFormModal from "@/components/WordFormModal";
 import ManageCategoriesModal from "@/components/ManageCategoriesModal";
+import { useLanguage } from "@/i18n/LanguageProvider";
 import {
   Table,
   TableBody,
@@ -31,14 +33,17 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-type SortColumn = "word" | "comment" | "mechanism" | "chosen" | "repeated" | "lastTimestampRepeated" | "created";
+type SortColumn = "word" | "comment" | "mechanism" | "chosen" | "repeated" | "lastTimeRepeated" | "created";
 type SortDirection = "asc" | "desc";
 
 export default function CategoryView() {
   const { categoryId } = useParams();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [category, setCategory] = useState<Category | null>(null);
   const [words, setWords] = useState<Word[]>([]);
+  const [totalWords, setTotalWords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [customPageSize, setCustomPageSize] = useState("");
@@ -48,6 +53,9 @@ export default function CategoryView() {
   const [mechanismFilter, setMechanismFilter] = useState<Mechanism | "ALL">("ALL");
 
   // Unaccepted words states
+  const [unacceptedWords, setUnacceptedWords] = useState<Word[]>([]);
+  const [unacceptedTotalWords, setUnacceptedTotalWords] = useState(0);
+  const [unacceptedTotalPages, setUnacceptedTotalPages] = useState(1);
   const [unacceptedCurrentPage, setUnacceptedCurrentPage] = useState(1);
   const [unacceptedPageSize, setUnacceptedPageSize] = useState(20);
   const [unacceptedCustomPageSize, setUnacceptedCustomPageSize] = useState("");
@@ -63,7 +71,6 @@ export default function CategoryView() {
   const [specialLetters, setSpecialLetters] = useState<string>("");
   const [isCategoriesModalOpen, setIsCategoriesModalOpen] = useState(false);
   const [categoriesModalWord, setCategoriesModalWord] = useState<Word | null>(null);
-  const [allCategories, setAllCategories] = useState<Category[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -90,73 +97,246 @@ export default function CategoryView() {
         if (foundCategory) {
           setCategory(foundCategory);
           setLanguageId(foundLanguageId);
-
-          // Load all categories for the language
-          if (foundLanguageId) {
-            const categories = await categoryService.getAll(foundLanguageId);
-            setAllCategories(categories);
-          }
-
-          // Load words from localStorage or initialize with mock data
-          const storageKey = `words_${categoryId}`;
-          const storedWords = localStorage.getItem(storageKey);
-
-          if (storedWords) {
-            setWords(JSON.parse(storedWords));
-          } else {
-            // Initialize with empty words array (mock data no longer used)
-            setWords([]);
-          }
         } else {
-          toast.error("Category not found");
+          toast.error(t("categoryView.notFound"));
           navigate(-1);
         }
       } catch (error) {
         console.error("Error loading category:", error);
-        toast.error("Failed to load category");
+        toast.error(t("categoryView.errorLoad"));
         navigate(-1);
       }
     };
 
     loadData();
-  }, [categoryId, navigate]);
+  }, [categoryId, navigate, t]);
 
-  const handleChosenChange = (wordId: number, checked: boolean) => {
-    const updatedWords = words.map((word) =>
-      word.id === wordId ? { ...word, chosen: checked } : word
-    );
-    setWords(updatedWords);
-    
-    // Persist to localStorage
-    const storageKey = `words_${categoryId}`;
-    localStorage.setItem(storageKey, JSON.stringify(updatedWords));
+  // Load accepted words when filters, sorting, or pagination changes
+  useEffect(() => {
+    const loadAcceptedWords = async () => {
+      if (!languageId || !categoryId) return;
+
+      try {
+        const filters: WordFilters = {
+          accepted: true,
+          mechanism: mechanismFilter,
+          searchText: textFilter || undefined,
+        };
+
+        const pagination: PaginationParams = {
+          page: currentPage,
+          pageSize: pageSize,
+        };
+
+        const sort: SortParams | undefined = sortColumn
+          ? { column: sortColumn, direction: sortDirection }
+          : undefined;
+
+        const response = await wordService.getWords(
+          languageId,
+          categoryId,
+          filters,
+          pagination,
+          sort
+        );
+
+        setWords(response.words);
+        setTotalWords(response.total);
+        setTotalPages(response.totalPages);
+      } catch (error) {
+        console.error("Error loading accepted words:", error);
+        toast.error(t("categoryView.errorLoadWords"));
+      }
+    };
+
+    loadAcceptedWords();
+  }, [languageId, categoryId, currentPage, pageSize, sortColumn, sortDirection, textFilter, mechanismFilter, t]);
+
+  // Load unaccepted words when filters, sorting, or pagination changes
+  useEffect(() => {
+    const loadUnacceptedWords = async () => {
+      if (!languageId || !categoryId) return;
+
+      try {
+        const filters: WordFilters = {
+          accepted: false,
+          mechanism: unacceptedMechanismFilter,
+          searchText: unacceptedTextFilter || undefined,
+        };
+
+        const pagination: PaginationParams = {
+          page: unacceptedCurrentPage,
+          pageSize: unacceptedPageSize,
+        };
+
+        const sort: SortParams | undefined = unacceptedSortColumn
+          ? { column: unacceptedSortColumn, direction: unacceptedSortDirection }
+          : undefined;
+
+        const response = await wordService.getWords(
+          languageId,
+          categoryId,
+          filters,
+          pagination,
+          sort
+        );
+
+        setUnacceptedWords(response.words);
+        setUnacceptedTotalWords(response.total);
+        setUnacceptedTotalPages(response.totalPages);
+      } catch (error) {
+        console.error("Error loading unaccepted words:", error);
+        toast.error(t("categoryView.errorLoadUnaccepted"));
+      }
+    };
+
+    loadUnacceptedWords();
+  }, [languageId, categoryId, unacceptedCurrentPage, unacceptedPageSize, unacceptedSortColumn, unacceptedSortDirection, unacceptedTextFilter, unacceptedMechanismFilter, t]);
+
+  // Helper function to reload accepted words
+  const reloadAcceptedWords = async () => {
+    if (!languageId || !categoryId) return;
+
+    try {
+      const filters: WordFilters = {
+        accepted: true,
+        mechanism: mechanismFilter,
+        searchText: textFilter || undefined,
+      };
+
+      const pagination: PaginationParams = {
+        page: currentPage,
+        pageSize: pageSize,
+      };
+
+      const sort: SortParams | undefined = sortColumn
+        ? { column: sortColumn, direction: sortDirection }
+        : undefined;
+
+      const response = await wordService.getWords(
+        languageId,
+        categoryId,
+        filters,
+        pagination,
+        sort
+      );
+
+      setWords(response.words);
+      setTotalWords(response.total);
+      setTotalPages(response.totalPages);
+    } catch (error) {
+      console.error("Error reloading accepted words:", error);
+      toast.error(t("categoryView.errorReload"));
+    }
   };
 
-  const handleAcceptWord = (wordId: number) => {
-    const updatedWords = words.map((word) =>
-      word.id === wordId ? { ...word, accepted: true } : word
-    );
-    setWords(updatedWords);
-    
-    const storageKey = `words_${categoryId}`;
-    localStorage.setItem(storageKey, JSON.stringify(updatedWords));
-    toast.success("Word accepted");
+  // Helper function to reload unaccepted words
+  const reloadUnacceptedWords = async () => {
+    if (!languageId || !categoryId) return;
+
+    try {
+      const filters: WordFilters = {
+        accepted: false,
+        mechanism: unacceptedMechanismFilter,
+        searchText: unacceptedTextFilter || undefined,
+      };
+
+      const pagination: PaginationParams = {
+        page: unacceptedCurrentPage,
+        pageSize: unacceptedPageSize,
+      };
+
+      const sort: SortParams | undefined = unacceptedSortColumn
+        ? { column: unacceptedSortColumn, direction: unacceptedSortDirection }
+        : undefined;
+
+      const response = await wordService.getWords(
+        languageId,
+        categoryId,
+        filters,
+        pagination,
+        sort
+      );
+
+      setUnacceptedWords(response.words);
+      setUnacceptedTotalWords(response.total);
+      setUnacceptedTotalPages(response.totalPages);
+    } catch (error) {
+      console.error("Error reloading unaccepted words:", error);
+      toast.error(t("categoryView.errorReload"));
+    }
   };
 
-  const handleRejectWord = (wordId: number) => {
-    const updatedWords = words.filter((word) => word.id !== wordId);
-    setWords(updatedWords);
-    
-    const storageKey = `words_${categoryId}`;
-    localStorage.setItem(storageKey, JSON.stringify(updatedWords));
-    toast.success("Word removed");
+  const handleChosenChange = async (wordId: number, checked: boolean) => {
+    if (!languageId || !categoryId) return;
+
+    const word = words.find((w) => w.id === wordId);
+    if (!word || !word.uuid) return;
+
+    try {
+      // The /choose endpoint works as a toggle, so we just call it regardless of checked state
+      await wordService.chooseWord(languageId, categoryId, word.uuid);
+
+      // Reload data from backend
+      await reloadAcceptedWords();
+    } catch (error) {
+      console.error("Error updating word:", error);
+      toast.error(t("categoryView.errorUpdate"));
+    }
   };
 
-  const handleDeleteWord = (wordId: number) => {
-    const updatedWords = words.filter((w) => w.id !== wordId);
-    setWords(updatedWords);
-    localStorage.setItem(`words_${categoryId}`, JSON.stringify(updatedWords));
-    toast.success("Word deleted");
+  const handleAcceptWord = async (wordId: number) => {
+    if (!languageId || !categoryId) return;
+
+    const word = unacceptedWords.find((w) => w.id === wordId);
+    if (!word || !word.uuid) return;
+
+    try {
+      await wordService.acceptWord(languageId, categoryId, word.uuid);
+
+      // Reload both tables since word moved from unaccepted to accepted
+      await Promise.all([reloadAcceptedWords(), reloadUnacceptedWords()]);
+      toast.success(t("categoryView.successAccept"));
+    } catch (error) {
+      console.error("Error accepting word:", error);
+      toast.error(t("categoryView.errorAccept"));
+    }
+  };
+
+  const handleRejectWord = async (wordId: number) => {
+    if (!languageId || !categoryId) return;
+
+    const word = unacceptedWords.find((w) => w.id === wordId);
+    if (!word || !word.uuid) return;
+
+    try {
+      await wordService.deleteWord(languageId, categoryId, word.uuid);
+
+      // Reload unaccepted words table
+      await reloadUnacceptedWords();
+      toast.success(t("categoryView.successRemove"));
+    } catch (error) {
+      console.error("Error removing word:", error);
+      toast.error(t("categoryView.errorRemove"));
+    }
+  };
+
+  const handleDeleteWord = async (wordId: number) => {
+    if (!languageId || !categoryId) return;
+
+    const word = words.find((w) => w.id === wordId);
+    if (!word || !word.uuid) return;
+
+    try {
+      await wordService.deleteWord(languageId, categoryId, word.uuid);
+
+      // Reload accepted words table
+      await reloadAcceptedWords();
+      toast.success(t("categoryView.successDelete"));
+    } catch (error) {
+      console.error("Error deleting word:", error);
+      toast.error(t("categoryView.errorDelete"));
+    }
   };
 
   const handleOpenCategoriesModal = (word: Word) => {
@@ -164,33 +344,77 @@ export default function CategoryView() {
     setIsCategoriesModalOpen(true);
   };
 
-  const handleSaveCategories = (categoryNames: string[]) => {
-    if (!categoriesModalWord) return;
+  const handleSaveCategories = async (categoryUuids: string[]) => {
+    if (!categoriesModalWord || !languageId || !categoriesModalWord.uuid) return;
 
-    const updatedWords = words.map((w) =>
-      w.id === categoriesModalWord.id
-        ? { ...w, inCategories: categoryNames }
-        : w
-    );
-    setWords(updatedWords);
-    localStorage.setItem(`words_${categoryId}`, JSON.stringify(updatedWords));
-    toast.success("Categories updated");
+    try {
+      // Call the API to update word categories
+      const updatedWord = await wordService.updateWordCategories(
+        languageId,
+        categoriesModalWord.uuid,
+        categoryUuids
+      );
+
+      // Update local state with the updated word
+      setWords(prevWords =>
+        prevWords.map(w => w.uuid === updatedWord.uuid ? updatedWord : w)
+      );
+
+      setUnacceptedWords(prevWords =>
+        prevWords.map(w => w.uuid === updatedWord.uuid ? updatedWord : w)
+      );
+
+      toast.success(t("categoryView.successCategoriesUpdate"));
+    } catch (error) {
+      console.error("Error updating categories:", error);
+      toast.error(t("categoryView.errorCategoriesUpdate"));
+    }
   };
 
-  const handleWordAdded = (word: Word) => {
-    let updatedWords: Word[];
-    
-    if (editingWord) {
-      // Update existing word
-      updatedWords = words.map((w) => (w.id === word.id ? word : w));
-    } else {
-      // Add new word
-      updatedWords = [...words, word];
+  const handleWordAdded = async (word: Word) => {
+    if (!languageId || !categoryId) return;
+
+    try {
+      const wordForm: WordForm = {
+        comment: word.comment || null,
+        mechanism: word.mechanism,
+        wordParts: word.wordParts.map((part) => ({
+          answer: part.answer,
+          basicWord: part.basicWord || null,
+          position: part.position,
+          toSpeech: part.toSpeech,
+          separator: part.isSeparator || false,
+          separatorType: part.separatorType || null,
+          word: part.word || null,
+        })),
+      };
+
+      if (editingWord && editingWord.uuid) {
+        // Update existing word
+        await wordService.updateWord(
+          languageId,
+          categoryId,
+          editingWord.uuid,
+          wordForm
+        );
+        // Reload appropriate table based on word's accepted status
+        if (editingWord.accepted) {
+          await reloadAcceptedWords();
+        } else {
+          await reloadUnacceptedWords();
+        }
+        toast.success(t("categoryView.successUpdate"));
+      } else {
+        // Create new word
+        await wordService.createWord(languageId, categoryId, wordForm);
+        // New words are typically unaccepted, but reload both to be safe
+        await Promise.all([reloadAcceptedWords(), reloadUnacceptedWords()]);
+        toast.success(t("categoryView.successAdd"));
+      }
+    } catch (error) {
+      console.error("Error saving word:", error);
+      toast.error(t("categoryView.errorUpdate"));
     }
-    
-    setWords(updatedWords);
-    const storageKey = `words_${categoryId}`;
-    localStorage.setItem(storageKey, JSON.stringify(updatedWords));
   };
 
   const handleOpenAddModal = () => {
@@ -210,92 +434,18 @@ export default function CategoryView() {
       setSortColumn(column);
       setSortDirection("asc");
     }
+    setCurrentPage(1); // Reset to first page when sorting changes
   };
 
-  const getWordText = (wordParts: Word["wordParts"]) => {
-    const sortedParts = [...wordParts].sort((a, b) => a.position - b.position);
-    return sortedParts.map((part) => part.word).join(" ");
-  };
-
-  const filteredAndSortedWords = (accepted: boolean = true) => {
-    let filtered = words.filter((word) => word.accepted === accepted);
-
-    // Apply text filter
-    const currentTextFilter = accepted ? textFilter : unacceptedTextFilter;
-    if (currentTextFilter) {
-      filtered = filtered.filter((word) => {
-        const wordText = getWordText(word.wordParts).toLowerCase();
-        const commentText = word.comment.toLowerCase();
-        const filterText = currentTextFilter.toLowerCase();
-        return wordText.includes(filterText) || commentText.includes(filterText);
-      });
+  const handleUnacceptedSort = (column: SortColumn) => {
+    if (unacceptedSortColumn === column) {
+      setUnacceptedSortDirection(unacceptedSortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setUnacceptedSortColumn(column);
+      setUnacceptedSortDirection("asc");
     }
-
-    // Apply mechanism filter
-    const currentMechanismFilter = accepted ? mechanismFilter : unacceptedMechanismFilter;
-    if (currentMechanismFilter !== "ALL") {
-      filtered = filtered.filter((word) => word.mechanism === currentMechanismFilter);
-    }
-
-    // Apply sorting
-    const currentSortColumn = accepted ? sortColumn : unacceptedSortColumn;
-    if (currentSortColumn) {
-      const currentSortDirection = accepted ? sortDirection : unacceptedSortDirection;
-      filtered.sort((a, b) => {
-        let aValue: any;
-        let bValue: any;
-
-        switch (currentSortColumn) {
-          case "word":
-            aValue = getWordText(a.wordParts).toLowerCase();
-            bValue = getWordText(b.wordParts).toLowerCase();
-            break;
-          case "comment":
-            aValue = a.comment.toLowerCase();
-            bValue = b.comment.toLowerCase();
-            break;
-          case "mechanism":
-            aValue = a.mechanism;
-            bValue = b.mechanism;
-            break;
-          case "chosen":
-            aValue = a.chosen ? 1 : 0;
-            bValue = b.chosen ? 1 : 0;
-            break;
-          case "repeated":
-            aValue = a.repeated;
-            bValue = b.repeated;
-            break;
-          case "lastTimestampRepeated":
-            aValue = a.lastTimestampRepeated || 0;
-            bValue = b.lastTimestampRepeated || 0;
-            break;
-          case "created":
-            aValue = a.created;
-            bValue = b.created;
-            break;
-        }
-
-        if (aValue < bValue) return currentSortDirection === "asc" ? -1 : 1;
-        if (aValue > bValue) return currentSortDirection === "asc" ? 1 : -1;
-        return 0;
-      });
-    }
-
-    return filtered;
+    setUnacceptedCurrentPage(1); // Reset to first page when sorting changes
   };
-
-  const paginatedWords = (accepted: boolean = true) => {
-    const filtered = filteredAndSortedWords(accepted);
-    const currentPg = accepted ? currentPage : unacceptedCurrentPage;
-    const currentPgSize = accepted ? pageSize : unacceptedPageSize;
-    const startIndex = (currentPg - 1) * currentPgSize;
-    const endIndex = startIndex + currentPgSize;
-    return filtered.slice(startIndex, endIndex);
-  };
-
-  const totalPages = Math.ceil(filteredAndSortedWords(true).length / pageSize);
-  const unacceptedTotalPages = Math.ceil(filteredAndSortedWords(false).length / unacceptedPageSize);
 
   const handlePageSizeChange = (value: string) => {
     if (value === "custom") {
@@ -323,7 +473,7 @@ export default function CategoryView() {
             if (part.separatorType === "ENTER") {
               return <div key={index} className="w-full" />;
             } else if (part.separatorType === "TAB") {
-              return <span key={index} className="inline-block w-8">{part.basicWord}</span>;
+              return <span key={index} className="inline-block w-8"></span>;
             } else if (part.separatorType === "MULTI_DASH") {
               return <span key={index} className="mx-1">{part.basicWord}</span>;
             }
@@ -368,30 +518,30 @@ export default function CategoryView() {
             className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Language
+            {t("categoryView.backToLanguage")}
           </Button>
 
           <div>
             <h1 className="text-3xl font-bold">{category.name}</h1>
             <div className="flex gap-4 mt-2 text-muted-foreground items-center">
               <span className="flex items-center gap-2">
-                Mode: 
+                {t("categoryView.mode")}:
                 <Badge variant="outline" className="flex items-center gap-1">
                   {category.mode === "DICTIONARY" ? (
                     <Book className="h-4 w-4 text-primary" />
                   ) : (
                     <Dumbbell className="h-4 w-4 fill-orange-500 text-orange-500" />
                   )}
-                  {category.mode === "DICTIONARY" ? "Dictionary" : "Exercise"}
+                  {category.mode === "DICTIONARY" ? t("categoryView.modeDictionary") : t("categoryView.modeExercise")}
                 </Badge>
               </span>
               <span className="flex items-center gap-2">
-                Method: 
+                {t("categoryView.method")}:
                 <Badge variant="outline" className="flex items-center gap-1">
                   {category.method === "QUESTION_TO_ANSWER" && <ArrowRight className="h-4 w-4" />}
                   {category.method === "ANSWER_TO_QUESTION" && <ArrowLeft className="h-4 w-4" />}
                   {category.method === "BOTH" && <ArrowLeftRight className="h-4 w-4" />}
-                  {category.method === "QUESTION_TO_ANSWER" ? "Question → Answer" : category.method === "ANSWER_TO_QUESTION" ? "Answer → Question" : "Both"}
+                  {category.method === "QUESTION_TO_ANSWER" ? t("categoryView.methodQuestionToAnswer") : category.method === "ANSWER_TO_QUESTION" ? t("categoryView.methodAnswerToQuestion") : t("categoryView.methodBoth")}
                 </Badge>
               </span>
             </div>
@@ -399,21 +549,21 @@ export default function CategoryView() {
 
           <div className="flex gap-2">
             <Button onClick={handleOpenAddModal} size="lg">
-              Add New Word
+              {t("categoryView.addWord")}
             </Button>
             <Button 
               onClick={() => navigate(`/category/${categoryId}/auto-translate`)} 
               variant="secondary"
               size="lg"
             >
-              Automatic translation
+              {t("categoryView.autoTranslate")}
             </Button>
             <Button 
               onClick={() => navigate(`/category/${categoryId}/other-users-words`)} 
               variant="secondary"
               size="lg"
             >
-              Other users words
+              {t("categoryView.otherUsersWords")}
             </Button>
           </div>
 
@@ -429,8 +579,8 @@ export default function CategoryView() {
           <ManageCategoriesModal
             open={isCategoriesModalOpen}
             onOpenChange={setIsCategoriesModalOpen}
-            categories={allCategories}
-            initialCategories={categoriesModalWord?.inCategories || []}
+            languageUuid={languageId || ""}
+            initialCategoryNames={categoriesModalWord?.inCategories || []}
             onSave={handleSaveCategories}
           />
 
@@ -438,9 +588,9 @@ export default function CategoryView() {
             {/* Filters */}
             <div className="flex gap-4 items-end">
               <div className="flex-1">
-                <label className="text-sm font-medium mb-2 block">Search</label>
+                <label className="text-sm font-medium mb-2 block">{t("categoryView.search")}</label>
                 <Input
-                  placeholder="Filter by word or comment..."
+                  placeholder={t("categoryView.searchPlaceholder")}
                   value={textFilter}
                   onChange={(e) => {
                     setTextFilter(e.target.value);
@@ -449,7 +599,7 @@ export default function CategoryView() {
                 />
               </div>
               <div className="w-48">
-                <label className="text-sm font-medium mb-2 block">Mechanism</label>
+                <label className="text-sm font-medium mb-2 block">{t("categoryView.mechanism")}</label>
                 <Select
                   value={mechanismFilter}
                   onValueChange={(value: Mechanism | "ALL") => {
@@ -461,7 +611,7 @@ export default function CategoryView() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ALL">All</SelectItem>
+                    <SelectItem value="ALL">{t("categoryView.all")}</SelectItem>
                     <SelectItem value="BASIC">BASIC</SelectItem>
                     <SelectItem value="TABLE">TABLE</SelectItem>
                   </SelectContent>
@@ -475,24 +625,10 @@ export default function CategoryView() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-auto">
-                      <Button
-                        variant="ghost"
-                        onClick={() => handleSort("word")}
-                        className="flex items-center gap-1"
-                      >
-                        Word
-                        <ArrowUpDown className="h-4 w-4" />
-                      </Button>
+                      {t("categoryView.word")}
                     </TableHead>
                     <TableHead className="w-48">
-                      <Button
-                        variant="ghost"
-                        onClick={() => handleSort("comment")}
-                        className="flex items-center gap-1"
-                      >
-                        Comment
-                        <ArrowUpDown className="h-4 w-4" />
-                      </Button>
+                      {t("categoryView.comment")}
                     </TableHead>
                     <TableHead className="w-32 text-center">
                       <Button
@@ -500,7 +636,7 @@ export default function CategoryView() {
                         onClick={() => handleSort("mechanism")}
                         className="flex items-center gap-1 w-full justify-center"
                       >
-                        Mechanism
+                        {t("categoryView.mechanism")}
                         <ArrowUpDown className="h-4 w-4" />
                       </Button>
                     </TableHead>
@@ -510,7 +646,7 @@ export default function CategoryView() {
                         onClick={() => handleSort("chosen")}
                         className="flex items-center gap-1 w-full justify-center"
                       >
-                        Chosen
+                        {t("categoryView.chosen")}
                         <ArrowUpDown className="h-4 w-4" />
                       </Button>
                     </TableHead>
@@ -520,37 +656,37 @@ export default function CategoryView() {
                          onClick={() => handleSort("repeated")}
                          className="flex items-center gap-1 w-full justify-center"
                        >
-                         Repeated
+                         {t("categoryView.repeated")}
                          <ArrowUpDown className="h-4 w-4" />
                        </Button>
                      </TableHead>
-                     <TableHead className="w-40 text-center">In Categories</TableHead>
+                     <TableHead className="w-40 text-center">{t("categoryView.inCategories")}</TableHead>
                       <TableHead className="w-52 text-center">
                         <Button
                           variant="ghost"
                           onClick={() => handleSort("created")}
                           className="flex items-center gap-1 w-full justify-center"
                         >
-                          Created
+                          {t("categoryView.created")}
                           <ArrowUpDown className="h-4 w-4" />
                         </Button>
                       </TableHead>
                      <TableHead className="w-52 text-center">
                        <Button
                          variant="ghost"
-                         onClick={() => handleSort("lastTimestampRepeated")}
+                         onClick={() => handleSort("lastTimeRepeated")}
                          className="flex items-center gap-1 w-full justify-center"
                        >
-                         Last Repeated
+                         {t("categoryView.lastRepeated")}
                          <ArrowUpDown className="h-4 w-4" />
                        </Button>
                      </TableHead>
-                     <TableHead className="w-32 text-center">Actions</TableHead>
+                     <TableHead className="w-32 text-center">{t("categoryView.actions")}</TableHead>
                    </TableRow>
                  </TableHeader>
                   <TableBody>
-                    {paginatedWords(true).map((word) => (
-                     <TableRow 
+                    {words.map((word) => (
+                     <TableRow
                        key={word.id}
                        onDoubleClick={() => handleOpenEditModal(word)}
                        className="cursor-pointer"
@@ -593,7 +729,7 @@ export default function CategoryView() {
                                 <p className="max-w-xs">
                                   {word.inCategories.length > 0 
                                     ? word.inCategories.join(", ")
-                                    : "No categories"}
+                                    : t("categoryView.noCategories")}
                                 </p>
                               </TooltipContent>
                             </Tooltip>
@@ -642,7 +778,7 @@ export default function CategoryView() {
              {/* Pagination */}
              <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Items per page:</span>
+                <span className="text-sm text-muted-foreground">{t("categoryView.itemsPerPage")}</span>
                 <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
                   <SelectTrigger className="w-24">
                     <SelectValue />
@@ -660,7 +796,7 @@ export default function CategoryView() {
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"
-                    placeholder="Custom"
+                    placeholder={t("categoryView.custom")}
                     className="w-24"
                     value={customPageSize}
                     onChange={(e) => setCustomPageSize(e.target.value)}
@@ -676,14 +812,14 @@ export default function CategoryView() {
                     onClick={handleCustomPageSize}
                     disabled={!customPageSize}
                   >
-                    Apply
+                    {t("categoryView.apply")}
                   </Button>
                 </div>
               </div>
 
                <div className="flex items-center gap-2">
                  <span className="text-sm text-muted-foreground">
-                   Page {currentPage} of {totalPages || 1} ({filteredAndSortedWords(true).length} total items)
+                   {t("categoryView.page")} {currentPage} {t("categoryView.of")} {totalPages || 1} ({totalWords} {t("categoryView.totalItems")})
                  </span>
                  <Button
                    variant="outline"
@@ -706,14 +842,14 @@ export default function CategoryView() {
 
              {/* Unaccepted Words Section */}
              <div className="space-y-4 mt-12">
-               <h2 className="text-2xl font-bold">Pending Words</h2>
+               <h2 className="text-2xl font-bold">{t("categoryView.pendingWords")}</h2>
 
                {/* Filters */}
                <div className="flex gap-4 items-end">
                  <div className="flex-1">
-                   <label className="text-sm font-medium mb-2 block">Search</label>
+                   <label className="text-sm font-medium mb-2 block">{t("categoryView.search")}</label>
                    <Input
-                     placeholder="Filter by word or comment..."
+                     placeholder={t("categoryView.searchPlaceholder")}
                      value={unacceptedTextFilter}
                      onChange={(e) => {
                        setUnacceptedTextFilter(e.target.value);
@@ -722,7 +858,7 @@ export default function CategoryView() {
                    />
                  </div>
                  <div className="w-48">
-                   <label className="text-sm font-medium mb-2 block">Mechanism</label>
+                   <label className="text-sm font-medium mb-2 block">{t("categoryView.mechanism")}</label>
                    <Select
                      value={unacceptedMechanismFilter}
                      onValueChange={(value: Mechanism | "ALL") => {
@@ -734,7 +870,7 @@ export default function CategoryView() {
                        <SelectValue />
                      </SelectTrigger>
                      <SelectContent>
-                       <SelectItem value="ALL">All</SelectItem>
+                       <SelectItem value="ALL">{t("categoryView.all")}</SelectItem>
                        <SelectItem value="BASIC">BASIC</SelectItem>
                        <SelectItem value="TABLE">TABLE</SelectItem>
                      </SelectContent>
@@ -748,80 +884,38 @@ export default function CategoryView() {
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-auto">
-                          <Button
-                            variant="ghost"
-                            onClick={() => {
-                              if (unacceptedSortColumn === "word") {
-                                setUnacceptedSortDirection(unacceptedSortDirection === "asc" ? "desc" : "asc");
-                              } else {
-                                setUnacceptedSortColumn("word");
-                                setUnacceptedSortDirection("asc");
-                              }
-                            }}
-                            className="flex items-center gap-1"
-                          >
-                            Word
-                            <ArrowUpDown className="h-4 w-4" />
-                          </Button>
+                          {t("categoryView.word")}
                         </TableHead>
                         <TableHead className="w-48">
-                          <Button
-                            variant="ghost"
-                            onClick={() => {
-                              if (unacceptedSortColumn === "comment") {
-                                setUnacceptedSortDirection(unacceptedSortDirection === "asc" ? "desc" : "asc");
-                              } else {
-                                setUnacceptedSortColumn("comment");
-                                setUnacceptedSortDirection("asc");
-                              }
-                            }}
-                            className="flex items-center gap-1"
-                          >
-                            Comment
-                            <ArrowUpDown className="h-4 w-4" />
-                          </Button>
+                          {t("categoryView.comment")}
                         </TableHead>
                         <TableHead className="w-32 text-center">
                           <Button
                             variant="ghost"
-                            onClick={() => {
-                              if (unacceptedSortColumn === "mechanism") {
-                                setUnacceptedSortDirection(unacceptedSortDirection === "asc" ? "desc" : "asc");
-                              } else {
-                                setUnacceptedSortColumn("mechanism");
-                                setUnacceptedSortDirection("asc");
-                              }
-                            }}
+                            onClick={() => handleUnacceptedSort("mechanism")}
                             className="flex items-center gap-1 w-full justify-center"
                           >
-                            Mechanism
+                            {t("categoryView.mechanism")}
                             <ArrowUpDown className="h-4 w-4" />
                           </Button>
                          </TableHead>
-                         <TableHead className="w-40 text-center">In Categories</TableHead>
+                         <TableHead className="w-40 text-center">{t("categoryView.inCategories")}</TableHead>
                          <TableHead className="w-52 text-center">
                            <Button
                              variant="ghost"
-                             onClick={() => {
-                               if (unacceptedSortColumn === "created") {
-                                 setUnacceptedSortDirection(unacceptedSortDirection === "asc" ? "desc" : "asc");
-                               } else {
-                                 setUnacceptedSortColumn("created");
-                                 setUnacceptedSortDirection("asc");
-                               }
-                             }}
+                             onClick={() => handleUnacceptedSort("created")}
                              className="flex items-center gap-1 w-full justify-center"
                            >
-                             Created
+                             {t("categoryView.created")}
                              <ArrowUpDown className="h-4 w-4" />
                            </Button>
                          </TableHead>
-                        <TableHead className="w-32 text-center">Actions</TableHead>
+                        <TableHead className="w-32 text-center">{t("categoryView.actions")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                       {paginatedWords(false).map((word) => (
-                         <TableRow 
+                       {unacceptedWords.map((word) => (
+                         <TableRow
                            key={word.id}
                            onDoubleClick={() => handleOpenEditModal(word)}
                            className={`cursor-pointer ${word.inCategories.length > 0 ? 'bg-primary/5' : ''}`}
@@ -891,8 +985,8 @@ export default function CategoryView() {
                {/* Pagination */}
                <div className="flex items-center justify-between">
                  <div className="flex items-center gap-2">
-                   <span className="text-sm text-muted-foreground">Items per page:</span>
-                   <Select 
+                   <span className="text-sm text-muted-foreground">{t("categoryView.itemsPerPage")}</span>
+                   <Select
                      value={unacceptedPageSize.toString()} 
                      onValueChange={(value) => {
                        if (value !== "custom") {
@@ -917,7 +1011,7 @@ export default function CategoryView() {
                    <div className="flex items-center gap-2">
                      <Input
                        type="number"
-                       placeholder="Custom"
+                       placeholder={t("categoryView.custom")}
                        className="w-24"
                        value={unacceptedCustomPageSize}
                        onChange={(e) => setUnacceptedCustomPageSize(e.target.value)}
@@ -943,14 +1037,14 @@ export default function CategoryView() {
                         }}
                         disabled={!unacceptedCustomPageSize}
                       >
-                        Apply
+                        {t("categoryView.apply")}
                       </Button>
                    </div>
                  </div>
 
                  <div className="flex items-center gap-2">
                    <span className="text-sm text-muted-foreground">
-                     Page {unacceptedCurrentPage} of {unacceptedTotalPages || 1} ({filteredAndSortedWords(false).length} total items)
+                     {t("categoryView.page")} {unacceptedCurrentPage} {t("categoryView.of")} {unacceptedTotalPages || 1} ({unacceptedTotalWords} {t("categoryView.totalItems")})
                    </span>
                    <Button
                      variant="outline"
