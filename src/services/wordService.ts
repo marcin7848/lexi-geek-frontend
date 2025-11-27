@@ -330,6 +330,30 @@ export const wordService = {
     return mapWordDtoToWord(res.body);
   },
 
+  // Update word categories
+  updateWordCategories: async (
+    languageUuid: string,
+    wordUuid: string,
+    categoryUuids: string[]
+  ): Promise<Word> => {
+    const service = new RequestService();
+    const request = new RequestBuilder<{ categoryUuids: string[] }>()
+      .url(`/languages/${languageUuid}/words/${wordUuid}/categories`)
+      .method(HttpMethod.POST)
+      .contentTypeHeader('application/json')
+      .body({ categoryUuids })
+      .build();
+
+    const res = await service.send<{ categoryUuids: string[] }, WordDto>(request);
+    throwIfError(res, 'Failed to update word categories');
+
+    if (!res.body) {
+      throw new Error('No response body received');
+    }
+
+    return mapWordDtoToWord(res.body);
+  },
+
   // Convenience method: Get all words for a category (no pagination)
   getAll: async (
     languageUuid: string,

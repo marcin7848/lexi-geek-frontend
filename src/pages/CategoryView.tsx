@@ -69,7 +69,6 @@ export default function CategoryView() {
   const [specialLetters, setSpecialLetters] = useState<string>("");
   const [isCategoriesModalOpen, setIsCategoriesModalOpen] = useState(false);
   const [categoriesModalWord, setCategoriesModalWord] = useState<Word | null>(null);
-  const [allCategories, setAllCategories] = useState<Category[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -96,12 +95,6 @@ export default function CategoryView() {
         if (foundCategory) {
           setCategory(foundCategory);
           setLanguageId(foundLanguageId);
-
-          // Load all categories for the language
-          if (foundLanguageId) {
-            const categories = await categoryService.getAll(foundLanguageId);
-            setAllCategories(categories);
-          }
         } else {
           toast.error("Category not found");
           navigate(-1);
@@ -349,21 +342,31 @@ export default function CategoryView() {
     setIsCategoriesModalOpen(true);
   };
 
-  const handleSaveCategories = async (categoryNames: string[]) => {
-    if (!categoriesModalWord || !languageId || !categoryId) return;
+  const handleSaveCategories = async (categoryUuids: string[]) => {
+    if (!categoriesModalWord || !languageId || !categoriesModalWord.uuid) return;
 
-    // Note: The API doesn't have a direct endpoint for updating word categories
-    // This functionality might need to be implemented on the backend
-    // For now, we'll update the local state only
-    const updatedWords = words.map((w) =>
-      w.id === categoriesModalWord.id
-        ? { ...w, inCategories: categoryNames }
-        : w
-    );
-    setWords(updatedWords);
-    toast.info("Category update - note: this may need backend support");
+    try {
+      // Call the API to update word categories
+      const updatedWord = await wordService.updateWordCategories(
+        languageId,
+        categoriesModalWord.uuid,
+        categoryUuids
+      );
 
-    // TODO: Implement API endpoint for updating word categories if available
+      // Update local state with the updated word
+      setWords(prevWords =>
+        prevWords.map(w => w.uuid === updatedWord.uuid ? updatedWord : w)
+      );
+
+      setUnacceptedWords(prevWords =>
+        prevWords.map(w => w.uuid === updatedWord.uuid ? updatedWord : w)
+      );
+
+      toast.success("Categories updated successfully");
+    } catch (error) {
+      console.error("Error updating categories:", error);
+      toast.error("Failed to update categories");
+    }
   };
 
   const handleWordAdded = async (word: Word) => {
@@ -574,8 +577,8 @@ export default function CategoryView() {
           <ManageCategoriesModal
             open={isCategoriesModalOpen}
             onOpenChange={setIsCategoriesModalOpen}
-            categories={allCategories}
-            initialCategories={categoriesModalWord?.inCategories || []}
+            languageUuid={languageId || ""}
+            initialCategoryNames={categoriesModalWord?.inCategories || []}
             onSave={handleSaveCategories}
           />
 
