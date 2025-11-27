@@ -32,7 +32,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-type SortColumn = "word" | "comment" | "mechanism" | "chosen" | "repeated" | "lastTimestampRepeated" | "created";
+type SortColumn = "word" | "comment" | "mechanism" | "chosen" | "repeated" | "lastTimeRepeated" | "created";
 type SortDirection = "asc" | "desc";
 
 export default function CategoryView() {
@@ -669,7 +669,7 @@ export default function CategoryView() {
                      <TableHead className="w-52 text-center">
                        <Button
                          variant="ghost"
-                         onClick={() => handleSort("lastTimestampRepeated")}
+                         onClick={() => handleSort("lastTimeRepeated")}
                          className="flex items-center gap-1 w-full justify-center"
                        >
                          Last Repeated

@@ -1,6 +1,6 @@
 // Service for word operations
 
-import { Word, Mechanism, WordPart, WordStat, Method, SeparatorType } from "@/types/word";
+import { Word, Mechanism, SeparatorType } from "@/types/word";
 import { HttpMethod, RequestBuilder, RequestService, type PageDto, type PageableRequest } from '@/services/requestService';
 import { throwIfError } from '@/services/requestError';
 
@@ -16,12 +16,6 @@ interface WordPartDto {
   word: string | null;
 }
 
-interface WordStatsDto {
-  uuid: string;
-  answered: number;
-  toAnswer: number;
-  method: string;
-}
 
 interface WordDto {
   uuid: string;
@@ -31,10 +25,10 @@ interface WordDto {
   created: string;
   lastTimeRepeated: string | null;
   mechanism: Mechanism;
+  repeated: number;
   resetTime: string | null;
   toRepeat: boolean;
   wordParts: WordPartDto[];
-  wordStats: WordStatsDto[];
   categoryNames: string[];
 }
 
@@ -76,7 +70,7 @@ export interface PaginationParams {
 }
 
 export interface SortParams {
-  column?: "word" | "comment" | "mechanism" | "chosen" | "repeated" | "lastTimestampRepeated" | "created";
+  column?: "word" | "comment" | "mechanism" | "chosen" | "repeated" | "lastTimeRepeated" | "created";
   direction?: "asc" | "desc";
 }
 
@@ -105,7 +99,7 @@ const mapWordDtoToWord = (dto: WordDto): Word => {
     resetTimestamp: parseISOToTimestamp(dto.resetTime),
     mechanism: dto.mechanism,
     toRepeat: dto.toRepeat,
-    repeated: dto.wordStats.reduce((sum, stat) => sum + stat.answered, 0),
+    repeated: dto.repeated,
     lastTimestampRepeated: parseISOToTimestamp(dto.lastTimeRepeated),
     created: parseISOToTimestamp(dto.created) || Date.now(),
     wordParts: dto.wordParts.map((part) => ({
@@ -117,12 +111,7 @@ const mapWordDtoToWord = (dto: WordDto): Word => {
       isSeparator: part.separator,
       separatorType: part.separatorType as SeparatorType | undefined,
     })),
-    wordStats: dto.wordStats.map((stat) => ({
-      timestampRepeated: 0, // Not provided by backend
-      toAnswer: stat.toAnswer,
-      answered: stat.answered,
-      method: (stat.method === "QUESTION_TO_ANSWER" ? "QuestionToAnswer" : "AnswerToQuestion") as Method,
-    })),
+    wordStats: [],
     inCategories: dto.categoryNames || [],
   };
 };
