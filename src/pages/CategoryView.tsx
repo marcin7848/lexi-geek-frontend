@@ -10,6 +10,7 @@ import { languageService } from "@/services/languageService";
 import { wordService, type WordForm, type WordFilters, type PaginationParams, type SortParams } from "@/services/wordService";
 import WordFormModal from "@/components/WordFormModal";
 import ManageCategoriesModal from "@/components/ManageCategoriesModal";
+import { useLanguage } from "@/i18n/LanguageProvider";
 import {
   Table,
   TableBody,
@@ -38,6 +39,7 @@ type SortDirection = "asc" | "desc";
 export default function CategoryView() {
   const { categoryId } = useParams();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [category, setCategory] = useState<Category | null>(null);
   const [words, setWords] = useState<Word[]>([]);
   const [totalWords, setTotalWords] = useState(0);
@@ -96,18 +98,18 @@ export default function CategoryView() {
           setCategory(foundCategory);
           setLanguageId(foundLanguageId);
         } else {
-          toast.error("Category not found");
+          toast.error(t("categoryView.notFound"));
           navigate(-1);
         }
       } catch (error) {
         console.error("Error loading category:", error);
-        toast.error("Failed to load category");
+        toast.error(t("categoryView.errorLoad"));
         navigate(-1);
       }
     };
 
     loadData();
-  }, [categoryId, navigate]);
+  }, [categoryId, navigate, t]);
 
   // Load accepted words when filters, sorting, or pagination changes
   useEffect(() => {
@@ -143,12 +145,12 @@ export default function CategoryView() {
         setTotalPages(response.totalPages);
       } catch (error) {
         console.error("Error loading accepted words:", error);
-        toast.error("Failed to load words");
+        toast.error(t("categoryView.errorLoadWords"));
       }
     };
 
     loadAcceptedWords();
-  }, [languageId, categoryId, currentPage, pageSize, sortColumn, sortDirection, textFilter, mechanismFilter]);
+  }, [languageId, categoryId, currentPage, pageSize, sortColumn, sortDirection, textFilter, mechanismFilter, t]);
 
   // Load unaccepted words when filters, sorting, or pagination changes
   useEffect(() => {
@@ -184,12 +186,12 @@ export default function CategoryView() {
         setUnacceptedTotalPages(response.totalPages);
       } catch (error) {
         console.error("Error loading unaccepted words:", error);
-        toast.error("Failed to load unaccepted words");
+        toast.error(t("categoryView.errorLoadUnaccepted"));
       }
     };
 
     loadUnacceptedWords();
-  }, [languageId, categoryId, unacceptedCurrentPage, unacceptedPageSize, unacceptedSortColumn, unacceptedSortDirection, unacceptedTextFilter, unacceptedMechanismFilter]);
+  }, [languageId, categoryId, unacceptedCurrentPage, unacceptedPageSize, unacceptedSortColumn, unacceptedSortDirection, unacceptedTextFilter, unacceptedMechanismFilter, t]);
 
   // Helper function to reload accepted words
   const reloadAcceptedWords = async () => {
@@ -224,7 +226,7 @@ export default function CategoryView() {
       setTotalPages(response.totalPages);
     } catch (error) {
       console.error("Error reloading accepted words:", error);
-      toast.error("Failed to reload words");
+      toast.error(t("categoryView.errorReload"));
     }
   };
 
@@ -261,7 +263,7 @@ export default function CategoryView() {
       setUnacceptedTotalPages(response.totalPages);
     } catch (error) {
       console.error("Error reloading unaccepted words:", error);
-      toast.error("Failed to reload unaccepted words");
+      toast.error(t("categoryView.errorReload"));
     }
   };
 
@@ -279,7 +281,7 @@ export default function CategoryView() {
       await reloadAcceptedWords();
     } catch (error) {
       console.error("Error updating word:", error);
-      toast.error("Failed to update word");
+      toast.error(t("categoryView.errorUpdate"));
     }
   };
 
@@ -294,10 +296,10 @@ export default function CategoryView() {
 
       // Reload both tables since word moved from unaccepted to accepted
       await Promise.all([reloadAcceptedWords(), reloadUnacceptedWords()]);
-      toast.success("Word accepted");
+      toast.success(t("categoryView.successAccept"));
     } catch (error) {
       console.error("Error accepting word:", error);
-      toast.error("Failed to accept word");
+      toast.error(t("categoryView.errorAccept"));
     }
   };
 
@@ -312,10 +314,10 @@ export default function CategoryView() {
 
       // Reload unaccepted words table
       await reloadUnacceptedWords();
-      toast.success("Word removed");
+      toast.success(t("categoryView.successRemove"));
     } catch (error) {
       console.error("Error removing word:", error);
-      toast.error("Failed to remove word");
+      toast.error(t("categoryView.errorRemove"));
     }
   };
 
@@ -330,10 +332,10 @@ export default function CategoryView() {
 
       // Reload accepted words table
       await reloadAcceptedWords();
-      toast.success("Word deleted");
+      toast.success(t("categoryView.successDelete"));
     } catch (error) {
       console.error("Error deleting word:", error);
-      toast.error("Failed to delete word");
+      toast.error(t("categoryView.errorDelete"));
     }
   };
 
@@ -362,10 +364,10 @@ export default function CategoryView() {
         prevWords.map(w => w.uuid === updatedWord.uuid ? updatedWord : w)
       );
 
-      toast.success("Categories updated successfully");
+      toast.success(t("categoryView.successCategoriesUpdate"));
     } catch (error) {
       console.error("Error updating categories:", error);
-      toast.error("Failed to update categories");
+      toast.error(t("categoryView.errorCategoriesUpdate"));
     }
   };
 
@@ -401,17 +403,17 @@ export default function CategoryView() {
         } else {
           await reloadUnacceptedWords();
         }
-        toast.success("Word updated");
+        toast.success(t("categoryView.successUpdate"));
       } else {
         // Create new word
         await wordService.createWord(languageId, categoryId, wordForm);
         // New words are typically unaccepted, but reload both to be safe
         await Promise.all([reloadAcceptedWords(), reloadUnacceptedWords()]);
-        toast.success("Word added");
+        toast.success(t("categoryView.successAdd"));
       }
     } catch (error) {
       console.error("Error saving word:", error);
-      toast.error("Failed to save word");
+      toast.error(t("categoryView.errorUpdate"));
     }
   };
 
@@ -516,30 +518,30 @@ export default function CategoryView() {
             className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Language
+            {t("categoryView.backToLanguage")}
           </Button>
 
           <div>
             <h1 className="text-3xl font-bold">{category.name}</h1>
             <div className="flex gap-4 mt-2 text-muted-foreground items-center">
               <span className="flex items-center gap-2">
-                Mode: 
+                {t("categoryView.mode")}:
                 <Badge variant="outline" className="flex items-center gap-1">
                   {category.mode === "DICTIONARY" ? (
                     <Book className="h-4 w-4 text-primary" />
                   ) : (
                     <Dumbbell className="h-4 w-4 fill-orange-500 text-orange-500" />
                   )}
-                  {category.mode === "DICTIONARY" ? "Dictionary" : "Exercise"}
+                  {category.mode === "DICTIONARY" ? t("categoryView.modeDictionary") : t("categoryView.modeExercise")}
                 </Badge>
               </span>
               <span className="flex items-center gap-2">
-                Method: 
+                {t("categoryView.method")}:
                 <Badge variant="outline" className="flex items-center gap-1">
                   {category.method === "QUESTION_TO_ANSWER" && <ArrowRight className="h-4 w-4" />}
                   {category.method === "ANSWER_TO_QUESTION" && <ArrowLeft className="h-4 w-4" />}
                   {category.method === "BOTH" && <ArrowLeftRight className="h-4 w-4" />}
-                  {category.method === "QUESTION_TO_ANSWER" ? "Question → Answer" : category.method === "ANSWER_TO_QUESTION" ? "Answer → Question" : "Both"}
+                  {category.method === "QUESTION_TO_ANSWER" ? t("categoryView.methodQuestionToAnswer") : category.method === "ANSWER_TO_QUESTION" ? t("categoryView.methodAnswerToQuestion") : t("categoryView.methodBoth")}
                 </Badge>
               </span>
             </div>
@@ -547,21 +549,21 @@ export default function CategoryView() {
 
           <div className="flex gap-2">
             <Button onClick={handleOpenAddModal} size="lg">
-              Add New Word
+              {t("categoryView.addWord")}
             </Button>
             <Button 
               onClick={() => navigate(`/category/${categoryId}/auto-translate`)} 
               variant="secondary"
               size="lg"
             >
-              Automatic translation
+              {t("categoryView.autoTranslate")}
             </Button>
             <Button 
               onClick={() => navigate(`/category/${categoryId}/other-users-words`)} 
               variant="secondary"
               size="lg"
             >
-              Other users words
+              {t("categoryView.otherUsersWords")}
             </Button>
           </div>
 
@@ -586,9 +588,9 @@ export default function CategoryView() {
             {/* Filters */}
             <div className="flex gap-4 items-end">
               <div className="flex-1">
-                <label className="text-sm font-medium mb-2 block">Search</label>
+                <label className="text-sm font-medium mb-2 block">{t("categoryView.search")}</label>
                 <Input
-                  placeholder="Filter by word or comment..."
+                  placeholder={t("categoryView.searchPlaceholder")}
                   value={textFilter}
                   onChange={(e) => {
                     setTextFilter(e.target.value);
@@ -597,7 +599,7 @@ export default function CategoryView() {
                 />
               </div>
               <div className="w-48">
-                <label className="text-sm font-medium mb-2 block">Mechanism</label>
+                <label className="text-sm font-medium mb-2 block">{t("categoryView.mechanism")}</label>
                 <Select
                   value={mechanismFilter}
                   onValueChange={(value: Mechanism | "ALL") => {
@@ -609,7 +611,7 @@ export default function CategoryView() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ALL">All</SelectItem>
+                    <SelectItem value="ALL">{t("categoryView.all")}</SelectItem>
                     <SelectItem value="BASIC">BASIC</SelectItem>
                     <SelectItem value="TABLE">TABLE</SelectItem>
                   </SelectContent>
@@ -623,10 +625,10 @@ export default function CategoryView() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-auto">
-                      Word
+                      {t("categoryView.word")}
                     </TableHead>
                     <TableHead className="w-48">
-                      Comment
+                      {t("categoryView.comment")}
                     </TableHead>
                     <TableHead className="w-32 text-center">
                       <Button
@@ -634,7 +636,7 @@ export default function CategoryView() {
                         onClick={() => handleSort("mechanism")}
                         className="flex items-center gap-1 w-full justify-center"
                       >
-                        Mechanism
+                        {t("categoryView.mechanism")}
                         <ArrowUpDown className="h-4 w-4" />
                       </Button>
                     </TableHead>
@@ -644,7 +646,7 @@ export default function CategoryView() {
                         onClick={() => handleSort("chosen")}
                         className="flex items-center gap-1 w-full justify-center"
                       >
-                        Chosen
+                        {t("categoryView.chosen")}
                         <ArrowUpDown className="h-4 w-4" />
                       </Button>
                     </TableHead>
@@ -654,18 +656,18 @@ export default function CategoryView() {
                          onClick={() => handleSort("repeated")}
                          className="flex items-center gap-1 w-full justify-center"
                        >
-                         Repeated
+                         {t("categoryView.repeated")}
                          <ArrowUpDown className="h-4 w-4" />
                        </Button>
                      </TableHead>
-                     <TableHead className="w-40 text-center">In Categories</TableHead>
+                     <TableHead className="w-40 text-center">{t("categoryView.inCategories")}</TableHead>
                       <TableHead className="w-52 text-center">
                         <Button
                           variant="ghost"
                           onClick={() => handleSort("created")}
                           className="flex items-center gap-1 w-full justify-center"
                         >
-                          Created
+                          {t("categoryView.created")}
                           <ArrowUpDown className="h-4 w-4" />
                         </Button>
                       </TableHead>
@@ -675,11 +677,11 @@ export default function CategoryView() {
                          onClick={() => handleSort("lastTimeRepeated")}
                          className="flex items-center gap-1 w-full justify-center"
                        >
-                         Last Repeated
+                         {t("categoryView.lastRepeated")}
                          <ArrowUpDown className="h-4 w-4" />
                        </Button>
                      </TableHead>
-                     <TableHead className="w-32 text-center">Actions</TableHead>
+                     <TableHead className="w-32 text-center">{t("categoryView.actions")}</TableHead>
                    </TableRow>
                  </TableHeader>
                   <TableBody>
@@ -727,7 +729,7 @@ export default function CategoryView() {
                                 <p className="max-w-xs">
                                   {word.inCategories.length > 0 
                                     ? word.inCategories.join(", ")
-                                    : "No categories"}
+                                    : t("categoryView.noCategories")}
                                 </p>
                               </TooltipContent>
                             </Tooltip>
@@ -776,7 +778,7 @@ export default function CategoryView() {
              {/* Pagination */}
              <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Items per page:</span>
+                <span className="text-sm text-muted-foreground">{t("categoryView.itemsPerPage")}</span>
                 <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
                   <SelectTrigger className="w-24">
                     <SelectValue />
@@ -794,7 +796,7 @@ export default function CategoryView() {
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"
-                    placeholder="Custom"
+                    placeholder={t("categoryView.custom")}
                     className="w-24"
                     value={customPageSize}
                     onChange={(e) => setCustomPageSize(e.target.value)}
@@ -810,14 +812,14 @@ export default function CategoryView() {
                     onClick={handleCustomPageSize}
                     disabled={!customPageSize}
                   >
-                    Apply
+                    {t("categoryView.apply")}
                   </Button>
                 </div>
               </div>
 
                <div className="flex items-center gap-2">
                  <span className="text-sm text-muted-foreground">
-                   Page {currentPage} of {totalPages || 1} ({totalWords} total items)
+                   {t("categoryView.page")} {currentPage} {t("categoryView.of")} {totalPages || 1} ({totalWords} {t("categoryView.totalItems")})
                  </span>
                  <Button
                    variant="outline"
@@ -840,14 +842,14 @@ export default function CategoryView() {
 
              {/* Unaccepted Words Section */}
              <div className="space-y-4 mt-12">
-               <h2 className="text-2xl font-bold">Pending Words</h2>
+               <h2 className="text-2xl font-bold">{t("categoryView.pendingWords")}</h2>
 
                {/* Filters */}
                <div className="flex gap-4 items-end">
                  <div className="flex-1">
-                   <label className="text-sm font-medium mb-2 block">Search</label>
+                   <label className="text-sm font-medium mb-2 block">{t("categoryView.search")}</label>
                    <Input
-                     placeholder="Filter by word or comment..."
+                     placeholder={t("categoryView.searchPlaceholder")}
                      value={unacceptedTextFilter}
                      onChange={(e) => {
                        setUnacceptedTextFilter(e.target.value);
@@ -856,7 +858,7 @@ export default function CategoryView() {
                    />
                  </div>
                  <div className="w-48">
-                   <label className="text-sm font-medium mb-2 block">Mechanism</label>
+                   <label className="text-sm font-medium mb-2 block">{t("categoryView.mechanism")}</label>
                    <Select
                      value={unacceptedMechanismFilter}
                      onValueChange={(value: Mechanism | "ALL") => {
@@ -868,7 +870,7 @@ export default function CategoryView() {
                        <SelectValue />
                      </SelectTrigger>
                      <SelectContent>
-                       <SelectItem value="ALL">All</SelectItem>
+                       <SelectItem value="ALL">{t("categoryView.all")}</SelectItem>
                        <SelectItem value="BASIC">BASIC</SelectItem>
                        <SelectItem value="TABLE">TABLE</SelectItem>
                      </SelectContent>
@@ -882,10 +884,10 @@ export default function CategoryView() {
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-auto">
-                          Word
+                          {t("categoryView.word")}
                         </TableHead>
                         <TableHead className="w-48">
-                          Comment
+                          {t("categoryView.comment")}
                         </TableHead>
                         <TableHead className="w-32 text-center">
                           <Button
@@ -893,22 +895,22 @@ export default function CategoryView() {
                             onClick={() => handleUnacceptedSort("mechanism")}
                             className="flex items-center gap-1 w-full justify-center"
                           >
-                            Mechanism
+                            {t("categoryView.mechanism")}
                             <ArrowUpDown className="h-4 w-4" />
                           </Button>
                          </TableHead>
-                         <TableHead className="w-40 text-center">In Categories</TableHead>
+                         <TableHead className="w-40 text-center">{t("categoryView.inCategories")}</TableHead>
                          <TableHead className="w-52 text-center">
                            <Button
                              variant="ghost"
                              onClick={() => handleUnacceptedSort("created")}
                              className="flex items-center gap-1 w-full justify-center"
                            >
-                             Created
+                             {t("categoryView.created")}
                              <ArrowUpDown className="h-4 w-4" />
                            </Button>
                          </TableHead>
-                        <TableHead className="w-32 text-center">Actions</TableHead>
+                        <TableHead className="w-32 text-center">{t("categoryView.actions")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -983,8 +985,8 @@ export default function CategoryView() {
                {/* Pagination */}
                <div className="flex items-center justify-between">
                  <div className="flex items-center gap-2">
-                   <span className="text-sm text-muted-foreground">Items per page:</span>
-                   <Select 
+                   <span className="text-sm text-muted-foreground">{t("categoryView.itemsPerPage")}</span>
+                   <Select
                      value={unacceptedPageSize.toString()} 
                      onValueChange={(value) => {
                        if (value !== "custom") {
@@ -1009,7 +1011,7 @@ export default function CategoryView() {
                    <div className="flex items-center gap-2">
                      <Input
                        type="number"
-                       placeholder="Custom"
+                       placeholder={t("categoryView.custom")}
                        className="w-24"
                        value={unacceptedCustomPageSize}
                        onChange={(e) => setUnacceptedCustomPageSize(e.target.value)}
@@ -1035,14 +1037,14 @@ export default function CategoryView() {
                         }}
                         disabled={!unacceptedCustomPageSize}
                       >
-                        Apply
+                        {t("categoryView.apply")}
                       </Button>
                    </div>
                  </div>
 
                  <div className="flex items-center gap-2">
                    <span className="text-sm text-muted-foreground">
-                     Page {unacceptedCurrentPage} of {unacceptedTotalPages || 1} ({unacceptedTotalWords} total items)
+                     {t("categoryView.page")} {unacceptedCurrentPage} {t("categoryView.of")} {unacceptedTotalPages || 1} ({unacceptedTotalWords} {t("categoryView.totalItems")})
                    </span>
                    <Button
                      variant="outline"

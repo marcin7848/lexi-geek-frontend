@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Category } from "@/types/category";
 import { categoryService } from "@/services/categoryService";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 interface ManageCategoriesModalProps {
   open: boolean;
@@ -21,6 +22,7 @@ export default function ManageCategoriesModal({
   initialCategoryNames,
   onSave,
 }: ManageCategoriesModalProps) {
+  const { t } = useLanguage();
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [displayedCategories, setDisplayedCategories] = useState<Category[]>([]);
   const [selectedCategoryUuids, setSelectedCategoryUuids] = useState<string[]>([]);
@@ -132,9 +134,6 @@ export default function ManageCategoriesModal({
       .map(cat => cat.name);
   };
 
-  const selectedCategoriesText = selectedCategoryUuids.length > 0
-    ? getSelectedCategoryNames().join(", ")
-    : "No categories selected";
 
   const buildCategoryTree = () => {
     // Group categories by parent
@@ -193,23 +192,25 @@ export default function ManageCategoriesModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Manage Categories</DialogTitle>
+          <DialogTitle>{t("manageCategories.title")}</DialogTitle>
           <DialogDescription>
-            Select categories for this word (at least one required)
+            {t("manageCategories.description")}
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
           <div className="space-y-2">
-            <div className="text-sm font-medium">Selected Categories:</div>
+            <div className="text-sm font-medium">{t("manageCategories.selectedCategories")}:</div>
             <div className="text-sm text-muted-foreground border rounded-lg p-3 bg-muted/50 max-h-20 overflow-y-auto">
-              {selectedCategoriesText}
+              {selectedCategoryUuids.length > 0
+                ? getSelectedCategoryNames().join(", ")
+                : t("manageCategories.noCategoriesSelected")}
             </div>
           </div>
 
           <div className="space-y-2">
             <Input
-              placeholder="Filter categories..."
+              placeholder={t("manageCategories.filterPlaceholder")}
               value={filterText}
               onChange={(e) => {
                 setFilterText(e.target.value);
@@ -225,18 +226,18 @@ export default function ManageCategoriesModal({
             >
               {loading ? (
                 <div className="text-center text-sm text-muted-foreground py-4">
-                  Loading categories...
+                  {t("manageCategories.loading")}
                 </div>
               ) : displayedCategories.length === 0 ? (
                 <div className="text-center text-sm text-muted-foreground py-4">
-                  No categories found
+                  {t("manageCategories.noCategories")}
                 </div>
               ) : (
                 <>
                   {buildCategoryTree()}
                   {displayCount < getFilteredCategories().length && (
                     <div className="text-center text-sm text-muted-foreground py-2">
-                      Scroll down for more...
+                      {t("manageCategories.scrollMore")}
                     </div>
                   )}
                 </>
@@ -244,16 +245,16 @@ export default function ManageCategoriesModal({
             </div>
 
             <div className="text-xs text-muted-foreground">
-              Showing {displayedCategories.length} of {getFilteredCategories().length} categories
+              {t("manageCategories.showing")} {displayedCategories.length} {t("categoryView.of")} {getFilteredCategories().length} {t("manageCategories.categoriesCount")}
             </div>
           </div>
 
           <div className="flex gap-2">
             <Button onClick={handleSubmit} className="flex-1" disabled={selectedCategoryUuids.length === 0}>
-              Save Changes
+              {t("manageCategories.save")}
             </Button>
             <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
-              Cancel
+              {t("manageCategories.cancel")}
             </Button>
           </div>
         </div>

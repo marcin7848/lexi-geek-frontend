@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X, Plus, GripVertical } from "lucide-react";
 import { Word, Mechanism } from "@/types/word";
 import { toast } from "sonner";
+import { useLanguage } from "@/i18n/LanguageProvider";
 import {
   DndContext,
   closestCenter,
@@ -49,6 +50,7 @@ function SortableWordPartRow({
   onDelete,
   firstInputRef,
   onInputFocus,
+  t,
 }: {
   part: WordPartInput;
   index: number;
@@ -56,6 +58,7 @@ function SortableWordPartRow({
   onDelete: (id: string) => void;
   firstInputRef?: React.RefObject<HTMLInputElement>;
   onInputFocus?: (input: HTMLInputElement) => void;
+  t: (key: string) => string;
 }) {
   const {
     attributes,
@@ -98,13 +101,13 @@ function SortableWordPartRow({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ENTER">ENTER (new line)</SelectItem>
-              <SelectItem value="TAB">TAB (tabulator)</SelectItem>
-              <SelectItem value="MULTI_DASH">MULTI_DASH (----------)</SelectItem>
+              <SelectItem value="ENTER">{t("categoryView.separatorEnter")}</SelectItem>
+              <SelectItem value="TAB">{t("categoryView.separatorTab")}</SelectItem>
+              <SelectItem value="MULTI_DASH">{t("categoryView.separatorMultiDash")}</SelectItem>
             </SelectContent>
           </Select>
           <span className="text-sm text-muted-foreground">
-            Separator - {part.basicWord}
+            {t("wordForm.separatorInfo")} {part.basicWord}
           </span>
         </div>
       ) : (
@@ -113,7 +116,7 @@ function SortableWordPartRow({
         <Input
           id={`word-${part.id}-word`}
           ref={index === 0 && !part.answer ? firstInputRef : undefined}
-          placeholder={part.answer ? "Answer word" : "Question word"}
+          placeholder={part.answer ? t("wordForm.answerWord") : t("wordForm.questionWord")}
           value={part.word}
           onChange={(e) => onUpdate(part.id, "word", e.target.value)}
           onFocus={(e) => onInputFocus?.(e.target)}
@@ -127,7 +130,7 @@ function SortableWordPartRow({
         />
         <Input
           id={`word-${part.id}-basicWord`}
-          placeholder="Basic word (optional)"
+          placeholder={t("wordForm.basicWord")}
           value={part.basicWord}
           onChange={(e) => onUpdate(part.id, "basicWord", e.target.value)}
           onFocus={(e) => onInputFocus?.(e.target)}
@@ -158,7 +161,7 @@ function SortableWordPartRow({
             htmlFor={`toSpeech-${part.id}`}
             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
-            To Speech
+            {t("wordForm.toSpeech")}
           </label>
           </div>
         </div>
@@ -179,6 +182,7 @@ function SortableWordPartRow({
 }
 
 export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose, specialLetters }: AddWordFormProps) {
+  const { t } = useLanguage();
   const [comment, setComment] = useState(editWord?.comment || "");
   const [mechanism, setMechanism] = useState<Mechanism>(editWord?.mechanism || "BASIC");
   const [wordParts, setWordParts] = useState<WordPartInput[]>(
@@ -348,7 +352,7 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
     const newPart: WordPartInput = {
       id: crypto.randomUUID(),
       word: "ENTER",
-      basicWord: "(representation for enter)",
+      basicWord: t("categoryView.separatorEnterRep"),
       answer: false,
       toSpeech: false,
       isSeparator: true,
@@ -418,25 +422,24 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
         },
       ]);
       firstInputRef.current?.focus();
-      toast.success("Word added successfully");
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <h3 className="text-lg font-semibold">{editWord ? "Edit Word" : "Add New Word"}</h3>
+      <h3 className="text-lg font-semibold">{editWord ? t("wordForm.editTitle") : t("wordForm.addTitle")}</h3>
 
       {/* Keyboard shortcuts info */}
       <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-        <strong>Shortcuts:</strong> Ctrl+; (add question part), Ctrl+' (add answer part), Ctrl+/ (add separator), Enter (submit)
+        {t("wordForm.shortcutsInfo")}
       </div>
 
 
       <div>
-        <label className="text-sm font-medium mb-2 block">Comment</label>
+        <label className="text-sm font-medium mb-2 block">{t("wordForm.comment")}</label>
         <Input
           id="comment-input"
-          placeholder="Enter comment for this word..."
+          placeholder={t("wordForm.commentPlaceholder")}
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           onFocus={(e) => lastFocusedInputRef.current = e.target}
@@ -444,14 +447,14 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
       </div>
 
       <div>
-        <label className="text-sm font-medium mb-2 block">Mechanism</label>
+        <label className="text-sm font-medium mb-2 block">{t("wordForm.mechanism")}</label>
         <Select value={mechanism} onValueChange={(value: Mechanism) => setMechanism(value)}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="BASIC">Basic</SelectItem>
-            <SelectItem value="TABLE">Table</SelectItem>
+            <SelectItem value="BASIC">{t("wordForm.mechanismBasic")}</SelectItem>
+            <SelectItem value="TABLE">{t("wordForm.mechanismTable")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -459,7 +462,7 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
       {/* Special Letters */}
       {specialLetters && specialLetters.length > 0 && (
         <div className="border rounded-lg p-3">
-          <label className="text-sm font-medium block mb-2">Special Letters</label>
+          <label className="text-sm font-medium block mb-2">{t("wordForm.specialLetters")}</label>
           <div className="flex flex-wrap gap-2">
             {specialLetters.split(",").map((letter, index) => (
               <Button
@@ -479,7 +482,7 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
       )}
       
       <div className="space-y-3">
-        <label className="text-sm font-medium block">Word Parts</label>
+        <label className="text-sm font-medium block">{t("wordForm.wordParts")}</label>
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -498,6 +501,7 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
                 onDelete={deleteWordPart}
                 firstInputRef={index === 0 && !part.answer ? firstInputRef : undefined}
                 onInputFocus={(input) => lastFocusedInputRef.current = input}
+                t={t}
               />
             ))}
           </SortableContext>
@@ -511,7 +515,7 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
             className="flex-1"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Add Question Part
+            {t("wordForm.addQuestionPart")}
           </Button>
           <Button
             type="button"
@@ -520,7 +524,7 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
             className="flex-1"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Add Answer Part
+            {t("wordForm.addAnswerPart")}
           </Button>
           <Button
             type="button"
@@ -529,13 +533,13 @@ export default function AddWordForm({ categoryId, onWordAdded, editWord, onClose
             className="flex-1"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Add Separator
+            {t("wordForm.addSeparator")}
           </Button>
         </div>
       </div>
 
       <Button type="submit" className="w-full">
-        {editWord ? "Update Word" : "Add Word"}
+        {editWord ? t("wordForm.updateButton") : t("wordForm.addButton")}
       </Button>
     </form>
   );

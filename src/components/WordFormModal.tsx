@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import AddWordForm from "@/components/AddWordForm";
 import { Word } from "@/types/word";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 interface WordFormModalProps {
   open: boolean;
@@ -19,13 +20,15 @@ export default function WordFormModal({
   editWord,
   specialLetters,
 }: WordFormModalProps) {
+  const { t } = useLanguage();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editWord ? "Edit Word" : "Add New Word"}</DialogTitle>
+          <DialogTitle>{editWord ? t("wordForm.editTitle") : t("wordForm.addTitle")}</DialogTitle>
           <DialogDescription>
-            {editWord ? "Update the word details below" : "Fill in the details to add a new word"}
+            {editWord ? t("wordForm.editDescription") : t("wordForm.addDescription")}
           </DialogDescription>
         </DialogHeader>
         <AddWordForm
