@@ -109,7 +109,7 @@ export default function LanguageSettings() {
         shortcut: language.shortcut,
         codeForSpeech: language.codeForSpeech,
         codeForTranslator: language.codeForTranslator,
-        hidden: language.hidden,
+        isPublic: language.isPublic,
         specialLetters: language.specialLetters || "",
       };
       await languageService.updateLanguage(language.id, form);
@@ -194,13 +194,13 @@ export default function LanguageSettings() {
 
             <div className="flex items-center space-x-2">
               <Checkbox
-                id="hidden"
-                checked={language.hidden}
-                onCheckedChange={(checked) => 
-                  setLanguage({ ...language, hidden: checked as boolean })
+                id="public"
+                checked={language.isPublic}
+                onCheckedChange={(checked) =>
+                  setLanguage({ ...language, isPublic: checked as boolean })
                 }
               />
-              <Label htmlFor="hidden" className="cursor-pointer">{t("addLanguage.hidden")}</Label>
+              <Label htmlFor="public" className="cursor-pointer">{t("addLanguage.public")}</Label>
             </div>
 
             <div className="space-y-2">

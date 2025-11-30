@@ -7,7 +7,7 @@ export interface Language {
   id: string;
   name: string;
   shortcut: string;
-  hidden: boolean;
+  isPublic: boolean;
   codeForTranslator: string;
   codeForSpeech: string;
   specialLetters?: string;
@@ -20,7 +20,7 @@ interface LanguageDto {
   shortcut: string;
   codeForSpeech: string;
   codeForTranslator: string;
-  hidden: boolean;
+  isPublic: boolean;
   specialLetters: string;
 }
 
@@ -36,7 +36,7 @@ export interface LanguageFilterForm {
   shortcut?: string;
   codeForSpeech?: string;
   codeForTranslator?: string;
-  hidden?: boolean;
+  isPublic?: boolean;
   specialLetters?: string;
 }
 
@@ -46,7 +46,7 @@ export interface LanguageForm {
   shortcut: string;
   codeForSpeech: string;
   codeForTranslator: string;
-  hidden: boolean;
+  isPublic: boolean;
   specialLetters: string;
 }
 
@@ -105,7 +105,7 @@ export const languageService = {
         if (filter.shortcut) builder.param('shortcut', filter.shortcut);
         if (filter.codeForSpeech) builder.param('codeForSpeech', filter.codeForSpeech);
         if (filter.codeForTranslator) builder.param('codeForTranslator', filter.codeForTranslator);
-        if (typeof filter.hidden === 'boolean') builder.param('hidden', String(filter.hidden));
+        if (typeof filter.isPublic === 'boolean') builder.param('public', String(filter.isPublic));
         if (filter.specialLetters) builder.param('specialLetters', filter.specialLetters);
       }
 
@@ -121,7 +121,7 @@ export const languageService = {
         shortcut: l.shortcut,
         codeForTranslator: l.codeForTranslator,
         codeForSpeech: l.codeForSpeech,
-        hidden: l.hidden,
+        isPublic: l.isPublic,
         specialLetters: l.specialLetters,
       }));
 

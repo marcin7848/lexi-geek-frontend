@@ -18,7 +18,7 @@ export default function AddLanguage() {
   const [formData, setFormData] = useState({
     name: "",
     shortcut: "",
-    hidden: false,
+    isPublic: true,
     codeForTranslator: "",
     codeForSpeech: "",
     specialLetters: "",
@@ -71,7 +71,7 @@ export default function AddLanguage() {
         shortcut: formData.shortcut,
         codeForSpeech: formData.codeForSpeech,
         codeForTranslator: formData.codeForTranslator,
-        hidden: formData.hidden,
+        isPublic: formData.isPublic,
         specialLetters: formData.specialLetters,
       });
 
@@ -140,13 +140,13 @@ export default function AddLanguage() {
 
             <div className="flex items-center space-x-2">
               <Checkbox
-                id="hidden"
-                checked={formData.hidden}
-                onCheckedChange={(checked) => 
-                  setFormData({ ...formData, hidden: checked as boolean })
+                id="public"
+                checked={formData.isPublic}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, isPublic: checked as boolean })
                 }
               />
-              <Label htmlFor="hidden" className="cursor-pointer">{t("addLanguage.hidden")}</Label>
+              <Label htmlFor="public" className="cursor-pointer">{t("addLanguage.public")}</Label>
             </div>
 
             <div className="space-y-2">
