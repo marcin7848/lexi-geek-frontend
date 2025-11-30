@@ -559,11 +559,11 @@ export default function CategoryView() {
               {t("categoryView.autoTranslate")}
             </Button>
             <Button 
-              onClick={() => navigate(`/category/${categoryId}/other-users-words`)} 
+              onClick={() => navigate(`/category/${categoryId}/public-words`)}
               variant="secondary"
               size="lg"
             >
-              {t("categoryView.otherUsersWords")}
+              {t("categoryView.publicWords")}
             </Button>
           </div>
 

@@ -14,7 +14,7 @@ import LanguageView from "./pages/LanguageView";
 import LanguageSettings from "./pages/LanguageSettings";
 import CategoryView from "./pages/CategoryView";
 import AutomaticTranslate from "./pages/AutomaticTranslate";
-import OtherUsersWords from "./pages/OtherUsersWords";
+import PublicWords from "./pages/PublicWords";
 import Repeating from "./pages/Repeating";
 import NotFound from "./pages/NotFound";
 
@@ -39,7 +39,7 @@ const App = () => (
             <Route path="/language/:languageId/repeat" element={<Repeating />} />
             <Route path="/category/:categoryId" element={<CategoryView />} />
             <Route path="/category/:categoryId/auto-translate" element={<AutomaticTranslate />} />
-            <Route path="/category/:categoryId/other-users-words" element={<OtherUsersWords />} />
+            <Route path="/category/:categoryId/public-words" element={<PublicWords />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

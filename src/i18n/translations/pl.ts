@@ -293,7 +293,7 @@ export const pl = {
     "categoryView.method": "Metoda",
     "categoryView.addWord": "Dodaj Nowe Słowo",
     "categoryView.autoTranslate": "Automatyczne tłumaczenie",
-    "categoryView.otherUsersWords": "Słowa innych użytkowników",
+    "categoryView.publicWords": "Słowa publiczne",
     "categoryView.search": "Szukaj",
     "categoryView.searchPlaceholder": "Filtruj według słowa lub komentarza...",
     "categoryView.mechanism": "Mechanizm",
