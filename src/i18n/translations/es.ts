@@ -30,7 +30,7 @@ const es = {
     "sidebar.home": "Página principal",
     "sidebar.languages": "Idiomas",
     "sidebar.addLanguage": "Añadir Idioma",
-    "sidebar.otherUsersWords": "Palabras de Otros Usuarios",
+    "sidebar.publicWords": "Palabras Públicas",
 
     // Language View
     "language.title": "Idioma:",

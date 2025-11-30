@@ -30,7 +30,7 @@ export const de = {
     "sidebar.home": "Startseite",
     "sidebar.languages": "Sprachen",
     "sidebar.addLanguage": "Sprache Hinzufügen",
-    "sidebar.otherUsersWords": "Wörter Anderer Benutzer",
+    "sidebar.publicWords": "Öffentliche Wörter",
 
     // Language View
     "language.title": "Sprache:",
