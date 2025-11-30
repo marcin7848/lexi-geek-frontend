@@ -34,24 +34,40 @@ export default function LanguageSettings() {
 
   useEffect(() => {
     const load = async () => {
-      const idNum = Number(languageId);
-      if (!idNum || idNum < 1) {
+      if (!languageId) {
         toast.error(t("addLanguage.notFound"));
         navigate("/", { replace: true });
         return;
       }
+
       try {
-        const langs = await languageService.getLanguages(undefined, { sort: 'name', order: 'desc', singlePage: true });
-        const idx = idNum - 1;
-        const found = langs[idx];
-        if (found) {
-          // Optionally refetch specific language by UUID to ensure fresh data
-          try {
-            const precise = await languageService.getLanguages({ uuid: found.id }, { singlePage: true });
-            setLanguage(precise[0] ?? found);
-          } catch {
-            setLanguage(found);
+        // Check if languageId is a numeric index or a UUID
+        const isNumericIndex = /^\d+$/.test(languageId);
+        let found: Language | null = null;
+
+        if (isNumericIndex) {
+          // Handle numeric index (backward compatibility)
+          const idNum = Number(languageId);
+          if (idNum < 1) {
+            toast.error(t("addLanguage.notFound"));
+            navigate("/", { replace: true });
+            return;
           }
+          const langs = await languageService.getLanguages(undefined, { sort: 'name', order: 'desc', singlePage: true });
+          const idx = idNum - 1;
+          found = langs[idx];
+        } else {
+          // Handle UUID
+          try {
+            const langs = await languageService.getLanguages({ uuid: languageId }, { singlePage: true });
+            found = langs[0] || null;
+          } catch {
+            found = null;
+          }
+        }
+
+        if (found) {
+          setLanguage(found);
         } else {
           toast.error(t("addLanguage.notFound"));
           navigate("/", { replace: true });

@@ -181,7 +181,7 @@ export const Sidebar = () => {
                       size="icon"
                       onClick={(e) => {
                         e.preventDefault();
-                        navigate(`/language/${idx + 1}/edit`);
+                        navigate(`/language/${language.id}/edit`);
                         setIsOpen(false);
                       }}
                       className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
