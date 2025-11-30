@@ -31,18 +31,18 @@ interface WordDto {
   categoryNames: string[];
 }
 
-export interface OtherUsersWordFilters {
+export interface PublicWordsFilters {
   mechanism?: Mechanism | "ALL";
   searchText?: string;
   categoryName?: string;
 }
 
-export interface OtherUsersPaginationParams {
+export interface PublicWordsPaginationParams {
   page: number;
   pageSize: number;
 }
 
-export interface OtherUsersSortParams {
+export interface PublicWordsSortParams {
   column?: "word" | "comment" | "mechanism" | "category";
   direction?: "asc" | "desc";
 }
@@ -155,7 +155,7 @@ export const publicWordsService = {
     };
   },
 
-  // Accept a word from other users (add it to current user's category)
+  // Accept a public word (add it to current user's category)
   acceptWord: async (
     languageUuid: string,
     categoryUuid: string,

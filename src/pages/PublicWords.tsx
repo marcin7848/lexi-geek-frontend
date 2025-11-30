@@ -291,34 +291,13 @@ const PublicWords = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-auto">
-                      <Button
-                        variant="ghost"
-                        onClick={() => handleSort("word")}
-                        className="flex items-center gap-1"
-                      >
-                        {t("publicWords.word")}
-                        <ArrowUpDown className="h-4 w-4" />
-                      </Button>
+                      {t("publicWords.word")}
                     </TableHead>
                     <TableHead className="w-48">
-                      <Button
-                        variant="ghost"
-                        onClick={() => handleSort("comment")}
-                        className="flex items-center gap-1"
-                      >
-                        {t("publicWords.comment")}
-                        <ArrowUpDown className="h-4 w-4" />
-                      </Button>
+                      {t("publicWords.comment")}
                     </TableHead>
                     <TableHead className="w-32 text-center">
-                      <Button
-                        variant="ghost"
-                        onClick={() => handleSort("category")}
-                        className="flex items-center gap-1 w-full justify-center"
-                      >
-                        {t("publicWords.category")}
-                        <ArrowUpDown className="h-4 w-4" />
-                      </Button>
+                      {t("publicWords.category")}
                     </TableHead>
                     <TableHead className="w-32 text-center">
                       <Button
