@@ -211,7 +211,7 @@ export const de = {
     "addLanguage.namePlaceholder": "Sprachname eingeben",
     "addLanguage.shortcut": "Kürzel",
     "addLanguage.shortcutPlaceholder": "Kürzel eingeben",
-    "addLanguage.hidden": "Versteckt",
+    "addLanguage.public": "Öffentlich",
     "addLanguage.codeForTranslator": "Code für Übersetzer",
     "addLanguage.codeForTranslatorPlaceholder": "z.B. de-DE",
     "addLanguage.codeForSpeech": "Code für Sprache",

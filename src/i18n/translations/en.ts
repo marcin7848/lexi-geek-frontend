@@ -208,7 +208,7 @@ export const en = {
     "addLanguage.namePlaceholder": "Enter language name",
     "addLanguage.shortcut": "Shortcut",
     "addLanguage.shortcutPlaceholder": "Enter shortcut",
-    "addLanguage.hidden": "Hidden",
+    "addLanguage.public": "Public",
     "addLanguage.codeForTranslator": "Code for Translator",
     "addLanguage.codeForTranslatorPlaceholder": "e.g., en-US",
     "addLanguage.codeForSpeech": "Code for Speech",
