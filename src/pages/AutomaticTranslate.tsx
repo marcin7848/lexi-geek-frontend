@@ -11,6 +11,7 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 import { Category } from "@/types/category";
 import { categoryService } from "@/services/categoryService";
 import { languageService } from "@/services/languageService";
+import { toast } from "sonner";
 
 const AutomaticTranslate = () => {
   const { categoryId } = useParams();
@@ -19,6 +20,8 @@ const AutomaticTranslate = () => {
   const [method, setMethod] = useState("GOOGLE_TRANSLATOR");
   const [text, setText] = useState("");
   const [category, setCategory] = useState<Category | null>(null);
+  const [languageId, setLanguageId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const categoryName = category?.name || "Unknown Category";
 
@@ -36,20 +39,46 @@ const AutomaticTranslate = () => {
 
           if (found) {
             setCategory(found);
+            setLanguageId(language.id);
             break;
           }
         }
       } catch (error) {
         console.error("Error loading category:", error);
+        toast.error(t("autoTranslate.errorLoad"));
       }
     };
 
     loadCategory();
-  }, [categoryId]);
+  }, [categoryId, t]);
 
-  const handleAutoTranslate = () => {
-    // Currently just redirects back to category page
-    navigate(`/category/${categoryId}`);
+  const handleAutoTranslate = async () => {
+    if (!languageId || !categoryId) {
+      toast.error(t("autoTranslate.errorMissingData"));
+      return;
+    }
+
+    if (!text.trim()) {
+      toast.error(t("autoTranslate.errorEmptyText"));
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      await categoryService.automaticTranslation(languageId, categoryId, {
+        method,
+        text,
+      });
+
+      toast.success(t("autoTranslate.success"));
+      navigate(`/category/${categoryId}`);
+    } catch (error) {
+      console.error("Error performing automatic translation:", error);
+      toast.error(t("autoTranslate.errorTranslation"));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -96,8 +125,8 @@ const AutomaticTranslate = () => {
               />
             </div>
 
-            <Button onClick={handleAutoTranslate}>
-              {t("autoTranslate.button")}
+            <Button onClick={handleAutoTranslate} disabled={isLoading}>
+              {isLoading ? t("autoTranslate.translating") : t("autoTranslate.button")}
             </Button>
           </div>
         </div>

@@ -156,6 +156,12 @@ const es = {
     "autoTranslate.textToTranslate": "Texto para Traducir",
     "autoTranslate.placeholder": "Inserta el texto para traducción automática aquí...",
     "autoTranslate.button": "Traducir Automáticamente",
+    "autoTranslate.translating": "Traduciendo...",
+    "autoTranslate.success": "Traducción completada exitosamente",
+    "autoTranslate.errorLoad": "No se pudo cargar la categoría",
+    "autoTranslate.errorMissingData": "Faltan datos requeridos",
+    "autoTranslate.errorEmptyText": "Por favor, ingrese texto para traducir",
+    "autoTranslate.errorTranslation": "No se pudo realizar la traducción automática",
 
     // Groups
     "groups.welcome": "Bienvenido a {groupName}. Aquí puedes gestionar y ver contenido para este grupo específico.",

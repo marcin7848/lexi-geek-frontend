@@ -151,4 +151,26 @@ export const categoryService = {
     throwIfError(res, 'Failed to update category position');
     return;
   },
+
+  // Automatic translation
+  automaticTranslation: async (
+    languageUuid: string,
+    categoryUuid: string,
+    data: {
+      method: string;
+      text: string;
+    }
+  ): Promise<void> => {
+    const service = new RequestService();
+    const request = new RequestBuilder<typeof data>()
+      .url(`/languages/${languageUuid}/categories/${categoryUuid}/auto-translate`)
+      .method(HttpMethod.POST)
+      .contentTypeHeader('application/json')
+      .body(data)
+      .build();
+
+    const res = await service.send<typeof data, unknown>(request);
+    throwIfError(res, 'Failed to perform automatic translation');
+    return;
+  },
 };
