@@ -156,6 +156,12 @@ export const de = {
     "autoTranslate.textToTranslate": "Zu übersetzender Text",
     "autoTranslate.placeholder": "Fügen Sie hier den Text für die automatische Übersetzung ein...",
     "autoTranslate.button": "Auto-Übersetzen",
+    "autoTranslate.translating": "Übersetzen...",
+    "autoTranslate.success": "Übersetzung erfolgreich abgeschlossen",
+    "autoTranslate.errorLoad": "Kategorie konnte nicht geladen werden",
+    "autoTranslate.errorMissingData": "Erforderliche Daten fehlen",
+    "autoTranslate.errorEmptyText": "Bitte geben Sie Text zum Übersetzen ein",
+    "autoTranslate.errorTranslation": "Automatische Übersetzung fehlgeschlagen",
 
     // Groups
     "groups.welcome": "Willkommen bei {groupName}. Hier können Sie Inhalte für diese spezifische Gruppe verwalten und anzeigen.",

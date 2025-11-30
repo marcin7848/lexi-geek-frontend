@@ -156,6 +156,12 @@ export const en = {
     "autoTranslate.textToTranslate": "Text to Translate",
     "autoTranslate.placeholder": "Insert the text for automatic translation here...",
     "autoTranslate.button": "Auto Translate",
+    "autoTranslate.translating": "Translating...",
+    "autoTranslate.success": "Translation completed successfully",
+    "autoTranslate.errorLoad": "Failed to load category",
+    "autoTranslate.errorMissingData": "Missing required data",
+    "autoTranslate.errorEmptyText": "Please enter text to translate",
+    "autoTranslate.errorTranslation": "Failed to perform automatic translation",
 
     // Groups
     "groups.welcome": "Welcome to {groupName}. This is where you can manage and view content for this specific group.",

@@ -156,6 +156,12 @@ export const fr = {
     "autoTranslate.textToTranslate": "Texte à Traduire",
     "autoTranslate.placeholder": "Insérez le texte pour la traduction automatique ici...",
     "autoTranslate.button": "Traduire Automatiquement",
+    "autoTranslate.translating": "Traduction en cours...",
+    "autoTranslate.success": "Traduction terminée avec succès",
+    "autoTranslate.errorLoad": "Impossible de charger la catégorie",
+    "autoTranslate.errorMissingData": "Données requises manquantes",
+    "autoTranslate.errorEmptyText": "Veuillez entrer le texte à traduire",
+    "autoTranslate.errorTranslation": "Échec de la traduction automatique",
 
     // Groups
     "groups.welcome": "Bienvenue dans {groupName}. C'est ici que vous pouvez gérer et visualiser le contenu de ce groupe spécifique.",
