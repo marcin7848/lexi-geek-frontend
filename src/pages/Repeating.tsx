@@ -4,15 +4,12 @@ import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Word, WordPart, Method } from "@/types/word";
-import { Category, CategoryMode } from "@/types/category";
+import { WordPart, Method } from "@/types/word";
+import { CategoryMode } from "@/types/category";
 import { Mic, Volume2 } from "lucide-react";
-import { repeatService } from "@/services/repeatService";
-
-type RepeatData = {
-  active: boolean;
-  wordsLeft: number;
-};
+import { repeatService, type RepeatSession, type RepeatWord } from "@/services/repeatService";
+import { languageService, type Language } from "@/services/languageService";
+import { toast } from "sonner";
 
 type Stage = "ANSWER" | "RESULT";
 
@@ -23,10 +20,11 @@ type CheckedWordPart = WordPart & {
 export default function Repeating() {
   const { languageId } = useParams();
   const navigate = useNavigate();
-  const [repeatData, setRepeatData] = useState<RepeatData>({ active: false, wordsLeft: 0 });
-  const [currentWord, setCurrentWord] = useState<Word | null>(null);
+  const [language, setLanguage] = useState<Language | null>(null);
+  const [repeatSession, setRepeatSession] = useState<RepeatSession | null>(null);
+  const [currentWord, setCurrentWord] = useState<RepeatWord | null>(null);
   const [currentMethod, setCurrentMethod] = useState<Method>("QuestionToAnswer");
-  const [categoryMode, setCategoryMode] = useState<CategoryMode>("Dictionary");
+  const [categoryMode, setCategoryMode] = useState<CategoryMode>("DICTIONARY");
   const [specialLetters, setSpecialLetters] = useState<string>("");
   const [answers, setAnswers] = useState<{ [key: string]: string }>({});
   const [stage, setStage] = useState<Stage>("ANSWER");
@@ -37,25 +35,88 @@ export default function Repeating() {
   const microphoneButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
-    // Load repeat data
-    const storageKey = `repeat_${languageId}`;
-    const stored = localStorage.getItem(storageKey);
-    if (stored) {
-      const data = JSON.parse(stored);
-      setRepeatData(data);
+    const loadData = async () => {
+      if (!languageId) return;
 
-      if (data.active) {
-        loadWord();
+      try {
+        // Check if languageId is a numeric index or UUID
+        const isNumericIndex = /^\d+$/.test(languageId);
+        let languageUuid: string;
+        let found: Language | null = null;
+
+        if (isNumericIndex) {
+          const allLanguages = await languageService.getAll();
+          const index = parseInt(languageId) - 1;
+          if (index >= 0 && index < allLanguages.length) {
+            found = allLanguages[index];
+            languageUuid = found.id;
+          } else {
+            toast.error("Language not found");
+            navigate("/");
+            return;
+          }
+        } else {
+          found = await languageService.getById(languageId);
+          languageUuid = languageId;
+        }
+
+        if (!found) {
+          toast.error("Language not found");
+          navigate("/");
+          return;
+        }
+
+        setLanguage(found);
+        setSpecialLetters(found.specialLetters || "");
+
+        // Load active repeat session
+        const session = await repeatService.getActiveSession(languageUuid);
+        if (!session || !session.active) {
+          navigate(`/language/${languageId}`);
+          return;
+        }
+
+        setRepeatSession(session);
+
+        // Load next word
+        await loadNextWord(languageUuid);
+      } catch (error) {
+        console.error("Error loading repeat data:", error);
+        toast.error("Failed to load repeat session");
+        navigate(`/language/${languageId}`);
       }
-    }
+    };
 
-    // Load language special letters
-    const languages = JSON.parse(localStorage.getItem("languages") || "[]");
-    const language = languages.find((l: any) => l.id === languageId);
-    if (language) {
-      setSpecialLetters(language.specialLetters || "");
+    loadData();
+  }, [languageId, navigate]);
+
+  const loadNextWord = async (languageUuid: string) => {
+    try {
+      const word = await repeatService.getNextWord(languageUuid);
+      if (!word) {
+        toast.error("No more words to repeat");
+        navigate(`/language/${languageId}`);
+        return;
+      }
+
+      setCurrentWord(word);
+      setCurrentMethod(word.method);
+      setCategoryMode(word.categoryMode as CategoryMode);
+
+      // Log to console
+      console.log("Mode:", word.categoryMode);
+      console.log("Mechanism:", word.mechanism);
+      console.log("Method:", word.method);
+
+      // Reset answers and stage
+      setAnswers({});
+      setStage("ANSWER");
+      setCheckedWordParts([]);
+    } catch (error) {
+      console.error("Error loading next word:", error);
+      toast.error("Failed to load next word");
     }
-  }, [languageId]);
+  };
 
   useEffect(() => {
     if (firstInputRef.current && currentWord && stage === "ANSWER") {
@@ -99,64 +160,8 @@ export default function Repeating() {
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, [stage]);
 
-  const loadWord = () => {
-    // Load random word from any category in the language
-    const storageKey = `categories_${languageId}`;
-    const storedCategories = localStorage.getItem(storageKey);
-    
-    if (!storedCategories) return;
-
-    const categories: Category[] = JSON.parse(storedCategories);
-    
-    // Get all words from all categories
-    let allWords: Word[] = [];
-    categories.forEach(category => {
-      const wordsKey = `words_${category.id}`;
-      const storedWords = localStorage.getItem(wordsKey);
-      if (storedWords) {
-        const words: Word[] = JSON.parse(storedWords);
-        allWords = allWords.concat(words.map(w => ({ ...w, categoryMode: category.mode })));
-      }
-    });
-
-    if (allWords.length === 0) return;
-
-    // Pick random word
-    const randomWord = allWords[Math.floor(Math.random() * allWords.length)];
-    setCurrentWord(randomWord);
-
-    // Get category mode
-    const wordCategory = categories.find(c => {
-      const wordsKey = `words_${c.id}`;
-      const storedWords = localStorage.getItem(wordsKey);
-      if (storedWords) {
-        const words: Word[] = JSON.parse(storedWords);
-        return words.some(w => w.id === randomWord.id);
-      }
-      return false;
-    });
-    
-    if (wordCategory) {
-      setCategoryMode(wordCategory.mode);
-    }
-
-    // Randomly choose method (never Both)
-    const method = Math.random() > 0.5 ? "QuestionToAnswer" : "AnswerToQuestion";
-    setCurrentMethod(method);
-
-    // Log to console
-    console.log("Mode:", wordCategory?.mode || "Unknown");
-    console.log("Mechanism:", randomWord.mechanism);
-    console.log("Method:", method);
-
-    // Reset answers and stage
-    setAnswers({});
-    setStage("ANSWER");
-    setCheckedWordParts([]);
-  };
-
   const handleCheck = async () => {
-    if (!currentWord) return;
+    if (!currentWord || !language) return;
 
     if (stage === "ANSWER") {
       // Check answers and move to RESULT stage
@@ -178,22 +183,32 @@ export default function Repeating() {
       setCheckedWordParts(checked);
       setStage("RESULT");
     } else {
-      // Send simulated request
-      await repeatService.checkAnswer({
-        wordId: currentWord.id,
-        answers,
-      });
+      // Submit answer to backend
+      try {
+        const result = await repeatService.checkAnswer(language.id, currentWord.wordUuid, {
+          answers,
+        });
 
-      // Refresh page - reload repeat data and new word
-      const storageKey = `repeat_${languageId}`;
-      const stored = localStorage.getItem(storageKey);
-      if (stored) {
-        const data = JSON.parse(stored);
-        setRepeatData(data);
-        
-        if (data.active) {
-          loadWord();
+        // Update session with new wordsLeft
+        if (repeatSession) {
+          setRepeatSession({
+            ...repeatSession,
+            wordsLeft: result.wordsLeft,
+            active: result.sessionActive,
+          });
         }
+
+        // If session is still active, load next word
+        if (result.sessionActive) {
+          await loadNextWord(language.id);
+        } else {
+          // Session completed
+          toast.success("Repeat session completed!");
+          navigate(`/language/${languageId}`);
+        }
+      } catch (error) {
+        console.error("Error checking answer:", error);
+        toast.error("Failed to check answer");
       }
     }
   };
@@ -319,44 +334,44 @@ export default function Repeating() {
     let showBox = false;
     let boxParts: WordPart[] = [];
     let boxDisplayType: 'word-with-basic' | 'basic-only' = 'word-with-basic';
-    let belowParts: WordPart[] = sortedParts;
+    const belowParts: WordPart[] = sortedParts;
     let inputAnswerValue: boolean = true;
 
-    if (mode === "Dictionary" && mechanism === "BASIC" && method === "QuestionToAnswer") {
+    if (mode === "DICTIONARY" && mechanism === "BASIC" && method === "QuestionToAnswer") {
       // J, F
       showBox = false;
       inputAnswerValue = true;
-    } else if (mode === "Dictionary" && mechanism === "BASIC" && method === "AnswerToQuestion") {
+    } else if (mode === "DICTIONARY" && mechanism === "BASIC" && method === "AnswerToQuestion") {
       // J, G
       showBox = false;
       inputAnswerValue = false;
-    } else if (mode === "Dictionary" && mechanism === "TABLE" && method === "QuestionToAnswer") {
+    } else if (mode === "DICTIONARY" && mechanism === "TABLE" && method === "QuestionToAnswer") {
       // A, B, F
       showBox = true;
       boxParts = shuffle(sortedParts.filter(p => p.answer && !p.isSeparator));
       boxDisplayType = 'word-with-basic';
       inputAnswerValue = true;
-    } else if (mode === "Dictionary" && mechanism === "TABLE" && method === "AnswerToQuestion") {
+    } else if (mode === "DICTIONARY" && mechanism === "TABLE" && method === "AnswerToQuestion") {
       // A, D, G
       showBox = true;
       boxParts = shuffle(sortedParts.filter(p => !p.answer && !p.isSeparator));
       boxDisplayType = 'word-with-basic';
       inputAnswerValue = false;
-    } else if (mode === "Exercise" && mechanism === "BASIC" && method === "QuestionToAnswer") {
+    } else if (mode === "EXERCISE" && mechanism === "BASIC" && method === "QuestionToAnswer") {
       // J, I
       showBox = false;
       inputAnswerValue = true;
-    } else if (mode === "Exercise" && mechanism === "BASIC" && method === "AnswerToQuestion") {
+    } else if (mode === "EXERCISE" && mechanism === "BASIC" && method === "AnswerToQuestion") {
       // J, H
       showBox = false;
       inputAnswerValue = false;
-    } else if (mode === "Exercise" && mechanism === "TABLE" && method === "QuestionToAnswer") {
+    } else if (mode === "EXERCISE" && mechanism === "TABLE" && method === "QuestionToAnswer") {
       // A, C, F
       showBox = true;
       boxParts = shuffle(sortedParts.filter(p => p.answer && !p.isSeparator));
       boxDisplayType = 'basic-only';
       inputAnswerValue = true;
-    } else if (mode === "Exercise" && mechanism === "TABLE" && method === "AnswerToQuestion") {
+    } else if (mode === "EXERCISE" && mechanism === "TABLE" && method === "AnswerToQuestion") {
       // A, E, G
       showBox = true;
       boxParts = shuffle(sortedParts.filter(p => !p.answer && !p.isSeparator));
@@ -406,8 +421,8 @@ export default function Repeating() {
           
           if (isInput) {
             // Determine if we show basicWord next to input based on mode and mechanism (H/I only for Exercise BASIC)
-            const showBasicNextToInput = mode === "Exercise" && mechanism === "BASIC";
-            
+            const showBasicNextToInput = mode === "EXERCISE" && mechanism === "BASIC";
+
             return (
               <span key={part.position} className="inline-flex items-center gap-1">
                 <Input
@@ -447,7 +462,7 @@ export default function Repeating() {
     );
   };
 
-  if (!repeatData.active) {
+  if (!repeatSession?.active) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -475,7 +490,7 @@ export default function Repeating() {
           <h1 className="text-3xl font-bold">Repeating</h1>
           
           <div className="text-xl font-semibold">
-            Words left: {repeatData.wordsLeft}
+            Words left: {repeatSession.wordsLeft}
           </div>
 
           {stage === "ANSWER" && specialLetters && (
