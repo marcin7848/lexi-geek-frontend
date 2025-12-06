@@ -502,7 +502,7 @@ export default function Repeating() {
 
           {stage === "ANSWER" && specialLetters && (
             <div className="flex flex-wrap gap-2 border rounded-lg p-4">
-              {specialLetters.split("").map((letter, idx) => (
+              {specialLetters.split(",").map((letter, idx) => (
                 <Button
                   key={idx}
                   variant="outline"
