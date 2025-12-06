@@ -193,7 +193,7 @@ export default function Repeating() {
     } else {
       // Submit answer to backend
       try {
-        const result = await repeatService.checkAnswer(language.id, currentWord.wordUuid, {
+        const result = await repeatService.checkAnswer(language.id, currentWord.uuid, {
           answers,
         });
 

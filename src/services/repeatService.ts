@@ -25,8 +25,7 @@ interface WordPartDto {
 }
 
 interface RepeatWordDto {
-  uuid: string | null;
-  wordUuid: string;
+  uuid: string; // This is the wordUuid from backend
   comment: string | null;
   mechanism: string;
   wordParts: WordPartDto[];
@@ -51,7 +50,6 @@ export interface RepeatSession {
 
 export interface RepeatWord {
   uuid: string;
-  wordUuid: string;
   comment: string;
   mechanism: string;
   wordParts: WordPart[];
@@ -111,8 +109,7 @@ const mapRepeatWordDtoToRepeatWord = (dto: RepeatWordDto): RepeatWord => {
   const method = dto.method as Method;
 
   return {
-    uuid: dto.uuid || "",
-    wordUuid: dto.wordUuid,
+    uuid: dto.uuid,
     comment: dto.comment || "",
     mechanism: dto.mechanism,
     wordParts,
@@ -199,12 +196,12 @@ export const repeatService = {
   // Check the answer for the current word
   checkAnswer: async (
     languageUuid: string,
-    wordUuid: string,
+    uuid: string,
     form: CheckAnswerForm
   ): Promise<CheckAnswerResult> => {
     const service = new RequestService();
     const request = new RequestBuilder<CheckAnswerForm>()
-      .url(`/languages/${languageUuid}/repeat-session/words/${wordUuid}/check-answer`)
+      .url(`/languages/${languageUuid}/repeat-session/words/${uuid}/check-answer`)
       .method(HttpMethod.POST)
       .contentTypeHeader('application/json')
       .body(form)
