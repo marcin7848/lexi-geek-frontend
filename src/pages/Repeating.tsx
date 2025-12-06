@@ -10,6 +10,7 @@ import { Mic, Volume2 } from "lucide-react";
 import { repeatService, type RepeatSession, type RepeatWord } from "@/services/repeatService";
 import { languageService, type Language } from "@/services/languageService";
 import { toast } from "sonner";
+import { authStateService } from "@/services/authStateService";
 
 type Stage = "ANSWER" | "RESULT";
 
@@ -36,6 +37,13 @@ export default function Repeating() {
 
   useEffect(() => {
     const loadData = async () => {
+      // Initialize auth state to verify authentication
+      const user = await authStateService.initialize();
+      if (!user) {
+        navigate("/login");
+        return;
+      }
+
       if (!languageId) return;
 
       try {

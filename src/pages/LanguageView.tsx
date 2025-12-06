@@ -11,6 +11,7 @@ import { repeatService, type RepeatSession } from "@/services/repeatService";
 import { languageService, type Language } from "@/services/languageService";
 import { categoryService } from "@/services/categoryService";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { authStateService } from "@/services/authStateService";
 
 
 export default function LanguageView() {
@@ -24,6 +25,13 @@ export default function LanguageView() {
 
   useEffect(() => {
     const loadData = async () => {
+      // Initialize auth state to verify authentication
+      const user = await authStateService.initialize();
+      if (!user) {
+        navigate("/login");
+        return;
+      }
+
       if (!languageId) return;
       
       try {

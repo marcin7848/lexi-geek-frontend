@@ -74,11 +74,14 @@ export const authService = {
         saveMockSession(user);
         return user;
       }
-    } catch (_) {
-      // ignore and treat as unauthenticated
+      // No account returned (401/403) - clear session
+      clearMockSession();
+      return null;
+    } catch (error) {
+      // Network error or other exception - don't clear existing session
+      // Just return null to indicate initialization failed
+      return null;
     }
-    clearMockSession();
-    return null;
   },
 
   // Direct call to backend /api/account

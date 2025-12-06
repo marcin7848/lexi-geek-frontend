@@ -11,6 +11,7 @@ import { wordService, type WordForm, type WordFilters, type PaginationParams, ty
 import WordFormModal from "@/components/WordFormModal";
 import ManageCategoriesModal from "@/components/ManageCategoriesModal";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { authStateService } from "@/services/authStateService";
 import {
   Table,
   TableBody,
@@ -74,6 +75,13 @@ export default function CategoryView() {
 
   useEffect(() => {
     const loadData = async () => {
+      // Initialize auth state to verify authentication
+      const user = await authStateService.initialize();
+      if (!user) {
+        navigate("/login");
+        return;
+      }
+
       if (!categoryId) return;
 
       try {

@@ -1,11 +1,24 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { authStateService } from "@/services/authStateService";
 
 export default function Groups() {
   const { groupId } = useParams();
+  const navigate = useNavigate();
   const { t } = useLanguage();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const user = await authStateService.initialize();
+      if (!user) {
+        navigate("/login");
+      }
+    };
+    checkAuth();
+  }, [navigate]);
 
   const getGroupTitle = () => {
     switch (groupId) {
