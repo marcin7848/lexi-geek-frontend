@@ -1,7 +1,6 @@
 // Service for repeat/practice operations
 
 import { WordPart, Method } from "@/types/word";
-import { SeparatorType } from "@/types/word";
 import { HttpMethod, RequestBuilder, RequestService } from '@/services/requestService';
 import { throwIfError } from '@/services/requestError';
 
@@ -9,24 +8,14 @@ import { throwIfError } from '@/services/requestError';
 interface RepeatSessionDto {
   uuid: string;
   languageUuid: string;
-  active: boolean;
   wordsLeft: number;
-  totalWords: number;
-  method: string;
-  includeChosen: boolean;
-  categoryUuids: string[];
+  method: string; // "BOTH" | "QUESTION_TO_ANSWER" | "ANSWER_TO_QUESTION"
   created: string;
 }
 
 interface WordPartDto {
-  uuid?: string;
-  answer: boolean;
-  basicWord: string | null;
-  position: number;
-  toSpeech: boolean;
-  separator: boolean;
-  separatorType: string | null;
-  word: string | null;
+  role: string; // "QUESTION" | "ANSWER"
+  content: string;
 }
 
 interface RepeatWordDto {
@@ -35,7 +24,7 @@ interface RepeatWordDto {
   comment: string | null;
   mechanism: string;
   wordParts: WordPartDto[];
-  method: Method;
+  method: string; // "QUESTION_TO_ANSWER" | "ANSWER_TO_QUESTION"
   categoryMode: string;
 }
 
@@ -49,12 +38,8 @@ interface CheckAnswerResultDto {
 export interface RepeatSession {
   uuid: string;
   languageUuid: string;
-  active: boolean;
   wordsLeft: number;
-  totalWords: number;
   method: string;
-  includeChosen: boolean;
-  categoryUuids: string[];
   created: number;
 }
 
@@ -79,7 +64,7 @@ export interface StartRepeatForm {
   categoryUuids: string[];
   includeChosen: boolean;
   wordCount: number;
-  method: string;
+  method: string; // "BOTH" | "QUESTION_TO_ANSWER" | "ANSWER_TO_QUESTION"
 }
 
 export interface CheckAnswerForm {
@@ -97,33 +82,40 @@ const mapRepeatSessionDtoToRepeatSession = (dto: RepeatSessionDto): RepeatSessio
   return {
     uuid: dto.uuid,
     languageUuid: dto.languageUuid,
-    active: dto.active,
     wordsLeft: dto.wordsLeft,
-    totalWords: dto.totalWords,
     method: dto.method,
-    includeChosen: dto.includeChosen,
-    categoryUuids: dto.categoryUuids,
     created: parseISOToTimestamp(dto.created) || Date.now(),
   };
 };
 
 // Helper to convert RepeatWordDto to RepeatWord
 const mapRepeatWordDtoToRepeatWord = (dto: RepeatWordDto): RepeatWord => {
+  // Convert the new API structure (role: "QUESTION"/"ANSWER", content: string)
+  // to the frontend structure (answer: boolean, word: string, position: number)
+  const wordParts: WordPart[] = dto.wordParts.map((part, index) => ({
+    answer: part.role === "ANSWER",
+    basicWord: "", // Not provided by new API
+    position: index,
+    toSpeech: false, // Not provided by new API
+    word: part.content,
+    isSeparator: false, // Not provided by new API
+    separatorType: undefined,
+  }));
+
+  // Convert method from "QUESTION_TO_ANSWER" to "QuestionToAnswer"
+  const convertMethod = (apiMethod: string): Method => {
+    if (apiMethod === "QUESTION_TO_ANSWER") return "QuestionToAnswer";
+    if (apiMethod === "ANSWER_TO_QUESTION") return "AnswerToQuestion";
+    return "QuestionToAnswer"; // default
+  };
+
   return {
     uuid: dto.uuid,
     wordUuid: dto.wordUuid,
     comment: dto.comment || "",
     mechanism: dto.mechanism,
-    wordParts: dto.wordParts.map((part) => ({
-      answer: part.answer,
-      basicWord: part.basicWord || "",
-      position: part.position,
-      toSpeech: part.toSpeech,
-      word: part.word || "",
-      isSeparator: part.separator,
-      separatorType: part.separatorType as SeparatorType | undefined,
-    })),
-    method: dto.method,
+    wordParts,
+    method: convertMethod(dto.method),
     categoryMode: dto.categoryMode,
   };
 };
@@ -145,7 +137,7 @@ export const repeatService = {
   ): Promise<RepeatSession> => {
     const service = new RequestService();
     const request = new RequestBuilder<StartRepeatForm>()
-      .url(`/languages/${languageUuid}/repeat/start`)
+      .url(`/languages/${languageUuid}/repeat-session`)
       .method(HttpMethod.POST)
       .contentTypeHeader('application/json')
       .body(form)
@@ -165,7 +157,7 @@ export const repeatService = {
   getActiveSession: async (languageUuid: string): Promise<RepeatSession | null> => {
     const service = new RequestService();
     const request = new RequestBuilder<void>()
-      .url(`/languages/${languageUuid}/repeat/session`)
+      .url(`/languages/${languageUuid}/repeat-session`)
       .method(HttpMethod.GET)
       .build();
 
@@ -186,7 +178,7 @@ export const repeatService = {
   getNextWord: async (languageUuid: string): Promise<RepeatWord | null> => {
     const service = new RequestService();
     const request = new RequestBuilder<void>()
-      .url(`/languages/${languageUuid}/repeat/next`)
+      .url(`/languages/${languageUuid}/repeat-session/next-word`)
       .method(HttpMethod.GET)
       .build();
 
@@ -211,7 +203,7 @@ export const repeatService = {
   ): Promise<CheckAnswerResult> => {
     const service = new RequestService();
     const request = new RequestBuilder<CheckAnswerForm>()
-      .url(`/languages/${languageUuid}/repeat/check/${wordUuid}`)
+      .url(`/languages/${languageUuid}/repeat-session/words/${wordUuid}/check-answer`)
       .method(HttpMethod.POST)
       .contentTypeHeader('application/json')
       .body(form)
@@ -231,8 +223,8 @@ export const repeatService = {
   resetSession: async (languageUuid: string): Promise<void> => {
     const service = new RequestService();
     const request = new RequestBuilder<void>()
-      .url(`/languages/${languageUuid}/repeat/reset`)
-      .method(HttpMethod.POST)
+      .url(`/languages/${languageUuid}/repeat-session`)
+      .method(HttpMethod.DELETE)
       .responseAsVoid()
       .build();
 

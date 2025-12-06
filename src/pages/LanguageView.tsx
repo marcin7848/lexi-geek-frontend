@@ -89,7 +89,7 @@ export default function LanguageView() {
   };
 
   const handleStartRepeating = () => {
-    if (repeatSession?.active) {
+    if (repeatSession) {
       navigate(`/language/${languageId}/repeat`);
     } else {
       setIsModalOpen(true);
@@ -149,9 +149,9 @@ export default function LanguageView() {
           
           <div className="flex items-center gap-4">
             <Button onClick={handleStartRepeating} size="lg">
-              {repeatSession?.active ? t("languageView.backToRepeating") : t("languageView.startRepeating")}
+              {repeatSession ? t("languageView.backToRepeating") : t("languageView.startRepeating")}
             </Button>
-            {repeatSession?.active && (
+            {repeatSession && (
               <>
                 <span className="text-lg">{t("languageView.wordsLeft").replace("{count}", String(repeatSession.wordsLeft))}</span>
                 <Button onClick={handleResetRepeating} variant="outline">

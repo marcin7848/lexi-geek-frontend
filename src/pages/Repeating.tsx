@@ -71,7 +71,7 @@ export default function Repeating() {
 
         // Load active repeat session
         const session = await repeatService.getActiveSession(languageUuid);
-        if (!session || !session.active) {
+        if (!session) {
           navigate(`/language/${languageId}`);
           return;
         }
@@ -194,7 +194,6 @@ export default function Repeating() {
           setRepeatSession({
             ...repeatSession,
             wordsLeft: result.wordsLeft,
-            active: result.sessionActive,
           });
         }
 
@@ -462,7 +461,7 @@ export default function Repeating() {
     );
   };
 
-  if (!repeatSession?.active) {
+  if (!repeatSession) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
