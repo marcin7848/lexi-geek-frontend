@@ -14,17 +14,23 @@ interface RepeatSessionDto {
 }
 
 interface WordPartDto {
-  role: string; // "QUESTION" | "ANSWER"
-  content: string;
+  uuid: string | null;
+  answer: boolean;
+  basicWord: string | null;
+  position: number;
+  toSpeech: boolean;
+  separator: boolean;
+  separatorType: string | null;
+  word: string;
 }
 
 interface RepeatWordDto {
-  uuid: string;
+  uuid: string | null;
   wordUuid: string;
   comment: string | null;
   mechanism: string;
   wordParts: WordPartDto[];
-  method: string; // "QUESTION_TO_ANSWER" | "ANSWER_TO_QUESTION"
+  method: string; // "QuestionToAnswer" | "AnswerToQuestion"
   categoryMode: string;
 }
 
@@ -90,32 +96,27 @@ const mapRepeatSessionDtoToRepeatSession = (dto: RepeatSessionDto): RepeatSessio
 
 // Helper to convert RepeatWordDto to RepeatWord
 const mapRepeatWordDtoToRepeatWord = (dto: RepeatWordDto): RepeatWord => {
-  // Convert the new API structure (role: "QUESTION"/"ANSWER", content: string)
-  // to the frontend structure (answer: boolean, word: string, position: number)
-  const wordParts: WordPart[] = dto.wordParts.map((part, index) => ({
-    answer: part.role === "ANSWER",
-    basicWord: "", // Not provided by new API
-    position: index,
-    toSpeech: false, // Not provided by new API
-    word: part.content,
-    isSeparator: false, // Not provided by new API
-    separatorType: undefined,
+  // Convert the API WordPartDto structure to frontend WordPart structure
+  const wordParts: WordPart[] = dto.wordParts.map((part) => ({
+    answer: part.answer,
+    basicWord: part.basicWord || "",
+    position: part.position,
+    toSpeech: part.toSpeech,
+    word: part.word,
+    isSeparator: part.separator,
+    separatorType: part.separatorType ? (part.separatorType as "ENTER" | "TAB" | "MULTI_DASH") : undefined,
   }));
 
-  // Convert method from "QUESTION_TO_ANSWER" to "QuestionToAnswer"
-  const convertMethod = (apiMethod: string): Method => {
-    if (apiMethod === "QUESTION_TO_ANSWER") return "QuestionToAnswer";
-    if (apiMethod === "ANSWER_TO_QUESTION") return "AnswerToQuestion";
-    return "QuestionToAnswer"; // default
-  };
+  // The method is already in frontend format ("QuestionToAnswer" or "AnswerToQuestion")
+  const method = dto.method as Method;
 
   return {
-    uuid: dto.uuid,
+    uuid: dto.uuid || "",
     wordUuid: dto.wordUuid,
     comment: dto.comment || "",
     mechanism: dto.mechanism,
     wordParts,
-    method: convertMethod(dto.method),
+    method,
     categoryMode: dto.categoryMode,
   };
 };
