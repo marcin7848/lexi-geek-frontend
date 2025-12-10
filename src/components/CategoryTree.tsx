@@ -4,6 +4,7 @@ import { CategoryNode } from "./CategoryNode";
 import { Button } from "./ui/button";
 import { Plus } from "lucide-react";
 import { categoryService } from "@/services/categoryService";
+import { repeatService } from "@/services/repeatService";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -75,6 +76,16 @@ export const CategoryTree = ({ categories, languageId, onUpdate }: CategoryTreeP
     } catch (error) {
       console.error("Error deleting category:", error);
       toast.error(t("categoryEditForm.errorDelete"));
+    }
+  };
+
+  const handleReset = async (uuid: string) => {
+    try {
+      await repeatService.resetWordTime(languageId, uuid);
+      toast.success(t("categoryEditForm.resetSuccess"));
+    } catch (error) {
+      console.error("Error resetting category words:", error);
+      toast.error(t("categoryEditForm.resetError"));
     }
   };
 
@@ -246,6 +257,7 @@ export const CategoryTree = ({ categories, languageId, onUpdate }: CategoryTreeP
                 onToggleExpand={toggleExpand}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                onReset={handleReset}
                 isLastChild={index === rootCategories.length - 1}
               />
             ))}

@@ -244,6 +244,9 @@ export const de = {
     "languageView.resetRepeating": "Wiederholung zurücksetzen",
     "languageView.wordsLeft": "Wörter übrig: {count}",
     "languageView.successReset": "Wiederholung zurückgesetzt",
+    "languageView.resetAllWords": "Alle Wörter zurücksetzen",
+    "languageView.resetAllWordsSuccess": "Alle Wörter erfolgreich zurückgesetzt",
+    "languageView.resetAllWordsError": "Fehler beim Zurücksetzen aller Wörter",
 
     // Category Tree
     "categoryTree.categories": "Kategorien",
@@ -275,6 +278,9 @@ export const de = {
     "categoryEditForm.errorDelete": "Kategorie konnte nicht gelöscht werden",
     "categoryEditForm.created": "Kategorie erstellt",
     "categoryEditForm.errorCreate": "Kategorie konnte nicht erstellt werden",
+    "categoryEditForm.reset": "Zurücksetzen",
+    "categoryEditForm.resetSuccess": "Kategorie-Wörter erfolgreich zurückgesetzt",
+    "categoryEditForm.resetError": "Fehler beim Zurücksetzen der Kategorie-Wörter",
 
     // Category Form
     "categoryForm.parentCategory": "Übergeordnete Kategorie",

@@ -271,4 +271,21 @@ export const repeatService = {
     const res = await service.sendVoid(request);
     throwIfError(res, 'Failed to reset repeat session');
   },
+
+  // Reset word time for all words in a language or specific category
+  resetWordTime: async (languageUuid: string, categoryUuid?: string): Promise<void> => {
+    const service = new RequestService();
+    const url = categoryUuid
+      ? `/languages/${languageUuid}/reset-time?categoryUuid=${categoryUuid}`
+      : `/languages/${languageUuid}/reset-time`;
+
+    const request = new RequestBuilder<void>()
+      .url(url)
+      .method(HttpMethod.POST)
+      .responseAsVoid()
+      .build();
+
+    const res = await service.sendVoid(request);
+    throwIfError(res, 'Failed to reset word time');
+  },
 };

@@ -117,6 +117,18 @@ export default function LanguageView() {
     }
   };
 
+  const handleResetAllWords = async () => {
+    if (!language) return;
+
+    try {
+      await repeatService.resetWordTime(language.id);
+      toast.success(t("languageView.resetAllWordsSuccess"));
+    } catch (error) {
+      console.error("Error resetting all words:", error);
+      toast.error(t("languageView.resetAllWordsError"));
+    }
+  };
+
   const handleStartRepeatSubmit = async (data: {
     categoryUuids: string[];
     includeChosen: boolean;
@@ -155,18 +167,25 @@ export default function LanguageView() {
         <div className="py-8 space-y-6">
           <h1 className="text-3xl font-bold">{language.name}</h1>
           
-          <div className="flex items-center gap-4">
-            <Button onClick={handleStartRepeating} size="lg">
-              {repeatSession ? t("languageView.backToRepeating") : t("languageView.startRepeating")}
-            </Button>
-            {repeatSession && (
-              <>
-                <span className="text-lg">{t("languageView.wordsLeft").replace("{count}", String(repeatSession.wordsLeft))}</span>
-                <Button onClick={handleResetRepeating} variant="outline">
-                  {t("languageView.resetRepeating")}
-                </Button>
-              </>
-            )}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-4">
+              <Button onClick={handleStartRepeating} size="lg">
+                {repeatSession ? t("languageView.backToRepeating") : t("languageView.startRepeating")}
+              </Button>
+              {repeatSession && (
+                <>
+                  <span className="text-lg">{t("languageView.wordsLeft").replace("{count}", String(repeatSession.wordsLeft))}</span>
+                  <Button onClick={handleResetRepeating} variant="outline">
+                    {t("languageView.resetRepeating")}
+                  </Button>
+                </>
+              )}
+            </div>
+            <div>
+              <Button onClick={handleResetAllWords} variant="outline" size="sm">
+                {t("languageView.resetAllWords")}
+              </Button>
+            </div>
           </div>
 
           <CategoryTree categories={categories} languageId={language.id} onUpdate={handleCategoriesUpdate} />

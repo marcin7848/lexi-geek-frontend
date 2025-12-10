@@ -27,6 +27,7 @@ type CategoryEditFormProps = {
   category: Category;
   onSave: (name: string, mode: CategoryMode, method: CategoryMethod) => void;
   onDelete: () => void;
+  onReset: () => void;
   onCancel: () => void;
 };
 
@@ -34,6 +35,7 @@ export const CategoryEditForm = ({
   category,
   onSave,
   onDelete,
+  onReset,
   onCancel,
 }: CategoryEditFormProps) => {
   const { t } = useLanguage();
@@ -84,6 +86,9 @@ export const CategoryEditForm = ({
         </Button>
         <Button type="button" size="sm" variant="outline" className="h-8" onClick={onCancel}>
           {t("categoryEditForm.cancel")}
+        </Button>
+        <Button type="button" size="sm" variant="secondary" className="h-8" onClick={onReset}>
+          {t("categoryEditForm.reset")}
         </Button>
         <AlertDialog>
           <AlertDialogTrigger asChild>
