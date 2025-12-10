@@ -33,10 +33,17 @@ interface RepeatWordDto {
   categoryMode: string;
 }
 
+interface AnswerDetailDto {
+  userAnswer: string | null;
+  correctAnswer: string;
+  isCorrect: boolean;
+}
+
 interface CheckAnswerResultDto {
   correct: boolean;
   wordsLeft: number;
   sessionActive: boolean;
+  answerDetails: AnswerDetailDto[];
 }
 
 // Frontend types
@@ -57,10 +64,17 @@ export interface RepeatWord {
   categoryMode: string;
 }
 
+export interface AnswerDetail {
+  userAnswer: string | null;
+  correctAnswer: string;
+  isCorrect: boolean;
+}
+
 export interface CheckAnswerResult {
   correct: boolean;
   wordsLeft: number;
   sessionActive: boolean;
+  answerDetails: AnswerDetail[];
 }
 
 // Request forms
@@ -73,12 +87,20 @@ export interface StartRepeatForm {
 
 export interface CheckAnswerForm {
   answers: { [key: string]: string };
+  method: string; // "QUESTION_TO_ANSWER" | "ANSWER_TO_QUESTION"
 }
 
 // Helper to convert ISO date string to timestamp
 const parseISOToTimestamp = (isoString: string | null): number | null => {
   if (!isoString) return null;
   return new Date(isoString).getTime();
+};
+
+// Helper to convert frontend Method to backend format
+const convertMethodToBackendFormat = (method: Method): string => {
+  if (method === "QuestionToAnswer") return "QUESTION_TO_ANSWER";
+  if (method === "AnswerToQuestion") return "ANSWER_TO_QUESTION";
+  return method;
 };
 
 // Helper to convert RepeatSessionDto to RepeatSession
@@ -124,6 +146,11 @@ const mapCheckAnswerResultDtoToCheckAnswerResult = (dto: CheckAnswerResultDto): 
     correct: dto.correct,
     wordsLeft: dto.wordsLeft,
     sessionActive: dto.sessionActive,
+    answerDetails: dto.answerDetails.map(detail => ({
+      userAnswer: detail.userAnswer,
+      correctAnswer: detail.correctAnswer,
+      isCorrect: detail.isCorrect,
+    })),
   };
 };
 
@@ -200,11 +227,18 @@ export const repeatService = {
     form: CheckAnswerForm
   ): Promise<CheckAnswerResult> => {
     const service = new RequestService();
+
+    // Convert method to backend format if it's a Method type
+    const formWithConvertedMethod = {
+      ...form,
+      method: form.method.includes("_") ? form.method : convertMethodToBackendFormat(form.method as Method)
+    };
+
     const request = new RequestBuilder<CheckAnswerForm>()
       .url(`/languages/${languageUuid}/repeat-session/words/${uuid}/check-answer`)
       .method(HttpMethod.POST)
       .contentTypeHeader('application/json')
-      .body(form)
+      .body(formWithConvertedMethod)
       .build();
 
     const res = await service.send<CheckAnswerForm, CheckAnswerResultDto>(request);

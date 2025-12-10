@@ -172,29 +172,11 @@ export default function Repeating() {
     if (!currentWord || !language) return;
 
     if (stage === "ANSWER") {
-      // Check answers and move to RESULT stage
-      const sortedParts = [...currentWord.wordParts].sort((a, b) => a.position - b.position);
-      const inputParts = currentMethod === "QuestionToAnswer"
-        ? sortedParts.filter(p => p.answer && !p.isSeparator)
-        : sortedParts.filter(p => !p.answer && !p.isSeparator);
-
-      const checked: CheckedWordPart[] = sortedParts.map(part => {
-        const isInput = inputParts.some(p => p.position === part.position);
-        if (isInput) {
-          const userAnswer = answers[part.position.toString()] || "";
-          const correct = userAnswer.toLowerCase() === part.word.toLowerCase();
-          return { ...part, correct };
-        }
-        return part;
-      });
-
-      setCheckedWordParts(checked);
-      setStage("RESULT");
-    } else {
-      // Submit answer to backend
+      // First click: Check answers with backend
       try {
         const result = await repeatService.checkAnswer(language.id, currentWord.uuid, {
           answers,
+          method: currentMethod,
         });
 
         // Update session with new wordsLeft
@@ -205,8 +187,46 @@ export default function Repeating() {
           });
         }
 
-        // If session is still active, load next word
-        if (result.sessionActive) {
+        // Build answerDetailsMap from the server response
+        // The answerDetails array contains results for all answer parts in order
+        const sortedParts = [...currentWord.wordParts].sort((a, b) => a.position - b.position);
+        const inputParts = sortedParts.filter(p =>
+          (currentMethod === "QuestionToAnswer" ? p.answer : !p.answer) && !p.isSeparator
+        );
+
+        const detailsMap: { [position: string]: boolean } = {};
+        inputParts.forEach((part, index) => {
+          if (result.answerDetails[index]) {
+            detailsMap[part.position.toString()] = result.answerDetails[index].isCorrect;
+          }
+        });
+
+        // Prepare checked word parts for display in RESULT stage
+        const checked: CheckedWordPart[] = sortedParts.map(part => {
+          const isInput = inputParts.some(p => p.position === part.position);
+          if (isInput) {
+            const correct = detailsMap[part.position.toString()] || false;
+            return { ...part, correct };
+          }
+          return part;
+        });
+
+        setCheckedWordParts(checked);
+        setStage("RESULT");
+
+        // Check if session is still active
+        if (!result.sessionActive) {
+          // Session completed, but we'll navigate after user clicks "Next"
+          // (they can still see the result)
+        }
+      } catch (error) {
+        console.error("Error checking answer:", error);
+        toast.error("Failed to check answer");
+      }
+    } else {
+      // Second click (RESULT stage): Load next word or finish session
+      try {
+        if (repeatSession && repeatSession.wordsLeft > 0) {
           await loadNextWord(language.id);
         } else {
           // Session completed
@@ -214,8 +234,8 @@ export default function Repeating() {
           navigate(`/language/${languageId}`);
         }
       } catch (error) {
-        console.error("Error checking answer:", error);
-        toast.error("Failed to check answer");
+        console.error("Error loading next word:", error);
+        toast.error("Failed to load next word");
       }
     }
   };
