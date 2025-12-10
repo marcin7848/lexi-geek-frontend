@@ -366,20 +366,24 @@ export default function Repeating() {
 
     if (mode === "DICTIONARY" && mechanism === "BASIC" && method === "QuestionToAnswer") {
       // J, F
+      // QuestionToAnswer: Display questions (answer: false), Input answers (answer: true)
       showBox = false;
       inputAnswerValue = true;
     } else if (mode === "DICTIONARY" && mechanism === "BASIC" && method === "AnswerToQuestion") {
       // J, G
+      // AnswerToQuestion: Display answers (answer: true), Input questions (answer: false)
       showBox = false;
       inputAnswerValue = false;
     } else if (mode === "DICTIONARY" && mechanism === "TABLE" && method === "QuestionToAnswer") {
       // A, B, F
+      // QuestionToAnswer: Input answers (answer: true), so box shows answers
       showBox = true;
       boxParts = shuffle(sortedParts.filter(p => p.answer && !p.isSeparator));
       boxDisplayType = 'word-with-basic';
       inputAnswerValue = true;
     } else if (mode === "DICTIONARY" && mechanism === "TABLE" && method === "AnswerToQuestion") {
       // A, D, G
+      // AnswerToQuestion: Input questions (answer: false), so box shows questions
       showBox = true;
       boxParts = shuffle(sortedParts.filter(p => !p.answer && !p.isSeparator));
       boxDisplayType = 'word-with-basic';
@@ -394,12 +398,14 @@ export default function Repeating() {
       inputAnswerValue = false;
     } else if (mode === "EXERCISE" && mechanism === "TABLE" && method === "QuestionToAnswer") {
       // A, C, F
+      // QuestionToAnswer: Input answers (answer: true), so box shows answers (basicWord only)
       showBox = true;
       boxParts = shuffle(sortedParts.filter(p => p.answer && !p.isSeparator));
       boxDisplayType = 'basic-only';
       inputAnswerValue = true;
     } else if (mode === "EXERCISE" && mechanism === "TABLE" && method === "AnswerToQuestion") {
       // A, E, G
+      // AnswerToQuestion: Input questions (answer: false), so box shows questions (basicWord only)
       showBox = true;
       boxParts = shuffle(sortedParts.filter(p => !p.answer && !p.isSeparator));
       boxDisplayType = 'basic-only';

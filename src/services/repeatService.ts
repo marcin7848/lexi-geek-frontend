@@ -103,6 +103,14 @@ const convertMethodToBackendFormat = (method: Method): string => {
   return method;
 };
 
+// Helper to convert backend method format to frontend format
+const convertMethodToFrontendFormat = (method: string): Method => {
+  if (method === "QUESTION_TO_ANSWER") return "QuestionToAnswer";
+  if (method === "ANSWER_TO_QUESTION") return "AnswerToQuestion";
+  // Fallback if already in frontend format
+  return method as Method;
+};
+
 // Helper to convert RepeatSessionDto to RepeatSession
 const mapRepeatSessionDtoToRepeatSession = (dto: RepeatSessionDto): RepeatSession => {
   return {
@@ -127,8 +135,8 @@ const mapRepeatWordDtoToRepeatWord = (dto: RepeatWordDto): RepeatWord => {
     separatorType: part.separatorType ? (part.separatorType as "ENTER" | "TAB" | "MULTI_DASH") : undefined,
   }));
 
-  // The method is already in frontend format ("QuestionToAnswer" or "AnswerToQuestion")
-  const method = dto.method as Method;
+  // Convert backend method format to frontend format
+  const method = convertMethodToFrontendFormat(dto.method);
 
   return {
     uuid: dto.uuid,
