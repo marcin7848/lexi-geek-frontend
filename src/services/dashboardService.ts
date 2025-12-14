@@ -1,36 +1,12 @@
 import { TaskType, RecentActivity, TaskSettings, TaskSchedule, UserData } from "@/types/dashboard";
 import { languageService } from "./languageService";
 import { accountService } from "./accountService";
+import { tasksService } from "./tasksService";
 
 export type { TaskType, RecentActivity, TaskSettings, TaskSchedule, UserData };
 
-const TASKS_KEY = "daily_tasks";
 const RECENT_ACTIVITY_KEY = "recent_activity";
-const TASK_SETTINGS_KEY = "task_settings";
-const TASK_SCHEDULE_KEY = "task_schedule";
 const LAST_TASK_RELOAD_KEY = "last_task_reload";
-
-const calculateStarsReward = (maximum: number, schedule: TaskSchedule): number => {
-  let baseStars = Math.ceil(maximum / 10);
-  
-  // Multiply based on frequency
-  switch (schedule.frequency) {
-    case 'daily':
-      baseStars *= 1;
-      break;
-    case 'every_n_days':
-      baseStars *= Math.max(1, 1 / (schedule.frequencyValue || 1));
-      break;
-    case 'weekly':
-      baseStars *= 0.5;
-      break;
-    case 'monthly':
-      baseStars *= 0.2;
-      break;
-  }
-  
-  return Math.max(1, Math.ceil(baseStars));
-};
 
 export const dashboardService = {
   getUserData: async (): Promise<UserData> => {
@@ -65,69 +41,16 @@ export const dashboardService = {
   },
 
   getDailyTasks: async (): Promise<TaskType[]> => {
-    const stored = localStorage.getItem(TASKS_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-    return dashboardService.generateTasks();
+    return await tasksService.getTasks();
   },
 
   generateTasks: async (): Promise<TaskType[]> => {
-    const languages = await languageService.getAll();
-    const settings = await dashboardService.getTaskSettings();
-    const schedule = await dashboardService.getTaskSchedule();
-    const tasks: TaskType[] = [];
-
-    const taskTypes: Array<'repeat_dictionary' | 'repeat_exercise' | 'add_dictionary' | 'add_exercise'> = [
-      'repeat_dictionary',
-      'repeat_exercise',
-      'add_dictionary',
-      'add_exercise'
-    ];
-
-    languages.forEach(lang => {
-      const langSettings = settings.find(s => s.languageId === lang.id);
-      
-      taskTypes.forEach(taskType => {
-        const setting = langSettings?.[taskType] || {
-          enabled: true,
-          maximum: taskType.includes('repeat') ? 30 : 10
-        };
-
-        // Randomly include tasks (70% chance)
-        if (setting.enabled && Math.random() > 0.3) {
-          tasks.push({
-            id: `${lang.id}-${taskType}`,
-            type: taskType,
-            languageId: lang.id,
-            languageName: lang.name,
-            current: 0,
-            maximum: setting.maximum,
-            starsReward: calculateStarsReward(setting.maximum, schedule)
-          });
-        }
-      });
-    });
-
-    localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
     localStorage.setItem(LAST_TASK_RELOAD_KEY, String(Date.now()));
-    return tasks;
+    return await tasksService.reloadTasks();
   },
 
   updateTaskProgress: async (taskId: string, progress: number): Promise<void> => {
-    const tasks = await dashboardService.getDailyTasks();
-    const task = tasks.find(t => t.id === taskId);
-    
-    if (task) {
-      task.current = Math.min(progress, task.maximum);
-      
-      // Award stars if task completed
-      if (task.current >= task.maximum && task.current - progress < task.maximum) {
-        await dashboardService.addStars(task.starsReward);
-      }
-      
-      localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-    }
+    await tasksService.updateTaskProgress(taskId, progress);
   },
 
   getRecentActivity: async (): Promise<RecentActivity[]> => {
@@ -180,39 +103,18 @@ export const dashboardService = {
   },
 
   getTaskSettings: async (): Promise<TaskSettings[]> => {
-    const stored = localStorage.getItem(TASK_SETTINGS_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-    
-    // Generate default settings for all languages
-    const languages = await languageService.getAll();
-    return languages.map(lang => ({
-      languageId: lang.id,
-      repeat_dictionary: { enabled: true, maximum: 30 },
-      repeat_exercise: { enabled: true, maximum: 30 },
-      add_dictionary: { enabled: true, maximum: 10 },
-      add_exercise: { enabled: true, maximum: 10 }
-    }));
+    return await tasksService.getTaskSettings();
   },
 
   updateTaskSettings: async (settings: TaskSettings[]): Promise<void> => {
-    localStorage.setItem(TASK_SETTINGS_KEY, JSON.stringify(settings));
+    await tasksService.updateTaskSettings(settings);
   },
 
   getTaskSchedule: async (): Promise<TaskSchedule> => {
-    const stored = localStorage.getItem(TASK_SCHEDULE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-    return {
-      hour: 0,
-      minute: 0,
-      frequency: 'daily'
-    };
+    return await tasksService.getTaskSchedule();
   },
 
   updateTaskSchedule: async (schedule: TaskSchedule): Promise<void> => {
-    localStorage.setItem(TASK_SCHEDULE_KEY, JSON.stringify(schedule));
+    await tasksService.updateTaskSchedule(schedule);
   }
 };
