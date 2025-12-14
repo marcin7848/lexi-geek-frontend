@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { statisticsService, type UserStat } from "@/services/statisticsService";
+import { statisticsService } from "@/services/statisticsService";
+import type { UserStat } from "@/services/statisticsService";
 import { languageService, type Language } from "@/services/languageService";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Calendar } from "lucide-react";
@@ -18,12 +19,12 @@ export const StatisticsChart = () => {
   const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const loadStatistics = useCallback(async (customStartDate?: string, customEndDate?: string) => {
+  const loadStatistics = useCallback(async () => {
     setLoading(true);
     try {
       const statsData = await statisticsService.getUserStatistics({
-        startDate: customStartDate || startDate,
-        endDate: customEndDate || endDate,
+        startDate: startDate,
+        endDate: endDate,
         languageUuids: selectedLanguages.length > 0 ? selectedLanguages : undefined,
         showTotal,
         showStars,
@@ -37,32 +38,29 @@ export const StatisticsChart = () => {
     }
   }, [startDate, endDate, selectedLanguages, showTotal, showStars]);
 
-  const loadInitialData = useCallback(async () => {
-    try {
-      const langsData = await languageService.getAll();
-      setLanguages(langsData);
-
-      // Set default date range (last 30 days)
-      const end = new Date();
-      const start = new Date();
-      start.setDate(start.getDate() - 30);
-
-      const endDateStr = end.toISOString().split('T')[0];
-      const startDateStr = start.toISOString().split('T')[0];
-
-      setEndDate(endDateStr);
-      setStartDate(startDateStr);
-
-      // Load statistics with default date range
-      await loadStatistics(startDateStr, endDateStr);
-    } catch (error) {
-      console.error('Failed to load initial data:', error);
-    }
-  }, [loadStatistics]);
-
   useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        const langsData = await languageService.getAll();
+        setLanguages(langsData);
+
+        // Set default date range (last 30 days)
+        const end = new Date();
+        const start = new Date();
+        start.setDate(start.getDate() - 30);
+
+        const endDateStr = end.toISOString().split('T')[0];
+        const startDateStr = start.toISOString().split('T')[0];
+
+        setEndDate(endDateStr);
+        setStartDate(startDateStr);
+      } catch (error) {
+        console.error('Failed to load initial data:', error);
+      }
+    };
+
     loadInitialData();
-  }, [loadInitialData]);
+  }, []); // Only run once on mount
 
   useEffect(() => {
     if (startDate && endDate) {
@@ -92,12 +90,19 @@ export const StatisticsChart = () => {
       dataPoint['Stars'] = stat.stars;
     }
 
+    // Ensure all selected languages have data points (even if 0) to connect lines
     selectedLanguages.forEach(langId => {
       const lang = languages.find(l => l.id === langId);
-      if (lang && stat.languageStats[langId]) {
+      if (lang) {
         const ls = stat.languageStats[langId];
-        dataPoint[`${lang.name} (Repeated)`] = ls.repeat;
-        dataPoint[`${lang.name} (Added)`] = ls.add;
+        if (ls) {
+          dataPoint[`${lang.name} (Repeated)`] = ls.repeat;
+          dataPoint[`${lang.name} (Added)`] = ls.add;
+        } else {
+          // If no data for this language on this date, use 0 to keep line connected
+          dataPoint[`${lang.name} (Repeated)`] = 0;
+          dataPoint[`${lang.name} (Added)`] = 0;
+        }
       }
     });
 

@@ -1,4 +1,5 @@
 // Service for user statistics operations
+// Updated to match API documentation structure
 
 import { HttpMethod, RequestBuilder, RequestService } from '@/services/requestService';
 import { throwIfError } from '@/services/requestError';
