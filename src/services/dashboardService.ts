@@ -1,5 +1,6 @@
 import { TaskType, RecentActivity, TaskSettings, TaskSchedule, UserData } from "@/types/dashboard";
 import { languageService } from "./languageService";
+import { accountService } from "./accountService";
 
 export type { TaskType, RecentActivity, TaskSettings, TaskSchedule, UserData };
 
@@ -7,7 +8,7 @@ const TASKS_KEY = "daily_tasks";
 const RECENT_ACTIVITY_KEY = "recent_activity";
 const TASK_SETTINGS_KEY = "task_settings";
 const TASK_SCHEDULE_KEY = "task_schedule";
-const USER_DATA_KEY = "user_data";
+const LAST_TASK_RELOAD_KEY = "last_task_reload";
 
 const calculateStarsReward = (maximum: number, schedule: TaskSchedule): number => {
   let baseStars = Math.ceil(maximum / 10);
@@ -33,23 +34,34 @@ const calculateStarsReward = (maximum: number, schedule: TaskSchedule): number =
 
 export const dashboardService = {
   getUserData: async (): Promise<UserData> => {
-    const stored = localStorage.getItem(USER_DATA_KEY);
-    if (stored) {
-      return JSON.parse(stored);
+    try {
+      const stars = await accountService.getStars();
+      const stored = localStorage.getItem(LAST_TASK_RELOAD_KEY);
+      const lastTaskReload = stored ? parseInt(stored, 10) : Date.now();
+      return { stars, lastTaskReload };
+    } catch (error) {
+      console.error('Failed to fetch user data:', error);
+      // Fallback to 0 stars if API call fails
+      const stored = localStorage.getItem(LAST_TASK_RELOAD_KEY);
+      const lastTaskReload = stored ? parseInt(stored, 10) : Date.now();
+      return { stars: 0, lastTaskReload };
     }
-    return { stars: 0, lastTaskReload: Date.now() };
   },
 
   updateUserData: async (data: Partial<UserData>): Promise<UserData> => {
-    const current = await dashboardService.getUserData();
-    const updated = { ...current, ...data };
-    localStorage.setItem(USER_DATA_KEY, JSON.stringify(updated));
-    return updated;
+    // Only update lastTaskReload in localStorage since stars come from API
+    if (data.lastTaskReload !== undefined) {
+      localStorage.setItem(LAST_TASK_RELOAD_KEY, String(data.lastTaskReload));
+    }
+    // Fetch fresh data from API
+    return dashboardService.getUserData();
   },
 
   addStars: async (amount: number): Promise<UserData> => {
-    const current = await dashboardService.getUserData();
-    return dashboardService.updateUserData({ stars: current.stars + amount });
+    // Note: This is a placeholder. In the future, you should call a backend endpoint to add stars
+    // For now, we just refetch the current stars from the API
+    console.log(`Adding ${amount} stars (backend update needed)`);
+    return dashboardService.getUserData();
   },
 
   getDailyTasks: async (): Promise<TaskType[]> => {
@@ -98,7 +110,7 @@ export const dashboardService = {
     });
 
     localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-    await dashboardService.updateUserData({ lastTaskReload: Date.now() });
+    localStorage.setItem(LAST_TASK_RELOAD_KEY, String(Date.now()));
     return tasks;
   },
 

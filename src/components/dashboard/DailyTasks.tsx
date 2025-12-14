@@ -4,17 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { dashboardService, type TaskType } from "@/services/dashboardService";
+import { useStars } from "@/contexts/StarsContext";
 import { RefreshCw, Settings, Star } from "lucide-react";
 import { TaskSettingsModal } from "./TaskSettingsModal";
 
-interface DailyTasksProps {
-  onStarsUpdate: () => void;
-}
-
-export const DailyTasks = ({ onStarsUpdate }: DailyTasksProps) => {
+export const DailyTasks = () => {
   const [tasks, setTasks] = useState<TaskType[]>([]);
   const [loading, setLoading] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const { refreshStars } = useStars();
 
   useEffect(() => {
     loadTasks();
@@ -44,7 +42,7 @@ export const DailyTasks = ({ onStarsUpdate }: DailyTasksProps) => {
 
   const handleSettingsSaved = () => {
     loadTasks();
-    onStarsUpdate();
+    refreshStars();
   };
 
   return (

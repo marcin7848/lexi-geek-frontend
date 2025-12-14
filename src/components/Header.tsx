@@ -6,10 +6,10 @@ import { supabase, type AuthUser } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/components/ThemeProvider";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { useStars } from "@/contexts/StarsContext";
 import { languageOptions } from "@/i18n/languageConfig";
 import { authService } from "@/services/authService";
 import { authStateService } from "@/services/authStateService";
-import { dashboardService } from "@/services/dashboardService";
 import {
   Select,
   SelectContent,
@@ -22,7 +22,7 @@ import "flag-icons/css/flag-icons.min.css";
 export const Header = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [stars, setStars] = useState(0);
+  const { stars } = useStars();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
@@ -33,18 +33,9 @@ export const Header = () => {
     setUser(currentUser as AuthUser);
     setLoading(!authStateService.isInitialized());
 
-    if (currentUser) {
-      loadUserData();
-    }
-
     const unsubscribe = authStateService.subscribe((newUser) => {
       setUser(newUser as AuthUser);
       setLoading(false);
-      if (newUser) {
-        loadUserData();
-      } else {
-        setStars(0);
-      }
     });
 
     return () => {
@@ -52,14 +43,6 @@ export const Header = () => {
     };
   }, []);
 
-  const loadUserData = async () => {
-    try {
-      const userData = await dashboardService.getUserData();
-      setStars(userData.stars);
-    } catch (error) {
-      console.error('Failed to load user data:', error);
-    }
-  };
 
   const handleLogout = async () => {
     try {
