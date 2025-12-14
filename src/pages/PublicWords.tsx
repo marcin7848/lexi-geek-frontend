@@ -9,6 +9,7 @@ import { Category } from "@/types/category";
 import { categoryService } from "@/services/categoryService";
 import { languageService } from "@/services/languageService";
 import { publicWordsService } from "@/services/publicWordsService";
+import { authStateService } from "@/services/authStateService";
 import {
   Table,
   TableBody,
@@ -83,6 +84,13 @@ const PublicWords = () => {
   // Load category and fetch words
   useEffect(() => {
     const loadData = async () => {
+      // Initialize auth state to verify authentication
+      const user = await authStateService.initialize();
+      if (!user) {
+        navigate("/login");
+        return;
+      }
+
       if (!categoryId) return;
 
       setLoading(true);
@@ -90,11 +98,16 @@ const PublicWords = () => {
         // Find category from all languages
         const languages = await languageService.getAll();
 
+        let foundCategory: Category | null = null;
+        let foundLanguageUuid: string | null = null;
+
         for (const language of languages) {
           const categories = await categoryService.getAll(language.id);
           const found = categories.find((cat) => cat.uuid === categoryId);
 
           if (found) {
+            foundCategory = found;
+            foundLanguageUuid = language.id;
             setCategory(found);
             setLanguageUuid(language.id);
 
@@ -102,6 +115,10 @@ const PublicWords = () => {
             await fetchWords(language.id, categoryId);
             break;
           }
+        }
+
+        if (!foundCategory || !foundLanguageUuid) {
+          toast.error(t("publicWords.categoryNotFound"));
         }
       } catch (error) {
         console.error("Error loading data:", error);

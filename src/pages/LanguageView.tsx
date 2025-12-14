@@ -7,16 +7,12 @@ import { Category } from "@/types/category";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import StartRepeatingModal from "@/components/StartRepeatingModal";
-import { repeatService } from "@/services/repeatService";
+import { repeatService, type RepeatSession } from "@/services/repeatService";
 import { languageService, type Language } from "@/services/languageService";
 import { categoryService } from "@/services/categoryService";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { authStateService } from "@/services/authStateService";
 
-
-type RepeatData = {
-  active: boolean;
-  wordsLeft: number;
-};
 
 export default function LanguageView() {
   const { languageId } = useParams();
@@ -24,11 +20,18 @@ export default function LanguageView() {
   const { t } = useLanguage();
   const [language, setLanguage] = useState<Language | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [repeatData, setRepeatData] = useState<RepeatData>({ active: false, wordsLeft: 0 });
+  const [repeatSession, setRepeatSession] = useState<RepeatSession | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
+      // Initialize auth state to verify authentication
+      const user = await authStateService.initialize();
+      if (!user) {
+        navigate("/login");
+        return;
+      }
+
       if (!languageId) return;
       
       try {
@@ -63,16 +66,9 @@ export default function LanguageView() {
           const categories = await categoryService.getAll(languageUuid);
           setCategories(categories);
 
-          // Load repeat data using the original languageId (for localStorage compatibility)
-          const storedRepeatData = await repeatService.getRepeatData(languageId);
-
-          if (storedRepeatData) {
-            setRepeatData(storedRepeatData);
-          } else {
-            const initialRepeatData = { active: false, wordsLeft: 0 };
-            setRepeatData(initialRepeatData);
-            await repeatService.updateRepeatData(languageId, initialRepeatData);
-          }
+          // Load repeat session from backend
+          const session = await repeatService.getActiveSession(languageUuid);
+          setRepeatSession(session);
         } else {
           toast.error(t("addLanguage.notFound"));
           navigate("/");
@@ -101,7 +97,7 @@ export default function LanguageView() {
   };
 
   const handleStartRepeating = () => {
-    if (repeatData.active) {
+    if (repeatSession) {
       navigate(`/language/${languageId}/repeat`);
     } else {
       setIsModalOpen(true);
@@ -109,35 +105,54 @@ export default function LanguageView() {
   };
 
   const handleResetRepeating = async () => {
-    if (!languageId) return;
-    
-    const newRepeatData = { active: false, wordsLeft: 0 };
-    setRepeatData(newRepeatData);
-    await repeatService.updateRepeatData(languageId, newRepeatData);
-    toast.success(t("languageView.successReset"));
+    if (!language) return;
+
+    try {
+      await repeatService.resetSession(language.id);
+      setRepeatSession(null);
+      toast.success(t("languageView.successReset"));
+    } catch (error) {
+      console.error("Error resetting repeat session:", error);
+      toast.error(t("common.error"));
+    }
+  };
+
+  const handleResetAllWords = async () => {
+    if (!language) return;
+
+    try {
+      await repeatService.resetWordTime(language.id);
+      toast.success(t("languageView.resetAllWordsSuccess"));
+    } catch (error) {
+      console.error("Error resetting all words:", error);
+      toast.error(t("languageView.resetAllWordsError"));
+    }
   };
 
   const handleStartRepeatSubmit = async (data: {
-    categoryIds: number[];
+    categoryUuids: string[];
     includeChosen: boolean;
     wordCount: number;
     method: string;
   }) => {
-    if (!languageId) return;
-    
-    // Simulate API call
-    await repeatService.startRepeat(data);
+    if (!language) return;
 
-    // Set repeat data with random wordsLeft
-    const newRepeatData = {
-      active: true,
-      wordsLeft: Math.floor(Math.random() * 20) + 5,
-    };
-    setRepeatData(newRepeatData);
-    await repeatService.updateRepeatData(languageId, newRepeatData);
+    try {
+      // Start repeat session with backend
+      const session = await repeatService.startRepeat(language.id, {
+        categoryUuids: data.categoryUuids,
+        includeChosen: data.includeChosen,
+        wordCount: data.wordCount,
+        method: data.method,
+      });
 
-    setIsModalOpen(false);
-    navigate(`/language/${languageId}/repeat`);
+      setRepeatSession(session);
+      setIsModalOpen(false);
+      navigate(`/language/${languageId}/repeat`);
+    } catch (error) {
+      console.error("Error starting repeat session:", error);
+      toast.error(t("common.error"));
+    }
   };
 
   if (!language) {
@@ -152,18 +167,25 @@ export default function LanguageView() {
         <div className="py-8 space-y-6">
           <h1 className="text-3xl font-bold">{language.name}</h1>
           
-          <div className="flex items-center gap-4">
-            <Button onClick={handleStartRepeating} size="lg">
-              {repeatData.active ? t("languageView.backToRepeating") : t("languageView.startRepeating")}
-            </Button>
-            {repeatData.active && (
-              <>
-                <span className="text-lg">{t("languageView.wordsLeft").replace("{count}", String(repeatData.wordsLeft))}</span>
-                <Button onClick={handleResetRepeating} variant="outline">
-                  {t("languageView.resetRepeating")}
-                </Button>
-              </>
-            )}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-4">
+              <Button onClick={handleStartRepeating} size="lg">
+                {repeatSession ? t("languageView.backToRepeating") : t("languageView.startRepeating")}
+              </Button>
+              {repeatSession && (
+                <>
+                  <span className="text-lg">{t("languageView.wordsLeft").replace("{count}", String(repeatSession.wordsLeft))}</span>
+                  <Button onClick={handleResetRepeating} variant="outline">
+                    {t("languageView.resetRepeating")}
+                  </Button>
+                </>
+              )}
+            </div>
+            <div>
+              <Button onClick={handleResetAllWords} variant="outline" size="sm">
+                {t("languageView.resetAllWords")}
+              </Button>
+            </div>
           </div>
 
           <CategoryTree categories={categories} languageId={language.id} onUpdate={handleCategoriesUpdate} />

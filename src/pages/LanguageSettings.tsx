@@ -22,6 +22,7 @@ import { ShortcutHints } from "@/components/ShortcutHints";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { languageService, type Language, type LanguageForm } from "@/services/languageService";
 import { RequestError, buildLocalizedErrorDescription } from "@/services/requestError";
+import { authStateService } from "@/services/authStateService";
 
 export default function LanguageSettings() {
   const { languageId } = useParams();
@@ -34,6 +35,13 @@ export default function LanguageSettings() {
 
   useEffect(() => {
     const load = async () => {
+      // Initialize auth state to verify authentication
+      const user = await authStateService.initialize();
+      if (!user) {
+        navigate("/login");
+        return;
+      }
+
       if (!languageId) {
         toast.error(t("addLanguage.notFound"));
         navigate("/", { replace: true });

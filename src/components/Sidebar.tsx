@@ -79,7 +79,10 @@ export const Sidebar = () => {
     const handleAuthStorageChange = () => {
       const u = authStateService.getCurrentUser();
       setUser(u as AuthUser);
-      if (!u) {
+
+      // Only redirect if auth is fully initialized and user is still null
+      // This prevents redirects during the initialization process
+      if (!u && authStateService.isInitialized()) {
         setLanguages([]);
         redirectToHome();
       }

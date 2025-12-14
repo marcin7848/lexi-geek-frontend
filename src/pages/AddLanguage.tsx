@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
@@ -11,6 +11,7 @@ import { ShortcutHints } from "@/components/ShortcutHints";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { languageService } from "@/services/languageService";
 import { RequestError, buildLocalizedErrorDescription } from "@/services/requestError";
+import { authStateService } from "@/services/authStateService";
 
 export default function AddLanguage() {
   const navigate = useNavigate();
@@ -27,6 +28,16 @@ export default function AddLanguage() {
   const shortcutInputRef = useRef<HTMLInputElement>(null);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const user = await authStateService.initialize();
+      if (!user) {
+        navigate("/login");
+      }
+    };
+    checkAuth();
+  }, [navigate]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};

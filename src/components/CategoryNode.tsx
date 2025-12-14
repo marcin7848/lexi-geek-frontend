@@ -18,6 +18,7 @@ type CategoryNodeProps = {
   onToggleExpand: (uuid: string) => void;
   onEdit: (uuid: string, name: string, mode: Category["mode"], method: Category["method"]) => void;
   onDelete: (uuid: string) => void;
+  onReset: (uuid: string) => void;
   depth?: number;
   isLastChild?: boolean;
 };
@@ -30,6 +31,7 @@ export const CategoryNode = ({
   onToggleExpand,
   onEdit,
   onDelete,
+  onReset,
   depth = 0,
   isLastChild = false,
 }: CategoryNodeProps) => {
@@ -175,6 +177,7 @@ export const CategoryNode = ({
                 category={category}
                 onSave={handleSave}
                 onDelete={() => onDelete(category.uuid)}
+                onReset={() => onReset(category.uuid)}
                 onCancel={() => setIsEditing(false)}
               />
             )}
@@ -195,6 +198,7 @@ export const CategoryNode = ({
                   onToggleExpand={onToggleExpand}
                   onEdit={onEdit}
                   onDelete={onDelete}
+                  onReset={onReset}
                   depth={depth + 1}
                   isLastChild={index === children.length - 1}
                 />

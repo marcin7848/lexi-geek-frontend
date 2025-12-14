@@ -244,6 +244,9 @@ export const fr = {
     "languageView.resetRepeating": "Réinitialiser la répétition",
     "languageView.wordsLeft": "Mots restants: {count}",
     "languageView.successReset": "Répétition réinitialisée",
+    "languageView.resetAllWords": "Réinitialiser tous les mots",
+    "languageView.resetAllWordsSuccess": "Tous les mots ont été réinitialisés avec succès",
+    "languageView.resetAllWordsError": "Échec de la réinitialisation de tous les mots",
 
     // Category Tree
     "categoryTree.categories": "Catégories",
@@ -275,6 +278,9 @@ export const fr = {
     "categoryEditForm.errorDelete": "Échec de la suppression de la catégorie",
     "categoryEditForm.created": "Catégorie créée",
     "categoryEditForm.errorCreate": "Échec de la création de la catégorie",
+    "categoryEditForm.reset": "Réinitialiser",
+    "categoryEditForm.resetSuccess": "Les mots de la catégorie ont été réinitialisés avec succès",
+    "categoryEditForm.resetError": "Échec de la réinitialisation des mots de la catégorie",
 
     // Category Form
     "categoryForm.parentCategory": "Catégorie Parente",
