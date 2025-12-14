@@ -1,42 +1,72 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { dashboardService, type UserStats } from "@/services/dashboardService";
+import { statisticsService } from "@/services/statisticsService";
+import type { UserStat } from "@/services/statisticsService";
 import { languageService, type Language } from "@/services/languageService";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Calendar } from "lucide-react";
 
 export const StatisticsChart = () => {
-  const [stats, setStats] = useState<UserStats[]>([]);
+  const [stats, setStats] = useState<UserStat[]>([]);
   const [languages, setLanguages] = useState<Language[]>([]);
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [showTotal, setShowTotal] = useState(true);
   const [showStars, setShowStars] = useState(true);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const loadStatistics = useCallback(async () => {
+    setLoading(true);
+    try {
+      const statsData = await statisticsService.getUserStatistics({
+        startDate: startDate,
+        endDate: endDate,
+        languageUuids: selectedLanguages.length > 0 ? selectedLanguages : undefined,
+        showTotal,
+        showStars,
+      });
+      setStats(statsData);
+    } catch (error) {
+      console.error('Failed to load statistics:', error);
+      setStats([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [startDate, endDate, selectedLanguages, showTotal, showStars]);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    const loadInitialData = async () => {
+      try {
+        const langsData = await languageService.getAll();
+        setLanguages(langsData);
 
-  const loadData = async () => {
-    const statsData = await dashboardService.getUserStats();
-    const langsData = await languageService.getAll();
-    
-    setStats(statsData);
-    setLanguages(langsData);
-    
-    // Set default date range (last 30 days)
-    const end = new Date();
-    const start = new Date();
-    start.setDate(start.getDate() - 30);
-    
-    setEndDate(end.toISOString().split('T')[0]);
-    setStartDate(start.toISOString().split('T')[0]);
-  };
+        // Set default date range (last 30 days)
+        const end = new Date();
+        const start = new Date();
+        start.setDate(start.getDate() - 30);
+
+        const endDateStr = end.toISOString().split('T')[0];
+        const startDateStr = start.toISOString().split('T')[0];
+
+        setEndDate(endDateStr);
+        setStartDate(startDateStr);
+      } catch (error) {
+        console.error('Failed to load initial data:', error);
+      }
+    };
+
+    loadInitialData();
+  }, []); // Only run once on mount
+
+  useEffect(() => {
+    if (startDate && endDate) {
+      loadStatistics();
+    }
+  }, [startDate, endDate, selectedLanguages, showTotal, showStars, loadStatistics]);
 
   const toggleLanguage = (langId: string) => {
     setSelectedLanguages(prev => 
@@ -46,31 +76,33 @@ export const StatisticsChart = () => {
     );
   };
 
-  const filteredStats = stats.filter(stat => {
-    if (!startDate || !endDate) return true;
-    return stat.date >= startDate && stat.date <= endDate;
-  });
-
-  const chartData = filteredStats.map(stat => {
-    const dataPoint: any = {
+  const chartData = stats.map(stat => {
+    const dataPoint: Record<string, string | number> = {
       date: new Date(stat.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     };
 
     if (showTotal) {
-      dataPoint['Total Repeated'] = stat.repeatDictionary + stat.repeatExercise;
-      dataPoint['Total Added'] = stat.addDictionary + stat.addExercise;
+      dataPoint['Total Repeated'] = stat.repeat;
+      dataPoint['Total Added'] = stat.add;
     }
 
     if (showStars) {
       dataPoint['Stars'] = stat.stars;
     }
 
+    // Ensure all selected languages have data points (even if 0) to connect lines
     selectedLanguages.forEach(langId => {
       const lang = languages.find(l => l.id === langId);
-      if (lang && stat.languageBreakdown[langId]) {
-        const lb = stat.languageBreakdown[langId];
-        dataPoint[`${lang.name} (Repeated)`] = lb.repeatDictionary + lb.repeatExercise;
-        dataPoint[`${lang.name} (Added)`] = lb.addDictionary + lb.addExercise;
+      if (lang) {
+        const ls = stat.languageStats[langId];
+        if (ls) {
+          dataPoint[`${lang.name} (Repeated)`] = ls.repeat;
+          dataPoint[`${lang.name} (Added)`] = ls.add;
+        } else {
+          // If no data for this language on this date, use 0 to keep line connected
+          dataPoint[`${lang.name} (Repeated)`] = 0;
+          dataPoint[`${lang.name} (Added)`] = 0;
+        }
       }
     });
 
@@ -110,6 +142,9 @@ export const StatisticsChart = () => {
                 onChange={(e) => setEndDate(e.target.value)}
               />
             </div>
+            {loading && (
+              <div className="text-sm text-muted-foreground">Loading...</div>
+            )}
           </div>
 
           {/* Series Selection */}

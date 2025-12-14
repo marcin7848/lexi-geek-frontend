@@ -33,20 +33,6 @@ export interface TaskSchedule {
   frequencyValue?: number; // for every_n_days, day of week (0-6), or day of month (1-31)
 }
 
-export interface UserStats {
-  date: string;
-  repeatDictionary: number;
-  repeatExercise: number;
-  addDictionary: number;
-  addExercise: number;
-  stars: number;
-  languageBreakdown: Record<string, {
-    repeatDictionary: number;
-    repeatExercise: number;
-    addDictionary: number;
-    addExercise: number;
-  }>;
-}
 
 export interface UserData {
   stars: number;
