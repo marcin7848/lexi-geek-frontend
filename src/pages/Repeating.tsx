@@ -30,6 +30,7 @@ export default function Repeating() {
   const [answers, setAnswers] = useState<{ [key: string]: string }>({});
   const [stage, setStage] = useState<Stage>("ANSWER");
   const [checkedWordParts, setCheckedWordParts] = useState<CheckedWordPart[]>([]);
+  const [shuffledBoxParts, setShuffledBoxParts] = useState<WordPart[]>([]);
   const lastFocusedInputRef = useRef<HTMLInputElement | null>(null);
   const firstInputRef = useRef<HTMLInputElement | null>(null);
   const speakerButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -120,6 +121,25 @@ export default function Repeating() {
       setAnswers({});
       setStage("ANSWER");
       setCheckedWordParts([]);
+
+      // Initialize shuffled box parts for TABLE mechanism
+      const sortedParts = [...word.wordParts].sort((a, b) => a.position - b.position);
+      const shuffle = <T,>(array: T[]): T[] => {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+      };
+
+      // Determine which parts to shuffle based on method
+      let partsToShuffle: WordPart[] = [];
+      if (word.mechanism === "TABLE") {
+        const inputAnswerValue = word.method === "QuestionToAnswer";
+        partsToShuffle = shuffle(sortedParts.filter(p => (p.answer === inputAnswerValue && !p.isSeparator)));
+      }
+      setShuffledBoxParts(partsToShuffle);
     } catch (error) {
       console.error("Error loading next word:", error);
       toast.error("Failed to load next word");
@@ -347,16 +367,6 @@ export default function Repeating() {
     const mode = categoryMode;
     const method = currentMethod;
 
-    // Helper to shuffle array (for random order)
-    const shuffle = <T,>(array: T[]): T[] => {
-      const shuffled = [...array];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      return shuffled;
-    };
-
     // Determine behaviors based on combination
     let showBox = false;
     let boxParts: WordPart[] = [];
@@ -378,14 +388,14 @@ export default function Repeating() {
       // A, B, F
       // QuestionToAnswer: Input answers (answer: true), so box shows answers
       showBox = true;
-      boxParts = shuffle(sortedParts.filter(p => p.answer && !p.isSeparator));
+      boxParts = shuffledBoxParts;
       boxDisplayType = 'word-with-basic';
       inputAnswerValue = true;
     } else if (mode === "DICTIONARY" && mechanism === "TABLE" && method === "AnswerToQuestion") {
       // A, D, G
       // AnswerToQuestion: Input questions (answer: false), so box shows questions
       showBox = true;
-      boxParts = shuffle(sortedParts.filter(p => !p.answer && !p.isSeparator));
+      boxParts = shuffledBoxParts;
       boxDisplayType = 'word-with-basic';
       inputAnswerValue = false;
     } else if (mode === "EXERCISE" && mechanism === "BASIC" && method === "QuestionToAnswer") {
@@ -400,22 +410,18 @@ export default function Repeating() {
       // A, C, F
       // QuestionToAnswer: Input answers (answer: true), so box shows answers (basicWord only)
       showBox = true;
-      boxParts = shuffle(sortedParts.filter(p => p.answer && !p.isSeparator));
+      boxParts = shuffledBoxParts;
       boxDisplayType = 'basic-only';
       inputAnswerValue = true;
     } else if (mode === "EXERCISE" && mechanism === "TABLE" && method === "AnswerToQuestion") {
       // A, E, G
       // AnswerToQuestion: Input questions (answer: false), so box shows questions (basicWord only)
       showBox = true;
-      boxParts = shuffle(sortedParts.filter(p => !p.answer && !p.isSeparator));
+      boxParts = shuffledBoxParts;
       boxDisplayType = 'basic-only';
       inputAnswerValue = false;
     }
 
-    // Normalize TABLE box parts to match inputAnswerValue to avoid inversion bugs
-    if (showBox && mechanism === "TABLE") {
-      boxParts = shuffle(sortedParts.filter(p => (p.answer === inputAnswerValue && !p.isSeparator)));
-    }
 
     // Render box if needed
     const boxElement = showBox ? (
