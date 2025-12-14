@@ -84,8 +84,8 @@ export const StatisticsChart = () => {
     };
 
     if (showTotal) {
-      dataPoint['Total Repeated'] = stat.repeatDictionary + stat.repeatExercise;
-      dataPoint['Total Added'] = stat.addDictionary + stat.addExercise;
+      dataPoint['Total Repeated'] = stat.repeat;
+      dataPoint['Total Added'] = stat.add;
     }
 
     if (showStars) {
@@ -94,10 +94,10 @@ export const StatisticsChart = () => {
 
     selectedLanguages.forEach(langId => {
       const lang = languages.find(l => l.id === langId);
-      if (lang && stat.languageBreakdown[langId]) {
-        const lb = stat.languageBreakdown[langId];
-        dataPoint[`${lang.name} (Repeated)`] = lb.repeatDictionary + lb.repeatExercise;
-        dataPoint[`${lang.name} (Added)`] = lb.addDictionary + lb.addExercise;
+      if (lang && stat.languageStats[langId]) {
+        const ls = stat.languageStats[langId];
+        dataPoint[`${lang.name} (Repeated)`] = ls.repeat;
+        dataPoint[`${lang.name} (Added)`] = ls.add;
       }
     });
 

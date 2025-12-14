@@ -3,40 +3,32 @@
 import { HttpMethod, RequestBuilder, RequestService } from '@/services/requestService';
 import { throwIfError } from '@/services/requestError';
 
-// Backend DTOs
+// Backend DTOs - matching the API documentation
 interface LanguageStatsDto {
-  repeatDictionary: number;
-  repeatExercise: number;
-  addDictionary: number;
-  addExercise: number;
+  repeat: number;
+  add: number;
 }
 
 interface UserStatDto {
   date: string; // ISO date string (YYYY-MM-DD)
-  repeatDictionary: number;
-  repeatExercise: number;
-  addDictionary: number;
-  addExercise: number;
+  repeat: number;
+  add: number;
   stars: number;
-  languageBreakdown: Record<string, LanguageStatsDto>;
+  languageStats: Record<string, LanguageStatsDto>;
 }
 
 // Frontend types
 export interface LanguageStats {
-  repeatDictionary: number;
-  repeatExercise: number;
-  addDictionary: number;
-  addExercise: number;
+  repeat: number;
+  add: number;
 }
 
 export interface UserStat {
   date: string;
-  repeatDictionary: number;
-  repeatExercise: number;
-  addDictionary: number;
-  addExercise: number;
+  repeat: number;
+  add: number;
   stars: number;
-  languageBreakdown: Record<string, LanguageStats>;
+  languageStats: Record<string, LanguageStats>;
 }
 
 // Query parameters for filtering statistics
@@ -52,12 +44,10 @@ export interface StatisticsQueryParams {
 const mapUserStatDtoToUserStat = (dto: UserStatDto): UserStat => {
   return {
     date: dto.date,
-    repeatDictionary: dto.repeatDictionary,
-    repeatExercise: dto.repeatExercise,
-    addDictionary: dto.addDictionary,
-    addExercise: dto.addExercise,
+    repeat: dto.repeat,
+    add: dto.add,
     stars: dto.stars,
-    languageBreakdown: dto.languageBreakdown,
+    languageStats: dto.languageStats,
   };
 };
 
