@@ -3,7 +3,7 @@ import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import type { AuthUser } from "@/lib/supabase";
 import { authStateService } from "@/services/authStateService";
-import { dashboardService } from "@/services/dashboardService";
+import { useStars } from "@/contexts/StarsContext";
 import { RecentActivitySection } from "@/components/dashboard/RecentActivity";
 import { DailyTasks } from "@/components/dashboard/DailyTasks";
 import { StatisticsChart } from "@/components/dashboard/StatisticsChart";
@@ -13,7 +13,7 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 const Index = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [stars, setStars] = useState(0);
+  const { stars } = useStars();
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -21,19 +21,10 @@ const Index = () => {
       const serverUser = await authStateService.initialize();
       setUser(serverUser as AuthUser);
       setLoading(false);
-
-      if (serverUser) {
-        loadUserData();
-      }
     })();
 
     const unsubscribe = authStateService.subscribe((newUser) => {
       setUser(newUser as AuthUser);
-      if (newUser) {
-        loadUserData();
-      } else {
-        setStars(0);
-      }
     });
 
     const handleStorageChange = () => {
@@ -49,14 +40,6 @@ const Index = () => {
     };
   }, []);
 
-  const loadUserData = async () => {
-    try {
-      const userData = await dashboardService.getUserData();
-      setStars(userData.stars);
-    } catch (error) {
-      console.error('Failed to load user data:', error);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -94,7 +77,7 @@ const Index = () => {
                   <RecentActivitySection />
                 </div>
                 <div className="lg:col-span-2">
-                  <DailyTasks onStarsUpdate={loadUserData} />
+                  <DailyTasks />
                 </div>
               </div>
 

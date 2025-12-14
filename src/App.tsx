@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { LanguageProvider } from "@/i18n/LanguageProvider";
+import { StarsProvider } from "@/contexts/StarsContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -28,21 +29,23 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/groups/:groupId" element={<Groups />} />
-            <Route path="/add-language" element={<AddLanguage />} />
-            <Route path="/language/:languageId" element={<LanguageView />} />
-            <Route path="/language/:languageId/edit" element={<LanguageSettings />} />
-            <Route path="/language/:languageId/repeat" element={<Repeating />} />
-            <Route path="/category/:categoryId" element={<CategoryView />} />
-            <Route path="/category/:categoryId/auto-translate" element={<AutomaticTranslate />} />
-            <Route path="/category/:categoryId/public-words" element={<PublicWords />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+            <StarsProvider>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/groups/:groupId" element={<Groups />} />
+                <Route path="/add-language" element={<AddLanguage />} />
+                <Route path="/language/:languageId" element={<LanguageView />} />
+                <Route path="/language/:languageId/edit" element={<LanguageSettings />} />
+                <Route path="/language/:languageId/repeat" element={<Repeating />} />
+                <Route path="/category/:categoryId" element={<CategoryView />} />
+                <Route path="/category/:categoryId/auto-translate" element={<AutomaticTranslate />} />
+                <Route path="/category/:categoryId/public-words" element={<PublicWords />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </StarsProvider>
           </BrowserRouter>
         </TooltipProvider>
       </LanguageProvider>
