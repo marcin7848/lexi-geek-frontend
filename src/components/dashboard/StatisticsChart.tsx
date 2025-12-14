@@ -1,42 +1,74 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { dashboardService, type UserStats } from "@/services/dashboardService";
+import { statisticsService, type UserStat } from "@/services/statisticsService";
 import { languageService, type Language } from "@/services/languageService";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Calendar } from "lucide-react";
 
 export const StatisticsChart = () => {
-  const [stats, setStats] = useState<UserStats[]>([]);
+  const [stats, setStats] = useState<UserStat[]>([]);
   const [languages, setLanguages] = useState<Language[]>([]);
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [showTotal, setShowTotal] = useState(true);
   const [showStars, setShowStars] = useState(true);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const loadStatistics = useCallback(async (customStartDate?: string, customEndDate?: string) => {
+    setLoading(true);
+    try {
+      const statsData = await statisticsService.getUserStatistics({
+        startDate: customStartDate || startDate,
+        endDate: customEndDate || endDate,
+        languageUuids: selectedLanguages.length > 0 ? selectedLanguages : undefined,
+        showTotal,
+        showStars,
+      });
+      setStats(statsData);
+    } catch (error) {
+      console.error('Failed to load statistics:', error);
+      setStats([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [startDate, endDate, selectedLanguages, showTotal, showStars]);
+
+  const loadInitialData = useCallback(async () => {
+    try {
+      const langsData = await languageService.getAll();
+      setLanguages(langsData);
+
+      // Set default date range (last 30 days)
+      const end = new Date();
+      const start = new Date();
+      start.setDate(start.getDate() - 30);
+
+      const endDateStr = end.toISOString().split('T')[0];
+      const startDateStr = start.toISOString().split('T')[0];
+
+      setEndDate(endDateStr);
+      setStartDate(startDateStr);
+
+      // Load statistics with default date range
+      await loadStatistics(startDateStr, endDateStr);
+    } catch (error) {
+      console.error('Failed to load initial data:', error);
+    }
+  }, [loadStatistics]);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    loadInitialData();
+  }, [loadInitialData]);
 
-  const loadData = async () => {
-    const statsData = await dashboardService.getUserStats();
-    const langsData = await languageService.getAll();
-    
-    setStats(statsData);
-    setLanguages(langsData);
-    
-    // Set default date range (last 30 days)
-    const end = new Date();
-    const start = new Date();
-    start.setDate(start.getDate() - 30);
-    
-    setEndDate(end.toISOString().split('T')[0]);
-    setStartDate(start.toISOString().split('T')[0]);
-  };
+  useEffect(() => {
+    if (startDate && endDate) {
+      loadStatistics();
+    }
+  }, [startDate, endDate, selectedLanguages, showTotal, showStars, loadStatistics]);
 
   const toggleLanguage = (langId: string) => {
     setSelectedLanguages(prev => 
@@ -46,13 +78,8 @@ export const StatisticsChart = () => {
     );
   };
 
-  const filteredStats = stats.filter(stat => {
-    if (!startDate || !endDate) return true;
-    return stat.date >= startDate && stat.date <= endDate;
-  });
-
-  const chartData = filteredStats.map(stat => {
-    const dataPoint: any = {
+  const chartData = stats.map(stat => {
+    const dataPoint: Record<string, string | number> = {
       date: new Date(stat.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     };
 
@@ -110,6 +137,9 @@ export const StatisticsChart = () => {
                 onChange={(e) => setEndDate(e.target.value)}
               />
             </div>
+            {loading && (
+              <div className="text-sm text-muted-foreground">Loading...</div>
+            )}
           </div>
 
           {/* Series Selection */}

@@ -1,13 +1,12 @@
-import { TaskType, RecentActivity, TaskSettings, TaskSchedule, UserStats, UserData } from "@/types/dashboard";
+import { TaskType, RecentActivity, TaskSettings, TaskSchedule, UserData } from "@/types/dashboard";
 import { languageService } from "./languageService";
 
-export type { TaskType, RecentActivity, TaskSettings, TaskSchedule, UserStats, UserData };
+export type { TaskType, RecentActivity, TaskSettings, TaskSchedule, UserData };
 
 const TASKS_KEY = "daily_tasks";
 const RECENT_ACTIVITY_KEY = "recent_activity";
 const TASK_SETTINGS_KEY = "task_settings";
 const TASK_SCHEDULE_KEY = "task_schedule";
-const USER_STATS_KEY = "user_stats";
 const USER_DATA_KEY = "user_data";
 
 const calculateStarsReward = (maximum: number, schedule: TaskSchedule): number => {
@@ -203,87 +202,5 @@ export const dashboardService = {
 
   updateTaskSchedule: async (schedule: TaskSchedule): Promise<void> => {
     localStorage.setItem(TASK_SCHEDULE_KEY, JSON.stringify(schedule));
-  },
-
-  getUserStats: async (): Promise<UserStats[]> => {
-    const stored = localStorage.getItem(USER_STATS_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-    
-    // Generate mock data for the last 30 days
-    const stats: UserStats[] = [];
-    const languages = await languageService.getAll();
-    
-    for (let i = 30; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
-      
-      const languageBreakdown: Record<string, any> = {};
-      languages.forEach(lang => {
-        languageBreakdown[lang.id] = {
-          repeatDictionary: Math.floor(Math.random() * 20),
-          repeatExercise: Math.floor(Math.random() * 15),
-          addDictionary: Math.floor(Math.random() * 5),
-          addExercise: Math.floor(Math.random() * 5)
-        };
-      });
-      
-      const totalRepeatDict = Object.values(languageBreakdown).reduce((sum: number, lb: any) => sum + lb.repeatDictionary, 0);
-      const totalRepeatExer = Object.values(languageBreakdown).reduce((sum: number, lb: any) => sum + lb.repeatExercise, 0);
-      const totalAddDict = Object.values(languageBreakdown).reduce((sum: number, lb: any) => sum + lb.addDictionary, 0);
-      const totalAddExer = Object.values(languageBreakdown).reduce((sum: number, lb: any) => sum + lb.addExercise, 0);
-      
-      stats.push({
-        date: dateStr,
-        repeatDictionary: totalRepeatDict,
-        repeatExercise: totalRepeatExer,
-        addDictionary: totalAddDict,
-        addExercise: totalAddExer,
-        stars: Math.floor(Math.random() * 10),
-        languageBreakdown
-      });
-    }
-    
-    localStorage.setItem(USER_STATS_KEY, JSON.stringify(stats));
-    return stats;
-  },
-
-  addDailyStats: async (
-    languageId: string,
-    type: 'repeatDictionary' | 'repeatExercise' | 'addDictionary' | 'addExercise',
-    amount: number
-  ): Promise<void> => {
-    const stats = await dashboardService.getUserStats();
-    const today = new Date().toISOString().split('T')[0];
-    
-    let todayStats = stats.find(s => s.date === today);
-    if (!todayStats) {
-      todayStats = {
-        date: today,
-        repeatDictionary: 0,
-        repeatExercise: 0,
-        addDictionary: 0,
-        addExercise: 0,
-        stars: 0,
-        languageBreakdown: {}
-      };
-      stats.push(todayStats);
-    }
-    
-    todayStats[type] += amount;
-    
-    if (!todayStats.languageBreakdown[languageId]) {
-      todayStats.languageBreakdown[languageId] = {
-        repeatDictionary: 0,
-        repeatExercise: 0,
-        addDictionary: 0,
-        addExercise: 0
-      };
-    }
-    todayStats.languageBreakdown[languageId][type] += amount;
-    
-    localStorage.setItem(USER_STATS_KEY, JSON.stringify(stats));
   }
 };
