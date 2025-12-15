@@ -35,6 +35,12 @@ export default function Repeating() {
   const firstInputRef = useRef<HTMLInputElement | null>(null);
   const speakerButtonRef = useRef<HTMLButtonElement | null>(null);
   const microphoneButtonRef = useRef<HTMLButtonElement | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const checkButtonRef = useRef<HTMLButtonElement | null>(null);
+  const shouldRestartRef = useRef<boolean>(true);
+  const stageRef = useRef<Stage>(stage);
+  const isRecognitionReadyRef = useRef<boolean>(false);
+  const isProcessingCommandRef = useRef<boolean>(false);
 
   // Initialize microphone and headphones state from localStorage (default: true)
   const [isMicrophoneOn, setIsMicrophoneOn] = useState<boolean>(() => {
@@ -42,10 +48,17 @@ export default function Repeating() {
     return stored === null ? true : stored === "true";
   });
 
+  const [isListening, setIsListening] = useState<boolean>(false);
+  const [interimTranscript, setInterimTranscript] = useState<string>("");
+
   const [isHeadphonesOn, setIsHeadphonesOn] = useState<boolean>(() => {
     const stored = localStorage.getItem("repeating-headphones");
     return stored === null ? true : stored === "true";
   });
+
+  // Refs that depend on state values must be declared after state
+  const languageRef = useRef<Language | null>(language);
+  const isMicrophoneOnRef = useRef<boolean>(isMicrophoneOn);
 
   // Save microphone state to localStorage whenever it changes
   useEffect(() => {
@@ -56,6 +69,21 @@ export default function Repeating() {
   useEffect(() => {
     localStorage.setItem("repeating-headphones", isHeadphonesOn.toString());
   }, [isHeadphonesOn]);
+
+  // Keep stageRef in sync with stage
+  useEffect(() => {
+    stageRef.current = stage;
+  }, [stage]);
+
+  // Keep languageRef in sync with language
+  useEffect(() => {
+    languageRef.current = language;
+  }, [language]);
+
+  // Keep isMicrophoneOnRef in sync with isMicrophoneOn
+  useEffect(() => {
+    isMicrophoneOnRef.current = isMicrophoneOn;
+  }, [isMicrophoneOn]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -191,13 +219,224 @@ export default function Repeating() {
     window.speechSynthesis.speak(utterance);
   }, [isHeadphonesOn, currentWord, language]);
 
-  // Auto-click microphone when entering ANSWER stage
-  useEffect(() => {
-    if (stage === "ANSWER" && microphoneButtonRef.current && currentWord) {
-      console.log("Auto-triggering microphone (ANSWER stage loaded)");
-      microphoneButtonRef.current.click();
+  // Speech recognition setup
+  const startListening = useCallback(() => {
+    const language = languageRef.current;
+    const isMicrophoneOn = isMicrophoneOnRef.current;
+
+    if (!language || !isMicrophoneOn) {
+      console.log("Cannot start listening - missing language or microphone off");
+      return;
     }
-  }, [stage, currentWord]);
+
+    // Check if browser supports speech recognition
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error("Speech recognition is not supported in this browser");
+      return;
+    }
+
+    if (recognitionRef.current) {
+      try {
+        shouldRestartRef.current = false;
+        recognitionRef.current.stop();
+      } catch (e) {
+        console.log("Error stopping previous recognition:", e);
+      }
+      recognitionRef.current = null;
+    }
+
+    shouldRestartRef.current = true;
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true; // Enable interim results for live display
+    recognition.lang = language.codeForSpeech || "en-US";
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      setInterimTranscript(""); // Clear interim text when starting
+      console.log("Speech recognition started for stage:", stageRef.current);
+      // Mark as ready after a brief delay to ensure it's fully listening
+      setTimeout(() => {
+        isRecognitionReadyRef.current = true;
+        console.log("Recognition now ready to accept commands");
+      }, 200);
+    };
+
+    recognition.onresult = (event: any) => {
+      let interimText = "";
+      let finalTranscript = "";
+
+      // Process all results
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript;
+        } else {
+          interimText += transcript;
+        }
+      }
+
+      // Update interim display
+      if (interimText) {
+        setInterimTranscript(interimText.trim());
+      }
+
+      // Only process final results
+      if (!finalTranscript) return;
+
+      const transcript = finalTranscript.trim();
+      const currentStage = stageRef.current;
+      console.log("Recognized:", transcript, "Stage:", currentStage, "Ready:", isRecognitionReadyRef.current);
+
+      // Clear interim text after final result
+      setInterimTranscript("");
+
+      // For commands, ensure recognition is ready to prevent missing commands during transitions
+      const isCommand = transcript.toLowerCase() === "next" ||
+                        transcript.toLowerCase() === "next." ||
+                        transcript.toLowerCase() === "switch" ||
+                        transcript.toLowerCase() === "switch.";
+
+      if (isCommand && !isRecognitionReadyRef.current) {
+        console.log("Command received but recognition not ready yet, will try to process anyway");
+      }
+
+      // Check for "next" command in English (regardless of language setting)
+      if (transcript.toLowerCase() === "next" || transcript.toLowerCase() === "next.") {
+        console.log("Next command recognized in stage:", currentStage);
+        isProcessingCommandRef.current = true;
+        if (checkButtonRef.current) {
+          checkButtonRef.current.click();
+        }
+        // Clear the processing flag after a short delay to allow stage transition
+        setTimeout(() => {
+          isProcessingCommandRef.current = false;
+        }, 150);
+        return;
+      }
+
+      // Check for "switch" command to move to next input (Tab simulation)
+      if (transcript.toLowerCase() === "switch" || transcript.toLowerCase() === "switch.") {
+        console.log("Switch command recognized - simulating Tab");
+        isProcessingCommandRef.current = true;
+        const inputs = Array.from(document.querySelectorAll<HTMLInputElement>('input[data-answer-input]'));
+        const currentInput = lastFocusedInputRef.current;
+
+        if (currentInput && inputs.length > 0) {
+          const currentIndex = inputs.indexOf(currentInput);
+          if (currentIndex !== -1) {
+            const nextIndex = (currentIndex + 1) % inputs.length;
+            inputs[nextIndex]?.focus();
+            lastFocusedInputRef.current = inputs[nextIndex];
+          }
+        } else if (inputs.length > 0) {
+          // If no input is focused, focus the first one
+          inputs[0]?.focus();
+          lastFocusedInputRef.current = inputs[0];
+        }
+        setTimeout(() => {
+          isProcessingCommandRef.current = false;
+        }, 100);
+        return;
+      }
+
+      // Insert transcribed text into the currently focused input (only in ANSWER stage)
+      if (currentStage === "ANSWER" && lastFocusedInputRef.current) {
+        const targetInput = lastFocusedInputRef.current;
+        const start = targetInput.selectionStart || 0;
+        const end = targetInput.selectionEnd || 0;
+        const currentValue = targetInput.value;
+        const newValue = currentValue.slice(0, start) + transcript + currentValue.slice(end);
+
+        const partId = targetInput.dataset.partId;
+        if (partId) {
+          setAnswers(prev => ({ ...prev, [partId]: newValue }));
+
+          setTimeout(() => {
+            targetInput.focus();
+            const newCursorPos = start + transcript.length;
+            targetInput.setSelectionRange(newCursorPos, newCursorPos);
+          }, 0);
+        }
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error:", event.error);
+      if (event.error === 'aborted') {
+        // Don't restart on aborted error
+        shouldRestartRef.current = false;
+        return;
+      }
+      if (event.error !== 'no-speech') {
+        toast.error(`Speech recognition error: ${event.error}`);
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      isRecognitionReadyRef.current = false; // Mark as not ready when ending
+      const currentMicState = isMicrophoneOnRef.current;
+      const currentLanguage = languageRef.current;
+      console.log("Speech recognition ended. shouldRestart:", shouldRestartRef.current, "microphone:", currentMicState);
+
+      // Only restart if we should and microphone is still on
+      if (shouldRestartRef.current && currentMicState && currentLanguage) {
+        setTimeout(() => {
+          console.log("Restarting recognition...");
+          startListening();
+        }, 100); // Reduced from 500ms to 100ms for faster restart
+      }
+    };
+
+    recognitionRef.current = recognition;
+    try {
+      recognition.start();
+      console.log("Recognition start called");
+    } catch (error) {
+      console.error("Failed to start recognition:", error);
+      shouldRestartRef.current = false;
+    }
+  }, []); // No dependencies - completely stable!
+
+
+  const stopListening = useCallback(() => {
+    console.log("stopListening called");
+    shouldRestartRef.current = false;
+    isRecognitionReadyRef.current = false; // Mark as not ready when stopping
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {
+        console.log("Error stopping recognition:", e);
+      }
+      recognitionRef.current = null;
+    }
+    setIsListening(false);
+    setInterimTranscript(""); // Clear interim text when stopping
+  }, []);
+
+  // Start/stop listening based on microphone state
+  useEffect(() => {
+    if (isMicrophoneOn && language) {
+      // Only start if not already listening
+      if (!recognitionRef.current) {
+        console.log("Starting listening - no active recognition");
+        startListening();
+      } else {
+        console.log("Recognition already active, not restarting");
+      }
+    } else {
+      console.log("Stopping listening - microphone:", isMicrophoneOn, "language:", !!language);
+      stopListening();
+    }
+
+    return () => {
+      // Cleanup on unmount only
+    };
+  }, [isMicrophoneOn, language, startListening, stopListening]);
 
   // Auto-speak answer parts when entering RESULT stage (if headphones are on)
   useEffect(() => {
@@ -587,16 +826,16 @@ export default function Repeating() {
           )}
 
           {stage === "ANSWER" && (
-            <div className="flex gap-4">
-              <Button 
+            <div className="flex gap-4 items-center">
+              <Button
                 ref={microphoneButtonRef}
                 variant="outline" 
                 size="icon"
                 onClick={() => {
                   setIsMicrophoneOn(!isMicrophoneOn);
-                  console.log("Microphone clicked manually");
+                  console.log("Microphone toggled");
                 }}
-                className={!isMicrophoneOn ? "opacity-50 relative" : ""}
+                className={`${!isMicrophoneOn ? "opacity-50" : ""} ${isListening ? "ring-2 ring-red-500 animate-pulse" : ""} relative`}
               >
                 <Mic className="h-5 w-5" />
                 {!isMicrophoneOn && (
@@ -605,6 +844,9 @@ export default function Repeating() {
                   </div>
                 )}
               </Button>
+              {isListening && (
+                <span className="text-sm text-red-500 animate-pulse">Listening...</span>
+              )}
               <Button
                 variant="outline"
                 size="icon"
@@ -626,7 +868,24 @@ export default function Repeating() {
 
           {stage === "RESULT" && (
             <div className="flex gap-4">
-              <Button 
+              <Button
+                ref={microphoneButtonRef}
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  setIsMicrophoneOn(!isMicrophoneOn);
+                  console.log("Microphone toggled");
+                }}
+                className={!isMicrophoneOn ? "opacity-50 relative" : ""}
+              >
+                <Mic className="h-5 w-5" />
+                {!isMicrophoneOn && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-full h-0.5 bg-foreground rotate-45 transform scale-x-75"></div>
+                  </div>
+                )}
+              </Button>
+              <Button
                 ref={speakerButtonRef}
                 variant="outline" 
                 size="icon"
@@ -662,10 +921,20 @@ export default function Repeating() {
                 {renderWordParts()}
                 
                 <div className="flex justify-end">
-                  <Button onClick={handleCheck} size="lg">
+                  <Button ref={checkButtonRef} onClick={handleCheck} size="lg">
                     {stage === "ANSWER" ? "Check" : "Next"}
                   </Button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Interim speech recognition display */}
+          {interimTranscript && (
+            <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg shadow-lg z-50 animate-pulse">
+              <div className="flex items-center gap-2">
+                <Mic className="h-4 w-4" />
+                <span className="text-sm">{interimTranscript}</span>
               </div>
             </div>
           )}
