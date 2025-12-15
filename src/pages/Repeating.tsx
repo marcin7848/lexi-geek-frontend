@@ -145,7 +145,6 @@ export default function Repeating() {
         // Load next word
         await loadNextWord(languageUuid);
       } catch (error) {
-        console.error("Error loading repeat data:", error);
         toast.error("Failed to load repeat session");
         navigate(`/language/${languageId}`);
       }
@@ -167,10 +166,6 @@ export default function Repeating() {
       setCurrentMethod(word.method);
       setCategoryMode(word.categoryMode as CategoryMode);
 
-      // Log to console
-      console.log("Mode:", word.categoryMode);
-      console.log("Mechanism:", word.mechanism);
-      console.log("Method:", word.method);
 
       // Reset answers and stage
       setAnswers({});
@@ -196,7 +191,6 @@ export default function Repeating() {
       }
       setShuffledBoxParts(partsToShuffle);
     } catch (error) {
-      console.error("Error loading next word:", error);
       toast.error("Failed to load next word");
     }
   };
@@ -231,7 +225,6 @@ export default function Repeating() {
     const isMicrophoneOn = isMicrophoneOnRef.current;
 
     if (!language || !isMicrophoneOn) {
-      console.log("Cannot start listening - missing language or microphone off");
       return;
     }
 
@@ -247,7 +240,7 @@ export default function Repeating() {
         shouldRestartRef.current = false;
         recognitionRef.current.stop();
       } catch (e) {
-        console.log("Error stopping previous recognition:", e);
+        // Error stopping previous recognition
       }
       recognitionRef.current = null;
     }
@@ -261,12 +254,10 @@ export default function Repeating() {
 
     recognition.onstart = () => {
       setIsListening(true);
-      setInterimTranscript(""); // Clear interim text when starting
-      console.log("Speech recognition started for stage:", stageRef.current);
+      setInterimTranscript("");
       // Mark as ready after a brief delay to ensure it's fully listening
       setTimeout(() => {
         isRecognitionReadyRef.current = true;
-        console.log("Recognition now ready to accept commands");
       }, 200);
     };
 
@@ -294,7 +285,6 @@ export default function Repeating() {
 
       const transcript = finalTranscript.trim();
       const currentStage = stageRef.current;
-      console.log("Recognized:", transcript, "Stage:", currentStage, "Ready:", isRecognitionReadyRef.current);
 
       // Clear interim text after final result
       setInterimTranscript("");
@@ -305,13 +295,8 @@ export default function Repeating() {
                         transcript.toLowerCase() === "switch" ||
                         transcript.toLowerCase() === "switch.";
 
-      if (isCommand && !isRecognitionReadyRef.current) {
-        console.log("Command received but recognition not ready yet, will try to process anyway");
-      }
-
       // Check for "next" command in English (regardless of language setting)
       if (transcript.toLowerCase() === "next" || transcript.toLowerCase() === "next.") {
-        console.log("Next command recognized in stage:", currentStage);
         isProcessingCommandRef.current = true;
 
         // Stop current recognition to ensure clean restart
@@ -320,7 +305,7 @@ export default function Repeating() {
           try {
             recognitionRef.current.stop();
           } catch (e) {
-            console.log("Error stopping recognition after next command:", e);
+            // Error stopping recognition after next command
           }
         }
 
@@ -332,7 +317,6 @@ export default function Repeating() {
         setTimeout(() => {
           isProcessingCommandRef.current = false;
           shouldRestartRef.current = true;
-          console.log("Restarting recognition after next command");
           startListening();
         }, 200);
         return;
@@ -340,7 +324,6 @@ export default function Repeating() {
 
       // Check for "switch" command to move to next input (Tab simulation)
       if (transcript.toLowerCase() === "switch" || transcript.toLowerCase() === "switch.") {
-        console.log("Switch command recognized - simulating Tab");
         isProcessingCommandRef.current = true;
         const inputs = Array.from(document.querySelectorAll<HTMLInputElement>('input[data-answer-input]'));
         const currentInput = lastFocusedInputRef.current;
@@ -386,7 +369,6 @@ export default function Repeating() {
     };
 
     recognition.onerror = (event: any) => {
-      console.error("Speech recognition error:", event.error);
       if (event.error === 'aborted') {
         // Don't restart on aborted error
         shouldRestartRef.current = false;
@@ -399,45 +381,40 @@ export default function Repeating() {
 
     recognition.onend = () => {
       setIsListening(false);
-      isRecognitionReadyRef.current = false; // Mark as not ready when ending
+      isRecognitionReadyRef.current = false;
       const currentMicState = isMicrophoneOnRef.current;
       const currentLanguage = languageRef.current;
-      console.log("Speech recognition ended. shouldRestart:", shouldRestartRef.current, "microphone:", currentMicState);
 
       // Only restart if we should and microphone is still on
       if (shouldRestartRef.current && currentMicState && currentLanguage) {
         setTimeout(() => {
-          console.log("Restarting recognition...");
           startListening();
-        }, 100); // Reduced from 500ms to 100ms for faster restart
+        }, 100);
       }
     };
 
     recognitionRef.current = recognition;
     try {
       recognition.start();
-      console.log("Recognition start called");
     } catch (error) {
-      console.error("Failed to start recognition:", error);
       shouldRestartRef.current = false;
     }
-  }, []); // No dependencies - completely stable!
+  }, []);
 
 
   const stopListening = useCallback(() => {
-    console.log("stopListening called");
     shouldRestartRef.current = false;
-    isRecognitionReadyRef.current = false; // Mark as not ready when stopping
+    isRecognitionReadyRef.current = false;
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
       } catch (e) {
-        console.log("Error stopping recognition:", e);
+        // Error stopping recognition
       }
       recognitionRef.current = null;
     }
     setIsListening(false);
-    setInterimTranscript(""); // Clear interim text when stopping
+    setInterimTranscript("");
   }, []);
 
   // Start/stop listening based on microphone state
@@ -445,13 +422,9 @@ export default function Repeating() {
     if (isMicrophoneOn && language) {
       // Only start if not already listening
       if (!recognitionRef.current) {
-        console.log("Starting listening - no active recognition");
         startListening();
-      } else {
-        console.log("Recognition already active, not restarting");
       }
     } else {
-      console.log("Stopping listening - microphone:", isMicrophoneOn, "language:", !!language);
       stopListening();
     }
 
@@ -475,10 +448,8 @@ export default function Repeating() {
       if (keyEvent.ctrlKey && keyEvent.key === ";") {
         keyEvent.preventDefault();
         if (stage === "RESULT" && speakerButtonRef.current) {
-          console.log("Volume button triggered by Ctrl+;");
           speakerButtonRef.current.click();
         } else if (stage === "ANSWER" && microphoneButtonRef.current) {
-          console.log("Microphone triggered by Ctrl+;");
           microphoneButtonRef.current.click();
         }
       }
@@ -540,7 +511,6 @@ export default function Repeating() {
           // (they can still see the result)
         }
       } catch (error) {
-        console.error("Error checking answer:", error);
         toast.error("Failed to check answer");
       }
     } else {
@@ -554,7 +524,6 @@ export default function Repeating() {
           navigate(`/language/${languageId}`);
         }
       } catch (error) {
-        console.error("Error loading next word:", error);
         toast.error("Failed to load next word");
       }
     }
@@ -858,7 +827,6 @@ export default function Repeating() {
                       size="icon"
                       onClick={() => {
                         setIsMicrophoneOn(!isMicrophoneOn);
-                        console.log("Microphone toggled");
                       }}
                       className={`${!isMicrophoneOn ? "opacity-50" : ""} ${isListening ? "ring-2 ring-red-500 animate-pulse" : ""} relative`}
                     >
@@ -887,7 +855,6 @@ export default function Repeating() {
                 size="icon"
                 onClick={() => {
                   setIsHeadphonesOn(!isHeadphonesOn);
-                  console.log("Volume toggled");
                 }}
                 className={!isHeadphonesOn ? "opacity-50 relative" : ""}
               >
@@ -912,7 +879,6 @@ export default function Repeating() {
                       size="icon"
                       onClick={() => {
                         setIsMicrophoneOn(!isMicrophoneOn);
-                        console.log("Microphone toggled");
                       }}
                       className={!isMicrophoneOn ? "opacity-50 relative" : ""}
                     >
@@ -938,7 +904,6 @@ export default function Repeating() {
                 size="icon"
                 onClick={() => {
                   setIsHeadphonesOn(!isHeadphonesOn);
-                  console.log("Volume toggled");
                   // If turning on, also play the speech
                   if (!isHeadphonesOn) {
                     setTimeout(() => speakAnswerParts(), 100);
