@@ -307,13 +307,28 @@ export default function Repeating() {
       if (transcript.toLowerCase() === "next" || transcript.toLowerCase() === "next.") {
         console.log("Next command recognized in stage:", currentStage);
         isProcessingCommandRef.current = true;
+
+        // Stop current recognition to ensure clean restart
+        shouldRestartRef.current = false;
+        if (recognitionRef.current) {
+          try {
+            recognitionRef.current.stop();
+          } catch (e) {
+            console.log("Error stopping recognition after next command:", e);
+          }
+        }
+
         if (checkButtonRef.current) {
           checkButtonRef.current.click();
         }
-        // Clear the processing flag after a short delay to allow stage transition
+
+        // Restart recognition after a delay to ensure it's ready for the next command
         setTimeout(() => {
           isProcessingCommandRef.current = false;
-        }, 150);
+          shouldRestartRef.current = true;
+          console.log("Restarting recognition after next command");
+          startListening();
+        }, 200);
         return;
       }
 
@@ -336,6 +351,7 @@ export default function Repeating() {
           inputs[0]?.focus();
           lastFocusedInputRef.current = inputs[0];
         }
+
         setTimeout(() => {
           isProcessingCommandRef.current = false;
         }, 100);
