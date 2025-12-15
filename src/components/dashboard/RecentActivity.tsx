@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { activityService, type Activity } from "@/services/activityService";
-import { Clock } from "lucide-react";
+import { Clock, CheckCircle2, Star } from "lucide-react";
 
 export const RecentActivitySection = () => {
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -57,6 +57,11 @@ export const RecentActivitySection = () => {
             <div className="space-y-3 py-2">
               {activities.map(activity => (
                 <div key={activity.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                  {activity.type === 'REPEATING_FINISHED' ? (
+                    <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  ) : (
+                    <Star className="w-5 h-5 text-yellow-500 fill-current mt-0.5 flex-shrink-0" />
+                  )}
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm">{activity.languageName}</span>
