@@ -7,12 +7,14 @@ import { dashboardService, type TaskType } from "@/services/dashboardService";
 import { useStars } from "@/contexts/StarsContext";
 import { RefreshCw, Settings, Star } from "lucide-react";
 import { TaskSettingsModal } from "./TaskSettingsModal";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 export const DailyTasks = () => {
   const [tasks, setTasks] = useState<TaskType[]>([]);
   const [loading, setLoading] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { refreshStars } = useStars();
+  const { t } = useLanguage();
 
   useEffect(() => {
     loadTasks();
@@ -32,10 +34,10 @@ export const DailyTasks = () => {
 
   const getTaskLabel = (type: string) => {
     switch (type) {
-      case 'repeat_dictionary': return 'Repeat Dictionary Words';
-      case 'repeat_exercise': return 'Repeat Exercise Words';
-      case 'add_dictionary': return 'Add New Dictionary Words';
-      case 'add_exercise': return 'Add New Exercise Words';
+      case 'repeat_dictionary': return t("dashboard.repeatDictionary");
+      case 'repeat_exercise': return t("dashboard.repeatExercise");
+      case 'add_dictionary': return t("dashboard.addDictionary");
+      case 'add_exercise': return t("dashboard.addExercise");
       default: return type;
     }
   };
@@ -50,7 +52,7 @@ export const DailyTasks = () => {
       <Card className="shadow-card border-border/50 h-[480px] flex flex-col">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-primary">Tasks</CardTitle>
+            <CardTitle className="text-primary">{t("dashboard.tasks")}</CardTitle>
             <div className="flex gap-2">
               <Button
                 variant="outline"
@@ -59,7 +61,7 @@ export const DailyTasks = () => {
                 disabled={loading}
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                Reload
+                {t("dashboard.reload")}
               </Button>
               <Button
                 variant="outline"
@@ -67,14 +69,14 @@ export const DailyTasks = () => {
                 onClick={() => setSettingsOpen(true)}
               >
                 <Settings className="w-4 h-4 mr-2" />
-                Settings
+                {t("dashboard.settings")}
               </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden">
           {tasks.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No tasks for today</p>
+            <p className="text-muted-foreground text-sm">{t("dashboard.noTasks")}</p>
           ) : (
             <ScrollArea className="h-full pr-4">
               <div className="space-y-4">

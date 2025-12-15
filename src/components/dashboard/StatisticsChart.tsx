@@ -8,6 +8,7 @@ import type { UserStat } from "@/services/statisticsService";
 import { languageService, type Language } from "@/services/languageService";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Calendar } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 export const StatisticsChart = () => {
   const [stats, setStats] = useState<UserStat[]>([]);
@@ -18,6 +19,7 @@ export const StatisticsChart = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState(false);
+  const { t } = useLanguage();
 
   const loadStatistics = useCallback(async () => {
     setLoading(true);
@@ -82,12 +84,12 @@ export const StatisticsChart = () => {
     };
 
     if (showTotal) {
-      dataPoint['Total Repeated'] = stat.repeat;
-      dataPoint['Total Added'] = stat.add;
+      dataPoint[t("dashboard.totalRepeated")] = stat.repeat;
+      dataPoint[t("dashboard.totalAdded")] = stat.add;
     }
 
     if (showStars) {
-      dataPoint['Stars'] = stat.stars;
+      dataPoint[t("dashboard.stars")] = stat.stars;
     }
 
     // Ensure all selected languages have data points (even if 0) to connect lines
@@ -96,12 +98,12 @@ export const StatisticsChart = () => {
       if (lang) {
         const ls = stat.languageStats[langId];
         if (ls) {
-          dataPoint[`${lang.name} (Repeated)`] = ls.repeat;
-          dataPoint[`${lang.name} (Added)`] = ls.add;
+          dataPoint[`${lang.name} (${t("dashboard.repeated")})`] = ls.repeat;
+          dataPoint[`${lang.name} (${t("dashboard.added")})`] = ls.add;
         } else {
           // If no data for this language on this date, use 0 to keep line connected
-          dataPoint[`${lang.name} (Repeated)`] = 0;
-          dataPoint[`${lang.name} (Added)`] = 0;
+          dataPoint[`${lang.name} (${t("dashboard.repeated")})`] = 0;
+          dataPoint[`${lang.name} (${t("dashboard.added")})`] = 0;
         }
       }
     });
@@ -119,7 +121,7 @@ export const StatisticsChart = () => {
       <CardHeader>
         <CardTitle className="text-primary flex items-center gap-2">
           <Calendar className="w-5 h-5" />
-          Statistics
+          {t("dashboard.statistics")}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -127,7 +129,7 @@ export const StatisticsChart = () => {
           {/* Filters */}
           <div className="flex flex-wrap gap-4 items-end">
             <div className="space-y-2">
-              <Label>Start Date</Label>
+              <Label>{t("dashboard.startDate")}</Label>
               <Input
                 type="date"
                 value={startDate}
@@ -135,7 +137,7 @@ export const StatisticsChart = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label>End Date</Label>
+              <Label>{t("dashboard.endDate")}</Label>
               <Input
                 type="date"
                 value={endDate}
@@ -143,7 +145,7 @@ export const StatisticsChart = () => {
               />
             </div>
             {loading && (
-              <div className="text-sm text-muted-foreground">Loading...</div>
+              <div className="text-sm text-muted-foreground">{t("dashboard.loading")}</div>
             )}
           </div>
 
@@ -154,14 +156,14 @@ export const StatisticsChart = () => {
                 checked={showTotal}
                 onCheckedChange={(checked) => setShowTotal(checked as boolean)}
               />
-              <Label>Show Total</Label>
+              <Label>{t("dashboard.showTotal")}</Label>
             </div>
             <div className="flex items-center gap-2">
               <Checkbox
                 checked={showStars}
                 onCheckedChange={(checked) => setShowStars(checked as boolean)}
               />
-              <Label>Show Stars</Label>
+              <Label>{t("dashboard.showStars")}</Label>
             </div>
             {languages.map(lang => (
               <div key={lang.id} className="flex items-center gap-2">
@@ -201,15 +203,15 @@ export const StatisticsChart = () => {
                   <>
                     <Line 
                       type="monotone" 
-                      dataKey="Total Repeated" 
-                      stroke={colors[0]} 
+                      dataKey={t("dashboard.totalRepeated")}
+                      stroke={colors[0]}
                       strokeWidth={2}
                       dot={{ fill: colors[0] }}
                     />
                     <Line 
                       type="monotone" 
-                      dataKey="Total Added" 
-                      stroke={colors[1]} 
+                      dataKey={t("dashboard.totalAdded")}
+                      stroke={colors[1]}
                       strokeWidth={2}
                       dot={{ fill: colors[1] }}
                     />
@@ -219,8 +221,8 @@ export const StatisticsChart = () => {
                 {showStars && (
                   <Line 
                     type="monotone" 
-                    dataKey="Stars" 
-                    stroke="#fbbf24" 
+                    dataKey={t("dashboard.stars")}
+                    stroke="#fbbf24"
                     strokeWidth={2}
                     dot={{ fill: '#fbbf24' }}
                   />
@@ -234,7 +236,7 @@ export const StatisticsChart = () => {
                     <Line
                       key={`${langId}-repeated`}
                       type="monotone"
-                      dataKey={`${lang.name} (Repeated)`}
+                      dataKey={`${lang.name} (${t("dashboard.repeated")})`}
                       stroke={colors[(idx * 2 + 2) % colors.length]}
                       strokeWidth={2}
                       dot={{ fill: colors[(idx * 2 + 2) % colors.length] }}
@@ -250,7 +252,7 @@ export const StatisticsChart = () => {
                     <Line
                       key={`${langId}-added`}
                       type="monotone"
-                      dataKey={`${lang.name} (Added)`}
+                      dataKey={`${lang.name} (${t("dashboard.added")})`}
                       stroke={colors[(idx * 2 + 3) % colors.length]}
                       strokeWidth={2}
                       strokeDasharray="5 5"

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { dashboardService, type TaskSettings, type TaskSchedule } from "@/services/dashboardService";
 import { languageService, type Language } from "@/services/languageService";
 import { toast } from "sonner";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 interface TaskSettingsModalProps {
   open: boolean;
@@ -23,6 +24,7 @@ export const TaskSettingsModal = ({ open, onOpenChange, onSaved }: TaskSettingsM
     minute: 0,
     frequency: 'daily'
   });
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (open) {
@@ -57,7 +59,7 @@ export const TaskSettingsModal = ({ open, onOpenChange, onSaved }: TaskSettingsM
       setSchedule(taskSchedule);
     } catch (error) {
       console.error('Error loading task settings:', error);
-      toast.error('Failed to load task settings');
+      toast.error(t("dashboard.errorLoading"));
     }
   };
 
@@ -84,33 +86,33 @@ export const TaskSettingsModal = ({ open, onOpenChange, onSaved }: TaskSettingsM
   const handleSave = async () => {
     await dashboardService.updateTaskSettings(settings);
     await dashboardService.updateTaskSchedule(schedule);
-    toast.success("Task settings saved");
+    toast.success(t("dashboard.settingsSaved"));
     onSaved();
     onOpenChange(false);
   };
 
   const taskTypes = [
-    { key: 'repeat_dictionary' as const, label: 'Repeat Dictionary' },
-    { key: 'repeat_exercise' as const, label: 'Repeat Exercise' },
-    { key: 'add_dictionary' as const, label: 'Add Dictionary' },
-    { key: 'add_exercise' as const, label: 'Add Exercise' }
+    { key: 'repeat_dictionary' as const, label: t("dashboard.repeatDictionaryShort") },
+    { key: 'repeat_exercise' as const, label: t("dashboard.repeatExerciseShort") },
+    { key: 'add_dictionary' as const, label: t("dashboard.addDictionaryShort") },
+    { key: 'add_exercise' as const, label: t("dashboard.addExerciseShort") }
   ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Task Settings</DialogTitle>
+          <DialogTitle>{t("dashboard.taskSettings")}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Schedule Settings */}
           <div className="space-y-4">
-            <h3 className="font-semibold">Reload Schedule</h3>
-            
+            <h3 className="font-semibold">{t("dashboard.reloadSchedule")}</h3>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Frequency</Label>
+                <Label>{t("dashboard.frequency")}</Label>
                 <Select
                   value={schedule.frequency}
                   onValueChange={(value) => setSchedule({ ...schedule, frequency: value as TaskSchedule['frequency'] })}
@@ -119,17 +121,17 @@ export const TaskSettingsModal = ({ open, onOpenChange, onSaved }: TaskSettingsM
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="every_n_days">Every N Days</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="daily">{t("dashboard.daily")}</SelectItem>
+                    <SelectItem value="every_n_days">{t("dashboard.everyNDays")}</SelectItem>
+                    <SelectItem value="weekly">{t("dashboard.weekly")}</SelectItem>
+                    <SelectItem value="monthly">{t("dashboard.monthly")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {schedule.frequency === 'every_n_days' && (
                 <div className="space-y-2">
-                  <Label>Number of Days</Label>
+                  <Label>{t("dashboard.numberOfDays")}</Label>
                   <Input
                     type="number"
                     min="1"
@@ -141,7 +143,7 @@ export const TaskSettingsModal = ({ open, onOpenChange, onSaved }: TaskSettingsM
 
               {schedule.frequency === 'weekly' && (
                 <div className="space-y-2">
-                  <Label>Day of Week</Label>
+                  <Label>{t("dashboard.dayOfWeek")}</Label>
                   <Select
                     value={schedule.frequencyValue?.toString() || '1'}
                     onValueChange={(value) => setSchedule({ ...schedule, frequencyValue: parseInt(value) })}
@@ -150,13 +152,13 @@ export const TaskSettingsModal = ({ open, onOpenChange, onSaved }: TaskSettingsM
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">Monday</SelectItem>
-                      <SelectItem value="2">Tuesday</SelectItem>
-                      <SelectItem value="3">Wednesday</SelectItem>
-                      <SelectItem value="4">Thursday</SelectItem>
-                      <SelectItem value="5">Friday</SelectItem>
-                      <SelectItem value="6">Saturday</SelectItem>
-                      <SelectItem value="7">Sunday</SelectItem>
+                      <SelectItem value="1">{t("dashboard.monday")}</SelectItem>
+                      <SelectItem value="2">{t("dashboard.tuesday")}</SelectItem>
+                      <SelectItem value="3">{t("dashboard.wednesday")}</SelectItem>
+                      <SelectItem value="4">{t("dashboard.thursday")}</SelectItem>
+                      <SelectItem value="5">{t("dashboard.friday")}</SelectItem>
+                      <SelectItem value="6">{t("dashboard.saturday")}</SelectItem>
+                      <SelectItem value="7">{t("dashboard.sunday")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -164,7 +166,7 @@ export const TaskSettingsModal = ({ open, onOpenChange, onSaved }: TaskSettingsM
 
               {schedule.frequency === 'monthly' && (
                 <div className="space-y-2">
-                  <Label>Day of Month</Label>
+                  <Label>{t("dashboard.dayOfMonth")}</Label>
                   <Input
                     type="number"
                     min="1"
@@ -178,7 +180,7 @@ export const TaskSettingsModal = ({ open, onOpenChange, onSaved }: TaskSettingsM
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Hour (0-23)</Label>
+                <Label>{t("dashboard.hour")}</Label>
                 <Input
                   type="number"
                   min="0"
@@ -188,7 +190,7 @@ export const TaskSettingsModal = ({ open, onOpenChange, onSaved }: TaskSettingsM
                 />
               </div>
               <div className="space-y-2">
-                <Label>Minute (0-59)</Label>
+                <Label>{t("dashboard.minute")}</Label>
                 <Input
                   type="number"
                   min="0"
@@ -202,10 +204,10 @@ export const TaskSettingsModal = ({ open, onOpenChange, onSaved }: TaskSettingsM
 
           {/* Task Settings per Language */}
           <div className="space-y-4">
-            <h3 className="font-semibold">Task Limits per Language</h3>
-            
+            <h3 className="font-semibold">{t("dashboard.taskLimitsPerLanguage")}</h3>
+
             {languages.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No languages found. Please add a language first.</p>
+              <p className="text-muted-foreground text-sm">{t("dashboard.noLanguages")}</p>
             ) : (
               languages.map(lang => {
                 const langSettings = settings.find(s => s.languageId === lang.id);
@@ -243,7 +245,7 @@ export const TaskSettingsModal = ({ open, onOpenChange, onSaved }: TaskSettingsM
           </div>
 
           <Button onClick={handleSave} className="w-full">
-            Save Settings
+            {t("dashboard.saveSettings")}
           </Button>
         </div>
       </DialogContent>
