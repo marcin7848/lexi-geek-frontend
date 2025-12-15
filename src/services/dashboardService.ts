@@ -56,7 +56,7 @@ export const dashboardService = {
     return await activityService.getRecentActivities(50);
   },
 
-  addActivity: async (activity: Omit<RecentActivity, 'id' | 'timestamp'>): Promise<void> => {
+  addActivity: async (activity: Omit<RecentActivity, 'id' | 'created'>): Promise<void> => {
     // Note: This is a placeholder. In a real implementation, you would call a backend endpoint
     // to create a new activity. For now, we just clear the cache to trigger a refresh.
     console.log('Adding activity (backend endpoint needed):', activity);

@@ -8,41 +8,42 @@ export interface Activity {
   id: string;
   languageId: string;
   languageName: string;
-  categoryId: string;
-  categoryName: string;
-  timestamp: number;
-  type: 'repeat' | 'add';
+  categoryId: string | null;
+  categoryName: string | null;
+  created: number;
+  type: 'REPEATING_FINISHED' | 'STARS_ADDED';
+  param: string;
 }
 
 // Backend DTO
 interface ActivityDto {
   uuid: string;
-  languageUuid: string;
   languageName: string;
-  categoryUuid: string;
-  categoryName: string;
-  timestamp: string; // ISO 8601 format
-  type: 'REPEAT' | 'ADD';
+  categoryName: string | null;
+  created: string; // format: yyyy-MM-dd HH:mm:ss
+  type: 'REPEATING_FINISHED' | 'STARS_ADDED';
+  param: string;
 }
 
 // Filter form for querying activities
 export interface ActivityFilterForm {
   languageUuid?: string;
   categoryUuid?: string;
-  type?: 'REPEAT' | 'ADD';
-  fromTimestamp?: string; // ISO 8601 format
-  toTimestamp?: string; // ISO 8601 format
+  type?: 'REPEATING_FINISHED' | 'STARS_ADDED';
+  rangeMin?: string; // format: yyyy-MM-dd HH:mm:ss
+  rangeMax?: string; // format: yyyy-MM-dd HH:mm:ss
 }
 
 // Helper function to convert DTO to frontend format
 const activityDtoToActivity = (dto: ActivityDto): Activity => ({
   id: dto.uuid,
-  languageId: dto.languageUuid,
+  languageId: '', // Not provided in API response anymore
   languageName: dto.languageName,
-  categoryId: dto.categoryUuid,
+  categoryId: null, // Not provided in API response anymore
   categoryName: dto.categoryName,
-  timestamp: new Date(dto.timestamp).getTime(),
-  type: dto.type.toLowerCase() as Activity['type'],
+  created: new Date(dto.created).getTime(),
+  type: dto.type,
+  param: dto.param,
 });
 
 // Cache for activities to prevent duplicate API calls
@@ -97,8 +98,8 @@ export const activityService = {
         if (filter.languageUuid) builder.param('languageUuid', filter.languageUuid);
         if (filter.categoryUuid) builder.param('categoryUuid', filter.categoryUuid);
         if (filter.type) builder.param('type', filter.type);
-        if (filter.fromTimestamp) builder.param('fromTimestamp', filter.fromTimestamp);
-        if (filter.toTimestamp) builder.param('toTimestamp', filter.toTimestamp);
+        if (filter.rangeMin) builder.param('range.min', filter.rangeMin);
+        if (filter.rangeMax) builder.param('range.max', filter.rangeMax);
       }
 
       const req = builder.build();
@@ -131,15 +132,16 @@ export const activityService = {
     }
   },
 
-  // Fetch recent activities (last 50 by default, sorted by timestamp descending)
+  // Fetch recent activities (last 50 by default, sorted by created descending)
   getRecentActivities: async (limit: number = 50): Promise<Activity[]> => {
     return await activityService.getActivities(
       null,
       {
         singlePage: false,
-        page: 0,
+        page: 1,
         pageSize: limit,
-        sort: 'timestamp,desc'
+        sort: 'created',
+        order: 'desc'
       }
     );
   },
@@ -160,20 +162,30 @@ export const activityService = {
     );
   },
 
-  // Fetch activities by type (repeat or add)
-  getActivitiesByType: async (type: 'repeat' | 'add', pageable?: PageableRequest): Promise<Activity[]> => {
+  // Fetch activities by type (REPEATING_FINISHED or STARS_ADDED)
+  getActivitiesByType: async (type: 'REPEATING_FINISHED' | 'STARS_ADDED', pageable?: PageableRequest): Promise<Activity[]> => {
     return await activityService.getActivities(
-      { type: type.toUpperCase() as 'REPEAT' | 'ADD' },
+      { type: type },
       pageable ?? { singlePage: true }
     );
   },
 
   // Fetch activities within a date range
   getActivitiesInRange: async (fromDate: Date, toDate: Date, pageable?: PageableRequest): Promise<Activity[]> => {
+    const formatDateTime = (date: Date): string => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    };
+
     return await activityService.getActivities(
       {
-        fromTimestamp: fromDate.toISOString(),
-        toTimestamp: toDate.toISOString()
+        rangeMin: formatDateTime(fromDate),
+        rangeMax: formatDateTime(toDate)
       },
       pageable ?? { singlePage: true }
     );

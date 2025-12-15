@@ -60,15 +60,21 @@ export const RecentActivitySection = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm">{activity.languageName}</span>
-                      <span className="text-xs text-muted-foreground">•</span>
-                      <span className="text-sm text-muted-foreground">{activity.categoryName}</span>
+                      {activity.categoryName && (
+                        <>
+                          <span className="text-xs text-muted-foreground">•</span>
+                          <span className="text-sm text-muted-foreground">{activity.categoryName}</span>
+                        </>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {activity.type === 'repeat' ? 'Repeated words' : 'Added new words'}
+                      {activity.type === 'REPEATING_FINISHED'
+                        ? 'Repeated words'
+                        : `Earned ${activity.param} stars`}
                     </p>
                   </div>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {formatTime(activity.timestamp)}
+                    {formatTime(activity.created)}
                   </span>
                 </div>
               ))}
