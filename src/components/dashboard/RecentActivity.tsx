@@ -1,19 +1,28 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { dashboardService, type RecentActivity } from "@/services/dashboardService";
+import { activityService, type Activity } from "@/services/activityService";
 import { Clock } from "lucide-react";
 
 export const RecentActivitySection = () => {
-  const [activities, setActivities] = useState<RecentActivity[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     loadActivities();
   }, []);
 
   const loadActivities = async () => {
-    const data = await dashboardService.getRecentActivity();
-    setActivities(data.slice(0, 10)); // Show last 10
+    try {
+      setIsLoading(true);
+      const data = await activityService.getRecentActivities(10);
+      setActivities(data);
+    } catch (error) {
+      console.error('Failed to load activities:', error);
+      setActivities([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const formatTime = (timestamp: number) => {
@@ -39,7 +48,9 @@ export const RecentActivitySection = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden p-0">
-        {activities.length === 0 ? (
+        {isLoading ? (
+          <p className="text-muted-foreground text-sm p-6">Loading activities...</p>
+        ) : activities.length === 0 ? (
           <p className="text-muted-foreground text-sm p-6">No recent activity</p>
         ) : (
           <ScrollArea className="h-full px-6">
