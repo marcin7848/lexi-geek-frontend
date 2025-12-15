@@ -4,6 +4,12 @@ import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { WordPart, Method } from "@/types/word";
 import { CategoryMode } from "@/types/category";
 import { Mic, Volume2 } from "lucide-react";
@@ -843,23 +849,36 @@ export default function Repeating() {
 
           {stage === "ANSWER" && (
             <div className="flex gap-4 items-center">
-              <Button
-                ref={microphoneButtonRef}
-                variant="outline" 
-                size="icon"
-                onClick={() => {
-                  setIsMicrophoneOn(!isMicrophoneOn);
-                  console.log("Microphone toggled");
-                }}
-                className={`${!isMicrophoneOn ? "opacity-50" : ""} ${isListening ? "ring-2 ring-red-500 animate-pulse" : ""} relative`}
-              >
-                <Mic className="h-5 w-5" />
-                {!isMicrophoneOn && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-full h-0.5 bg-foreground rotate-45 transform scale-x-75"></div>
-                  </div>
-                )}
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      ref={microphoneButtonRef}
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        setIsMicrophoneOn(!isMicrophoneOn);
+                        console.log("Microphone toggled");
+                      }}
+                      className={`${!isMicrophoneOn ? "opacity-50" : ""} ${isListening ? "ring-2 ring-red-500 animate-pulse" : ""} relative`}
+                    >
+                      <Mic className="h-5 w-5" />
+                      {!isMicrophoneOn && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-full h-0.5 bg-foreground rotate-45 transform scale-x-75"></div>
+                        </div>
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="space-y-1">
+                      <p className="font-semibold">Voice Commands:</p>
+                      <p className="text-sm">• Say "next" to check answer</p>
+                      <p className="text-sm">• Say "switch" to go to next input</p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               {isListening && (
                 <span className="text-sm text-red-500 animate-pulse">Listening...</span>
               )}
@@ -884,23 +903,35 @@ export default function Repeating() {
 
           {stage === "RESULT" && (
             <div className="flex gap-4">
-              <Button
-                ref={microphoneButtonRef}
-                variant="outline"
-                size="icon"
-                onClick={() => {
-                  setIsMicrophoneOn(!isMicrophoneOn);
-                  console.log("Microphone toggled");
-                }}
-                className={!isMicrophoneOn ? "opacity-50 relative" : ""}
-              >
-                <Mic className="h-5 w-5" />
-                {!isMicrophoneOn && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-full h-0.5 bg-foreground rotate-45 transform scale-x-75"></div>
-                  </div>
-                )}
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      ref={microphoneButtonRef}
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        setIsMicrophoneOn(!isMicrophoneOn);
+                        console.log("Microphone toggled");
+                      }}
+                      className={!isMicrophoneOn ? "opacity-50 relative" : ""}
+                    >
+                      <Mic className="h-5 w-5" />
+                      {!isMicrophoneOn && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-full h-0.5 bg-foreground rotate-45 transform scale-x-75"></div>
+                        </div>
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="space-y-1">
+                      <p className="font-semibold">Voice Command:</p>
+                      <p className="text-sm">• Say "next" to go to next word</p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <Button
                 ref={speakerButtonRef}
                 variant="outline" 
