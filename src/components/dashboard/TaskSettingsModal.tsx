@@ -31,13 +31,34 @@ export const TaskSettingsModal = ({ open, onOpenChange, onSaved }: TaskSettingsM
   }, [open]);
 
   const loadData = async () => {
-    const langs = await languageService.getAll();
-    const taskSettings = await dashboardService.getTaskSettings();
-    const taskSchedule = await dashboardService.getTaskSchedule();
-    
-    setLanguages(langs);
-    setSettings(taskSettings);
-    setSchedule(taskSchedule);
+    try {
+      const langs = await languageService.getAll();
+      const taskSettings = await dashboardService.getTaskSettings();
+      const taskSchedule = await dashboardService.getTaskSchedule();
+
+      // Create default settings for languages that don't have settings
+      const settingsMap = new Map(taskSettings.map(s => [s.languageId, s]));
+      const completeSettings: TaskSettings[] = langs.map(lang => {
+        if (settingsMap.has(lang.id)) {
+          return settingsMap.get(lang.id)!;
+        }
+        // Create default settings for this language
+        return {
+          languageId: lang.id,
+          repeat_dictionary: { enabled: true, maximum: 10 },
+          repeat_exercise: { enabled: true, maximum: 10 },
+          add_dictionary: { enabled: true, maximum: 5 },
+          add_exercise: { enabled: true, maximum: 5 },
+        };
+      });
+
+      setLanguages(langs);
+      setSettings(completeSettings);
+      setSchedule(taskSchedule);
+    } catch (error) {
+      console.error('Error loading task settings:', error);
+      toast.error('Failed to load task settings');
+    }
   };
 
   const updateSetting = (
@@ -92,7 +113,7 @@ export const TaskSettingsModal = ({ open, onOpenChange, onSaved }: TaskSettingsM
                 <Label>Frequency</Label>
                 <Select
                   value={schedule.frequency}
-                  onValueChange={(value: any) => setSchedule({ ...schedule, frequency: value })}
+                  onValueChange={(value) => setSchedule({ ...schedule, frequency: value as TaskSchedule['frequency'] })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -122,20 +143,20 @@ export const TaskSettingsModal = ({ open, onOpenChange, onSaved }: TaskSettingsM
                 <div className="space-y-2">
                   <Label>Day of Week</Label>
                   <Select
-                    value={schedule.frequencyValue?.toString() || '0'}
+                    value={schedule.frequencyValue?.toString() || '1'}
                     onValueChange={(value) => setSchedule({ ...schedule, frequencyValue: parseInt(value) })}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="0">Sunday</SelectItem>
                       <SelectItem value="1">Monday</SelectItem>
                       <SelectItem value="2">Tuesday</SelectItem>
                       <SelectItem value="3">Wednesday</SelectItem>
                       <SelectItem value="4">Thursday</SelectItem>
                       <SelectItem value="5">Friday</SelectItem>
                       <SelectItem value="6">Saturday</SelectItem>
+                      <SelectItem value="7">Sunday</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -183,38 +204,42 @@ export const TaskSettingsModal = ({ open, onOpenChange, onSaved }: TaskSettingsM
           <div className="space-y-4">
             <h3 className="font-semibold">Task Limits per Language</h3>
             
-            {languages.map(lang => {
-              const langSettings = settings.find(s => s.languageId === lang.id);
-              if (!langSettings) return null;
+            {languages.length === 0 ? (
+              <p className="text-muted-foreground text-sm">No languages found. Please add a language first.</p>
+            ) : (
+              languages.map(lang => {
+                const langSettings = settings.find(s => s.languageId === lang.id);
+                if (!langSettings) return null;
 
-              return (
-                <div key={lang.id} className="border rounded-lg p-4 space-y-3">
-                  <h4 className="font-medium">{lang.name}</h4>
-                  
-                  {taskTypes.map(({ key, label }) => (
-                    <div key={key} className="flex items-center gap-4">
-                      <Checkbox
-                        checked={langSettings[key].enabled}
-                        onCheckedChange={(checked) => 
-                          updateSetting(lang.id, key, 'enabled', checked as boolean)
-                        }
-                      />
-                      <Label className="flex-1">{label}</Label>
-                      <Input
-                        type="number"
-                        min="1"
-                        className="w-24"
-                        disabled={!langSettings[key].enabled}
-                        value={langSettings[key].maximum}
-                        onChange={(e) => 
-                          updateSetting(lang.id, key, 'maximum', parseInt(e.target.value) || 1)
-                        }
-                      />
-                    </div>
-                  ))}
-                </div>
-              );
-            })}
+                return (
+                  <div key={lang.id} className="border rounded-lg p-4 space-y-3">
+                    <h4 className="font-medium">{lang.name}</h4>
+
+                    {taskTypes.map(({ key, label }) => (
+                      <div key={key} className="flex items-center gap-4">
+                        <Checkbox
+                          checked={langSettings[key].enabled}
+                          onCheckedChange={(checked) =>
+                            updateSetting(lang.id, key, 'enabled', checked as boolean)
+                          }
+                        />
+                        <Label className="flex-1">{label}</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          className="w-24"
+                          disabled={!langSettings[key].enabled}
+                          value={langSettings[key].maximum}
+                          onChange={(e) =>
+                            updateSetting(lang.id, key, 'maximum', parseInt(e.target.value) || 1)
+                          }
+                        />
+                      </div>
+                    ))}
+                  </div>
+                );
+              })
+            )}
           </div>
 
           <Button onClick={handleSave} className="w-full">
