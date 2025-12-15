@@ -31,7 +31,16 @@ export function LanguageProvider({
   const t = (key: string, ...args: unknown[]): string => {
     const template = (translations[language] as Record<string, string>)[key] || key;
     if (!args || args.length === 0) return template;
-    // Simple %s placeholder replacement
+
+    // Check if first argument is an object (named parameters)
+    if (args.length === 1 && typeof args[0] === 'object' && args[0] !== null && !Array.isArray(args[0])) {
+      const params = args[0] as Record<string, unknown>;
+      return template.replace(/{(\w+)}/g, (match, paramKey) => {
+        return String(params[paramKey] ?? match);
+      });
+    }
+
+    // Simple %s placeholder replacement (positional arguments)
     let i = 0;
     return template.replace(/%s/g, () => String(args[i++] ?? ''));
   };

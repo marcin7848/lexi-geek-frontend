@@ -12,10 +12,11 @@ export interface RecentActivity {
   id: string;
   languageId: string;
   languageName: string;
-  categoryId: string;
-  categoryName: string;
-  timestamp: number;
-  type: 'repeat' | 'add';
+  categoryId: string | null;
+  categoryName: string | null;
+  created: number;
+  type: 'REPEATING_FINISHED' | 'STARS_ADDED';
+  param: string;
 }
 
 export interface TaskSettings {

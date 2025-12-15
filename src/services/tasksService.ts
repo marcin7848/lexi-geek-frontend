@@ -32,7 +32,7 @@ export interface TaskSchedule {
 // Backend DTOs
 interface TaskDto {
   uuid: string;
-  type: 'repeat_dictionary' | 'repeat_exercise' | 'add_dictionary' | 'add_exercise';
+  type: 'REPEAT_DICTIONARY' | 'REPEAT_EXERCISE' | 'ADD_DICTIONARY' | 'ADD_EXERCISE';
   languageUuid: string;
   languageName: string;
   current: number;
@@ -51,8 +51,14 @@ interface TaskSettingsDto {
 interface TaskScheduleDto {
   hour: number;
   minute: number;
-  frequency: 'daily' | 'every_n_days' | 'weekly' | 'monthly';
-  frequencyValue?: number;
+  frequency: 'DAILY' | 'EVERY_N_DAYS' | 'WEEKLY' | 'MONTHLY';
+  frequencyValue?: number | null;
+  lastRunAt?: string; // ISO 8601 format, read-only
+}
+
+interface TaskConfigDto {
+  settings: TaskSettingsDto[];
+  schedule: TaskScheduleDto;
 }
 
 // Payloads for creating/updating
@@ -67,8 +73,13 @@ interface TaskSettingsForm {
 interface TaskScheduleForm {
   hour: number;
   minute: number;
-  frequency: 'daily' | 'every_n_days' | 'weekly' | 'monthly';
-  frequencyValue?: number;
+  frequency: 'DAILY' | 'EVERY_N_DAYS' | 'WEEKLY' | 'MONTHLY';
+  frequencyValue?: number | null;
+}
+
+interface TaskConfigForm {
+  settings: TaskSettingsForm[];
+  schedule: TaskScheduleForm;
 }
 
 interface TaskProgressForm {
@@ -78,7 +89,7 @@ interface TaskProgressForm {
 // Helper functions to convert between frontend and backend formats
 const taskDtoToTask = (dto: TaskDto): Task => ({
   id: dto.uuid,
-  type: dto.type,
+  type: dto.type.toLowerCase() as Task['type'],
   languageId: dto.languageUuid,
   languageName: dto.languageName,
   current: dto.current,
@@ -105,15 +116,15 @@ const taskSettingsToForm = (settings: TaskSettings): TaskSettingsForm => ({
 const taskScheduleDtoToTaskSchedule = (dto: TaskScheduleDto): TaskSchedule => ({
   hour: dto.hour,
   minute: dto.minute,
-  frequency: dto.frequency,
-  frequencyValue: dto.frequencyValue,
+  frequency: dto.frequency.toLowerCase() as TaskSchedule['frequency'],
+  frequencyValue: dto.frequencyValue ?? undefined,
 });
 
 const taskScheduleToForm = (schedule: TaskSchedule): TaskScheduleForm => ({
   hour: schedule.hour,
   minute: schedule.minute,
-  frequency: schedule.frequency,
-  frequencyValue: schedule.frequencyValue,
+  frequency: schedule.frequency.toUpperCase() as TaskScheduleForm['frequency'],
+  frequencyValue: schedule.frequencyValue ?? null,
 });
 
 // Cache for tasks to prevent duplicate API calls
@@ -208,64 +219,65 @@ export const tasksService = {
     tasksService.clearCache();
   },
 
-  // Get task settings for all languages
-  getTaskSettings: async (): Promise<TaskSettings[]> => {
+  // Get task configuration (settings + schedule)
+  getTaskConfig: async (): Promise<{ settings: TaskSettings[]; schedule: TaskSchedule }> => {
     const service = new RequestService();
     const builder = new RequestBuilder<void>()
-      .url('/tasks/settings')
+      .url('/tasks/config')
       .method(HttpMethod.GET);
 
     const req = builder.build();
-    const res = await service.send<void, TaskSettingsDto[]>(req);
-    throwIfError(res, 'Failed to load task settings');
+    const res = await service.send<void, TaskConfigDto>(req);
+    throwIfError(res, 'Failed to load task configuration');
 
-    return (res.body as TaskSettingsDto[] ?? []).map(taskSettingsDtoToTaskSettings);
+    const config = res.body as TaskConfigDto;
+    return {
+      settings: config.settings.map(taskSettingsDtoToTaskSettings),
+      schedule: taskScheduleDtoToTaskSchedule(config.schedule),
+    };
   },
 
-  // Update task settings (expects array of settings for all languages)
-  updateTaskSettings: async (settings: TaskSettings[]): Promise<void> => {
+  // Update task configuration (settings + schedule)
+  updateTaskConfig: async (settings: TaskSettings[], schedule: TaskSchedule): Promise<void> => {
     const service = new RequestService();
-    const forms = settings.map(taskSettingsToForm);
-    const request = new RequestBuilder<TaskSettingsForm[]>()
-      .url('/tasks/settings')
-      .method(HttpMethod.PUT)
-      .contentTypeHeader('application/json')
-      .body(forms)
-      .build();
-
-    const res = await service.send<TaskSettingsForm[], unknown>(request);
-    throwIfError(res, 'Failed to update task settings');
-    tasksService.clearCache();
-  },
-
-  // Get task schedule
-  getTaskSchedule: async (): Promise<TaskSchedule> => {
-    const service = new RequestService();
-    const builder = new RequestBuilder<void>()
-      .url('/tasks/schedule')
-      .method(HttpMethod.GET);
-
-    const req = builder.build();
-    const res = await service.send<void, TaskScheduleDto>(req);
-    throwIfError(res, 'Failed to load task schedule');
-
-    return taskScheduleDtoToTaskSchedule(res.body as TaskScheduleDto);
-  },
-
-  // Update task schedule
-  updateTaskSchedule: async (schedule: TaskSchedule): Promise<void> => {
-    const service = new RequestService();
-    const form = taskScheduleToForm(schedule);
-    const request = new RequestBuilder<TaskScheduleForm>()
-      .url('/tasks/schedule')
+    const form: TaskConfigForm = {
+      settings: settings.map(taskSettingsToForm),
+      schedule: taskScheduleToForm(schedule),
+    };
+    const request = new RequestBuilder<TaskConfigForm>()
+      .url('/tasks/config')
       .method(HttpMethod.PUT)
       .contentTypeHeader('application/json')
       .body(form)
       .build();
 
-    const res = await service.send<TaskScheduleForm, unknown>(request);
-    throwIfError(res, 'Failed to update task schedule');
+    const res = await service.send<TaskConfigForm, unknown>(request);
+    throwIfError(res, 'Failed to update task configuration');
     tasksService.clearCache();
+  },
+
+  // Get task settings for all languages (for backward compatibility)
+  getTaskSettings: async (): Promise<TaskSettings[]> => {
+    const config = await tasksService.getTaskConfig();
+    return config.settings;
+  },
+
+  // Update task settings (for backward compatibility)
+  updateTaskSettings: async (settings: TaskSettings[]): Promise<void> => {
+    const config = await tasksService.getTaskConfig();
+    await tasksService.updateTaskConfig(settings, config.schedule);
+  },
+
+  // Get task schedule (for backward compatibility)
+  getTaskSchedule: async (): Promise<TaskSchedule> => {
+    const config = await tasksService.getTaskConfig();
+    return config.schedule;
+  },
+
+  // Update task schedule (for backward compatibility)
+  updateTaskSchedule: async (schedule: TaskSchedule): Promise<void> => {
+    const config = await tasksService.getTaskConfig();
+    await tasksService.updateTaskConfig(config.settings, schedule);
   },
 };
 

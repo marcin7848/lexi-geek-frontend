@@ -1,11 +1,10 @@
 import { TaskType, RecentActivity, TaskSettings, TaskSchedule, UserData } from "@/types/dashboard";
-import { languageService } from "./languageService";
 import { accountService } from "./accountService";
 import { tasksService } from "./tasksService";
+import { activityService } from "./activityService";
 
 export type { TaskType, RecentActivity, TaskSettings, TaskSchedule, UserData };
 
-const RECENT_ACTIVITY_KEY = "recent_activity";
 const LAST_TASK_RELOAD_KEY = "last_task_reload";
 
 export const dashboardService = {
@@ -54,52 +53,14 @@ export const dashboardService = {
   },
 
   getRecentActivity: async (): Promise<RecentActivity[]> => {
-    const stored = localStorage.getItem(RECENT_ACTIVITY_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-    
-    // Generate mock data
-    const languages = await languageService.getAll();
-    const activities: RecentActivity[] = [];
-    const activityTypes: Array<'repeat' | 'add'> = ['repeat', 'add'];
-    
-    // Generate 20 random activities over the past 7 days
-    for (let i = 0; i < 20; i++) {
-      const randomLang = languages[Math.floor(Math.random() * languages.length)];
-      const randomType = activityTypes[Math.floor(Math.random() * activityTypes.length)];
-      const randomHoursAgo = Math.floor(Math.random() * 168); // 7 days in hours
-      const timestamp = Date.now() - (randomHoursAgo * 60 * 60 * 1000);
-      
-      activities.push({
-        id: `activity-${i}`,
-        languageId: randomLang.id,
-        languageName: randomLang.name,
-        categoryId: `cat-${i}`,
-        categoryName: `Category ${i % 5 + 1}`,
-        timestamp,
-        type: randomType
-      });
-    }
-    
-    // Sort by timestamp (newest first)
-    activities.sort((a, b) => b.timestamp - a.timestamp);
-    
-    localStorage.setItem(RECENT_ACTIVITY_KEY, JSON.stringify(activities));
-    return activities;
+    return await activityService.getRecentActivities(50);
   },
 
-  addActivity: async (activity: Omit<RecentActivity, 'id' | 'timestamp'>): Promise<void> => {
-    const activities = await dashboardService.getRecentActivity();
-    activities.unshift({
-      ...activity,
-      id: `${Date.now()}-${Math.random()}`,
-      timestamp: Date.now()
-    });
-    
-    // Keep only last 50 activities
-    const trimmed = activities.slice(0, 50);
-    localStorage.setItem(RECENT_ACTIVITY_KEY, JSON.stringify(trimmed));
+  addActivity: async (activity: Omit<RecentActivity, 'id' | 'created'>): Promise<void> => {
+    // Note: This is a placeholder. In a real implementation, you would call a backend endpoint
+    // to create a new activity. For now, we just clear the cache to trigger a refresh.
+    console.log('Adding activity (backend endpoint needed):', activity);
+    activityService.clearCache();
   },
 
   getTaskSettings: async (): Promise<TaskSettings[]> => {
