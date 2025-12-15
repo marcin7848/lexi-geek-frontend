@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, KeyboardEvent } from "react";
+import { useEffect, useState, useRef, KeyboardEvent, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
@@ -35,6 +35,27 @@ export default function Repeating() {
   const firstInputRef = useRef<HTMLInputElement | null>(null);
   const speakerButtonRef = useRef<HTMLButtonElement | null>(null);
   const microphoneButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  // Initialize microphone and headphones state from localStorage (default: true)
+  const [isMicrophoneOn, setIsMicrophoneOn] = useState<boolean>(() => {
+    const stored = localStorage.getItem("repeating-microphone");
+    return stored === null ? true : stored === "true";
+  });
+
+  const [isHeadphonesOn, setIsHeadphonesOn] = useState<boolean>(() => {
+    const stored = localStorage.getItem("repeating-headphones");
+    return stored === null ? true : stored === "true";
+  });
+
+  // Save microphone state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("repeating-microphone", isMicrophoneOn.toString());
+  }, [isMicrophoneOn]);
+
+  // Save headphones state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("repeating-headphones", isHeadphonesOn.toString());
+  }, [isHeadphonesOn]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -152,6 +173,24 @@ export default function Repeating() {
     }
   }, [currentWord, stage]);
 
+  // Function to speak wordParts with answer:true
+  const speakAnswerParts = useCallback(() => {
+    if (!isHeadphonesOn || !currentWord || !language) return;
+
+    const sortedParts = [...currentWord.wordParts].sort((a, b) => a.position - b.position);
+    const answerParts = sortedParts.filter(p => p.answer && !p.isSeparator);
+
+    if (answerParts.length === 0) return;
+
+    const textToSpeak = answerParts.map(p => p.word).join(" ");
+    const speechLang = language.codeForSpeech || "en-US";
+
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    utterance.lang = speechLang;
+    window.speechSynthesis.cancel(); // Cancel any ongoing speech
+    window.speechSynthesis.speak(utterance);
+  }, [isHeadphonesOn, currentWord, language]);
+
   // Auto-click microphone when entering ANSWER stage
   useEffect(() => {
     if (stage === "ANSWER" && microphoneButtonRef.current && currentWord) {
@@ -160,13 +199,13 @@ export default function Repeating() {
     }
   }, [stage, currentWord]);
 
-  // Auto-click speaker when entering RESULT stage
+  // Auto-speak answer parts when entering RESULT stage (if headphones are on)
   useEffect(() => {
-    if (stage === "RESULT" && speakerButtonRef.current) {
-      console.log("Auto-triggering speaker (RESULT stage loaded)");
-      speakerButtonRef.current.click();
+    if (stage === "RESULT" && isHeadphonesOn) {
+      console.log("Auto-triggering speech (RESULT stage loaded)");
+      speakAnswerParts();
     }
-  }, [stage]);
+  }, [stage, isHeadphonesOn, speakAnswerParts]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -175,7 +214,7 @@ export default function Repeating() {
       if (keyEvent.ctrlKey && keyEvent.key === ";") {
         keyEvent.preventDefault();
         if (stage === "RESULT" && speakerButtonRef.current) {
-          console.log("Speaker triggered by Ctrl+;");
+          console.log("Volume button triggered by Ctrl+;");
           speakerButtonRef.current.click();
         } else if (stage === "ANSWER" && microphoneButtonRef.current) {
           console.log("Microphone triggered by Ctrl+;");
@@ -553,9 +592,34 @@ export default function Repeating() {
                 ref={microphoneButtonRef}
                 variant="outline" 
                 size="icon"
-                onClick={() => console.log("Microphone clicked manually")}
+                onClick={() => {
+                  setIsMicrophoneOn(!isMicrophoneOn);
+                  console.log("Microphone clicked manually");
+                }}
+                className={!isMicrophoneOn ? "opacity-50 relative" : ""}
               >
                 <Mic className="h-5 w-5" />
+                {!isMicrophoneOn && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-full h-0.5 bg-foreground rotate-45 transform scale-x-75"></div>
+                  </div>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  setIsHeadphonesOn(!isHeadphonesOn);
+                  console.log("Volume toggled");
+                }}
+                className={!isHeadphonesOn ? "opacity-50 relative" : ""}
+              >
+                <Volume2 className="h-5 w-5" />
+                {!isHeadphonesOn && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-full h-0.5 bg-foreground rotate-45 transform scale-x-75"></div>
+                  </div>
+                )}
               </Button>
             </div>
           )}
@@ -566,9 +630,22 @@ export default function Repeating() {
                 ref={speakerButtonRef}
                 variant="outline" 
                 size="icon"
-                onClick={() => console.log("Speaker clicked manually")}
+                onClick={() => {
+                  setIsHeadphonesOn(!isHeadphonesOn);
+                  console.log("Volume toggled");
+                  // If turning on, also play the speech
+                  if (!isHeadphonesOn) {
+                    setTimeout(() => speakAnswerParts(), 100);
+                  }
+                }}
+                className={!isHeadphonesOn ? "opacity-50 relative" : ""}
               >
                 <Volume2 className="h-5 w-5" />
+                {!isHeadphonesOn && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-full h-0.5 bg-foreground rotate-45 transform scale-x-75"></div>
+                  </div>
+                )}
               </Button>
             </div>
           )}
