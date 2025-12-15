@@ -9,7 +9,7 @@ export interface Activity {
   languageId: string;
   languageName: string;
   categoryId: string | null;
-  categoryName: string | null;
+  title: string | null; // Changed from categoryName - for STARS_ADDED this will be the task type (e.g., 'REPEAT_DICTIONARY')
   created: number;
   type: 'REPEATING_FINISHED' | 'STARS_ADDED';
   param: string;
@@ -19,7 +19,7 @@ export interface Activity {
 interface ActivityDto {
   uuid: string;
   languageName: string;
-  categoryName: string | null;
+  title: string | null; // Changed from categoryName
   created: string; // format: yyyy-MM-dd HH:mm:ss
   type: 'REPEATING_FINISHED' | 'STARS_ADDED';
   param: string;
@@ -28,7 +28,7 @@ interface ActivityDto {
 // Filter form for querying activities
 export interface ActivityFilterForm {
   languageUuid?: string;
-  categoryUuid?: string;
+  // categoryUuid removed - no longer supported by backend
   type?: 'REPEATING_FINISHED' | 'STARS_ADDED';
   rangeMin?: string; // format: yyyy-MM-dd HH:mm:ss
   rangeMax?: string; // format: yyyy-MM-dd HH:mm:ss
@@ -40,7 +40,7 @@ const activityDtoToActivity = (dto: ActivityDto): Activity => ({
   languageId: '', // Not provided in API response anymore
   languageName: dto.languageName,
   categoryId: null, // Not provided in API response anymore
-  categoryName: dto.categoryName,
+  title: dto.title, // Changed from categoryName
   created: new Date(dto.created).getTime(),
   type: dto.type,
   param: dto.param,
@@ -96,7 +96,7 @@ export const activityService = {
       // Append filter params if provided
       if (filter) {
         if (filter.languageUuid) builder.param('languageUuid', filter.languageUuid);
-        if (filter.categoryUuid) builder.param('categoryUuid', filter.categoryUuid);
+        // categoryUuid removed - no longer supported
         if (filter.type) builder.param('type', filter.type);
         if (filter.rangeMin) builder.param('range.min', filter.rangeMin);
         if (filter.rangeMax) builder.param('range.max', filter.rangeMax);
@@ -150,14 +150,6 @@ export const activityService = {
   getActivitiesByLanguage: async (languageId: string, pageable?: PageableRequest): Promise<Activity[]> => {
     return await activityService.getActivities(
       { languageUuid: languageId },
-      pageable ?? { singlePage: true }
-    );
-  },
-
-  // Fetch activities for a specific category
-  getActivitiesByCategory: async (categoryId: string, pageable?: PageableRequest): Promise<Activity[]> => {
-    return await activityService.getActivities(
-      { categoryUuid: categoryId },
       pageable ?? { singlePage: true }
     );
   },

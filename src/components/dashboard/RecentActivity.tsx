@@ -27,6 +27,18 @@ export const RecentActivitySection = () => {
     }
   };
 
+  const getTaskLabel = (taskType: string) => {
+    // Convert backend format (REPEAT_DICTIONARY) to frontend format (repeat_dictionary)
+    const type = taskType.toLowerCase();
+    switch (type) {
+      case 'repeat_dictionary': return t("dashboard.repeatDictionary");
+      case 'repeat_exercise': return t("dashboard.repeatExercise");
+      case 'add_dictionary': return t("dashboard.addDictionary");
+      case 'add_exercise': return t("dashboard.addExercise");
+      default: return taskType;
+    }
+  };
+
   const formatTime = (timestamp: number) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -67,10 +79,12 @@ export const RecentActivitySection = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm">{activity.languageName}</span>
-                      {activity.categoryName && (
+                      {activity.title && (
                         <>
                           <span className="text-xs text-muted-foreground">•</span>
-                          <span className="text-sm text-muted-foreground">{activity.categoryName}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {activity.type === 'STARS_ADDED' ? getTaskLabel(activity.title) : activity.title}
+                          </span>
                         </>
                       )}
                     </div>

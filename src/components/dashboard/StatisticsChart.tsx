@@ -16,6 +16,7 @@ export const StatisticsChart = () => {
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [showTotal, setShowTotal] = useState(true);
   const [showStars, setShowStars] = useState(true);
+  const [showRepeatErrors, setShowRepeatErrors] = useState(true);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState(false);
@@ -68,7 +69,7 @@ export const StatisticsChart = () => {
     if (startDate && endDate) {
       loadStatistics();
     }
-  }, [startDate, endDate, selectedLanguages, showTotal, showStars, loadStatistics]);
+  }, [startDate, endDate, selectedLanguages, showTotal, showStars, showRepeatErrors, loadStatistics]);
 
   const toggleLanguage = (langId: string) => {
     setSelectedLanguages(prev => 
@@ -88,6 +89,10 @@ export const StatisticsChart = () => {
       dataPoint[t("dashboard.totalAdded")] = stat.add;
     }
 
+    if (showRepeatErrors) {
+      dataPoint[t("dashboard.totalRepeatErrors")] = stat.repeatErrors;
+    }
+
     if (showStars) {
       dataPoint[t("dashboard.stars")] = stat.stars;
     }
@@ -100,10 +105,16 @@ export const StatisticsChart = () => {
         if (ls) {
           dataPoint[`${lang.name} (${t("dashboard.repeated")})`] = ls.repeat;
           dataPoint[`${lang.name} (${t("dashboard.added")})`] = ls.add;
+          if (showRepeatErrors) {
+            dataPoint[`${lang.name} (${t("dashboard.errors")})`] = ls.repeatErrors;
+          }
         } else {
           // If no data for this language on this date, use 0 to keep line connected
           dataPoint[`${lang.name} (${t("dashboard.repeated")})`] = 0;
           dataPoint[`${lang.name} (${t("dashboard.added")})`] = 0;
+          if (showRepeatErrors) {
+            dataPoint[`${lang.name} (${t("dashboard.errors")})`] = 0;
+          }
         }
       }
     });
@@ -111,10 +122,40 @@ export const StatisticsChart = () => {
     return dataPoint;
   });
 
+  // Extended color palette for chart lines
   const colors = [
     '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6',
-    '#ef4444', '#06b6d4', '#84cc16', '#f97316', '#a855f7'
+    '#ef4444', '#06b6d4', '#84cc16', '#f97316', '#a855f7',
+    '#ff6b9d', '#4ade80', '#fbbf24', '#fb923c', '#38bdf8',
+    '#818cf8', '#34d399', '#facc15', '#fb7185', '#60a5fa',
+    '#c084fc', '#22d3ee', '#a3e635', '#fdba74', '#f472b6',
+    '#e879f9', '#2dd4bf', '#bef264', '#fca5a5', '#93c5fd',
+    '#d8b4fe', '#5eead4', '#d9f99d', '#fcd34d', '#fda4af'
   ];
+
+  // Allocate colors sequentially to avoid duplicates
+  let colorIndex = 0;
+  const getNextColor = () => {
+    const color = colors[colorIndex % colors.length];
+    colorIndex++;
+    return color;
+  };
+
+  // Pre-allocate colors for fixed lines
+  const totalRepeatedColor = showTotal ? getNextColor() : null;
+  const totalAddedColor = showTotal ? getNextColor() : null;
+  const totalRepeatErrorsColor = showRepeatErrors ? getNextColor() : null;
+  const starsColor = showStars ? getNextColor() : null;
+
+  // Allocate colors for each language's lines
+  const languageColors: Record<string, { repeated: string; added: string; errors: string }> = {};
+  selectedLanguages.forEach(langId => {
+    languageColors[langId] = {
+      repeated: getNextColor(),
+      added: getNextColor(),
+      errors: showRepeatErrors ? getNextColor() : ''
+    };
+  });
 
   return (
     <Card className="shadow-card border-border/50">
@@ -165,6 +206,13 @@ export const StatisticsChart = () => {
               />
               <Label>{t("dashboard.showStars")}</Label>
             </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={showRepeatErrors}
+                onCheckedChange={(checked) => setShowRepeatErrors(checked as boolean)}
+              />
+              <Label>{t("dashboard.showRepeatErrors")}</Label>
+            </div>
             {languages.map(lang => (
               <div key={lang.id} className="flex items-center gap-2">
                 <Checkbox
@@ -204,31 +252,41 @@ export const StatisticsChart = () => {
                     <Line 
                       type="monotone" 
                       dataKey={t("dashboard.totalRepeated")}
-                      stroke={colors[0]}
+                      stroke={totalRepeatedColor}
                       strokeWidth={2}
-                      dot={{ fill: colors[0] }}
+                      dot={{ fill: totalRepeatedColor }}
                     />
                     <Line 
                       type="monotone" 
                       dataKey={t("dashboard.totalAdded")}
-                      stroke={colors[1]}
+                      stroke={totalAddedColor}
                       strokeWidth={2}
-                      dot={{ fill: colors[1] }}
+                      dot={{ fill: totalAddedColor }}
                     />
                   </>
                 )}
                 
+                {showRepeatErrors && (
+                  <Line
+                    type="monotone"
+                    dataKey={t("dashboard.totalRepeatErrors")}
+                    stroke={totalRepeatErrorsColor}
+                    strokeWidth={2}
+                    dot={{ fill: totalRepeatErrorsColor }}
+                  />
+                )}
+
                 {showStars && (
                   <Line 
                     type="monotone" 
                     dataKey={t("dashboard.stars")}
-                    stroke="#fbbf24"
+                    stroke={starsColor}
                     strokeWidth={2}
-                    dot={{ fill: '#fbbf24' }}
+                    dot={{ fill: starsColor }}
                   />
                 )}
 
-                {selectedLanguages.map((langId, idx) => {
+                {selectedLanguages.map((langId) => {
                   const lang = languages.find(l => l.id === langId);
                   if (!lang) return null;
                   
@@ -237,14 +295,14 @@ export const StatisticsChart = () => {
                       key={`${langId}-repeated`}
                       type="monotone"
                       dataKey={`${lang.name} (${t("dashboard.repeated")})`}
-                      stroke={colors[(idx * 2 + 2) % colors.length]}
+                      stroke={languageColors[langId].repeated}
                       strokeWidth={2}
-                      dot={{ fill: colors[(idx * 2 + 2) % colors.length] }}
+                      dot={{ fill: languageColors[langId].repeated }}
                     />
                   );
                 })}
                 
-                {selectedLanguages.map((langId, idx) => {
+                {selectedLanguages.map((langId) => {
                   const lang = languages.find(l => l.id === langId);
                   if (!lang) return null;
                   
@@ -253,10 +311,27 @@ export const StatisticsChart = () => {
                       key={`${langId}-added`}
                       type="monotone"
                       dataKey={`${lang.name} (${t("dashboard.added")})`}
-                      stroke={colors[(idx * 2 + 3) % colors.length]}
+                      stroke={languageColors[langId].added}
                       strokeWidth={2}
                       strokeDasharray="5 5"
-                      dot={{ fill: colors[(idx * 2 + 3) % colors.length] }}
+                      dot={{ fill: languageColors[langId].added }}
+                    />
+                  );
+                })}
+
+                {showRepeatErrors && selectedLanguages.map((langId) => {
+                  const lang = languages.find(l => l.id === langId);
+                  if (!lang) return null;
+
+                  return (
+                    <Line
+                      key={`${langId}-errors`}
+                      type="monotone"
+                      dataKey={`${lang.name} (${t("dashboard.errors")})`}
+                      stroke={languageColors[langId].errors}
+                      strokeWidth={2}
+                      strokeDasharray="3 3"
+                      dot={{ fill: languageColors[langId].errors }}
                     />
                   );
                 })}

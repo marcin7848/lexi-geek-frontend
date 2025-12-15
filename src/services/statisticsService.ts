@@ -8,6 +8,7 @@ import { throwIfError } from '@/services/requestError';
 interface LanguageStatsDto {
   repeat: number;
   add: number;
+  repeatErrors: number;
 }
 
 interface UserStatDto {
@@ -15,6 +16,7 @@ interface UserStatDto {
   repeat: number;
   add: number;
   stars: number;
+  repeatErrors: number;
   languageStats: Record<string, LanguageStatsDto>;
 }
 
@@ -22,6 +24,7 @@ interface UserStatDto {
 export interface LanguageStats {
   repeat: number;
   add: number;
+  repeatErrors: number;
 }
 
 export interface UserStat {
@@ -29,6 +32,7 @@ export interface UserStat {
   repeat: number;
   add: number;
   stars: number;
+  repeatErrors: number;
   languageStats: Record<string, LanguageStats>;
 }
 
@@ -48,6 +52,7 @@ const mapUserStatDtoToUserStat = (dto: UserStatDto): UserStat => {
     repeat: dto.repeat,
     add: dto.add,
     stars: dto.stars,
+    repeatErrors: dto.repeatErrors,
     languageStats: dto.languageStats,
   };
 };

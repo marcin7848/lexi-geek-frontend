@@ -1,9 +1,15 @@
-import { useEffect, useState, useRef, KeyboardEvent } from "react";
+import { useEffect, useState, useRef, KeyboardEvent, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { WordPart, Method } from "@/types/word";
 import { CategoryMode } from "@/types/category";
 import { Mic, Volume2 } from "lucide-react";
@@ -35,6 +41,55 @@ export default function Repeating() {
   const firstInputRef = useRef<HTMLInputElement | null>(null);
   const speakerButtonRef = useRef<HTMLButtonElement | null>(null);
   const microphoneButtonRef = useRef<HTMLButtonElement | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const checkButtonRef = useRef<HTMLButtonElement | null>(null);
+  const shouldRestartRef = useRef<boolean>(true);
+  const stageRef = useRef<Stage>(stage);
+  const isRecognitionReadyRef = useRef<boolean>(false);
+  const isProcessingCommandRef = useRef<boolean>(false);
+
+  // Initialize microphone and headphones state from localStorage (default: true)
+  const [isMicrophoneOn, setIsMicrophoneOn] = useState<boolean>(() => {
+    const stored = localStorage.getItem("repeating-microphone");
+    return stored === null ? true : stored === "true";
+  });
+
+  const [isListening, setIsListening] = useState<boolean>(false);
+  const [interimTranscript, setInterimTranscript] = useState<string>("");
+
+  const [isHeadphonesOn, setIsHeadphonesOn] = useState<boolean>(() => {
+    const stored = localStorage.getItem("repeating-headphones");
+    return stored === null ? true : stored === "true";
+  });
+
+  // Refs that depend on state values must be declared after state
+  const languageRef = useRef<Language | null>(language);
+  const isMicrophoneOnRef = useRef<boolean>(isMicrophoneOn);
+
+  // Save microphone state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("repeating-microphone", isMicrophoneOn.toString());
+  }, [isMicrophoneOn]);
+
+  // Save headphones state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("repeating-headphones", isHeadphonesOn.toString());
+  }, [isHeadphonesOn]);
+
+  // Keep stageRef in sync with stage
+  useEffect(() => {
+    stageRef.current = stage;
+  }, [stage]);
+
+  // Keep languageRef in sync with language
+  useEffect(() => {
+    languageRef.current = language;
+  }, [language]);
+
+  // Keep isMicrophoneOnRef in sync with isMicrophoneOn
+  useEffect(() => {
+    isMicrophoneOnRef.current = isMicrophoneOn;
+  }, [isMicrophoneOn]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -90,7 +145,6 @@ export default function Repeating() {
         // Load next word
         await loadNextWord(languageUuid);
       } catch (error) {
-        console.error("Error loading repeat data:", error);
         toast.error("Failed to load repeat session");
         navigate(`/language/${languageId}`);
       }
@@ -112,10 +166,6 @@ export default function Repeating() {
       setCurrentMethod(word.method);
       setCategoryMode(word.categoryMode as CategoryMode);
 
-      // Log to console
-      console.log("Mode:", word.categoryMode);
-      console.log("Mechanism:", word.mechanism);
-      console.log("Method:", word.method);
 
       // Reset answers and stage
       setAnswers({});
@@ -141,7 +191,6 @@ export default function Repeating() {
       }
       setShuffledBoxParts(partsToShuffle);
     } catch (error) {
-      console.error("Error loading next word:", error);
       toast.error("Failed to load next word");
     }
   };
@@ -152,21 +201,245 @@ export default function Repeating() {
     }
   }, [currentWord, stage]);
 
-  // Auto-click microphone when entering ANSWER stage
-  useEffect(() => {
-    if (stage === "ANSWER" && microphoneButtonRef.current && currentWord) {
-      console.log("Auto-triggering microphone (ANSWER stage loaded)");
-      microphoneButtonRef.current.click();
-    }
-  }, [stage, currentWord]);
+  // Function to speak wordParts with answer:true
+  const speakAnswerParts = useCallback(() => {
+    if (!isHeadphonesOn || !currentWord || !language) return;
 
-  // Auto-click speaker when entering RESULT stage
-  useEffect(() => {
-    if (stage === "RESULT" && speakerButtonRef.current) {
-      console.log("Auto-triggering speaker (RESULT stage loaded)");
-      speakerButtonRef.current.click();
+    const sortedParts = [...currentWord.wordParts].sort((a, b) => a.position - b.position);
+    const answerParts = sortedParts.filter(p => p.answer && !p.isSeparator);
+
+    if (answerParts.length === 0) return;
+
+    const textToSpeak = answerParts.map(p => p.word).join(" ");
+    const speechLang = language.codeForSpeech || "en-US";
+
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    utterance.lang = speechLang;
+    window.speechSynthesis.cancel(); // Cancel any ongoing speech
+    window.speechSynthesis.speak(utterance);
+  }, [isHeadphonesOn, currentWord, language]);
+
+  // Speech recognition setup
+  const startListening = useCallback(() => {
+    const language = languageRef.current;
+    const isMicrophoneOn = isMicrophoneOnRef.current;
+
+    if (!language || !isMicrophoneOn) {
+      return;
     }
-  }, [stage]);
+
+    // Check if browser supports speech recognition
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error("Speech recognition is not supported in this browser");
+      return;
+    }
+
+    if (recognitionRef.current) {
+      try {
+        shouldRestartRef.current = false;
+        recognitionRef.current.stop();
+      } catch (e) {
+        // Error stopping previous recognition
+      }
+      recognitionRef.current = null;
+    }
+
+    shouldRestartRef.current = true;
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true; // Enable interim results for live display
+    recognition.lang = language.codeForSpeech || "en-US";
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      setInterimTranscript("");
+      // Mark as ready after a brief delay to ensure it's fully listening
+      setTimeout(() => {
+        isRecognitionReadyRef.current = true;
+      }, 200);
+    };
+
+    recognition.onresult = (event: any) => {
+      let interimText = "";
+      let finalTranscript = "";
+
+      // Process all results
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript;
+        } else {
+          interimText += transcript;
+        }
+      }
+
+      // Update interim display
+      if (interimText) {
+        setInterimTranscript(interimText.trim());
+      }
+
+      // Only process final results
+      if (!finalTranscript) return;
+
+      const transcript = finalTranscript.trim();
+      const currentStage = stageRef.current;
+
+      // Clear interim text after final result
+      setInterimTranscript("");
+
+      // For commands, ensure recognition is ready to prevent missing commands during transitions
+      const isCommand = transcript.toLowerCase() === "next" ||
+                        transcript.toLowerCase() === "next." ||
+                        transcript.toLowerCase() === "switch" ||
+                        transcript.toLowerCase() === "switch.";
+
+      // Check for "next" command in English (regardless of language setting)
+      if (transcript.toLowerCase() === "next" || transcript.toLowerCase() === "next.") {
+        isProcessingCommandRef.current = true;
+
+        // Stop current recognition to ensure clean restart
+        shouldRestartRef.current = false;
+        if (recognitionRef.current) {
+          try {
+            recognitionRef.current.stop();
+          } catch (e) {
+            // Error stopping recognition after next command
+          }
+        }
+
+        if (checkButtonRef.current) {
+          checkButtonRef.current.click();
+        }
+
+        // Restart recognition after a delay to ensure it's ready for the next command
+        setTimeout(() => {
+          isProcessingCommandRef.current = false;
+          shouldRestartRef.current = true;
+          startListening();
+        }, 200);
+        return;
+      }
+
+      // Check for "switch" command to move to next input (Tab simulation)
+      if (transcript.toLowerCase() === "switch" || transcript.toLowerCase() === "switch.") {
+        isProcessingCommandRef.current = true;
+        const inputs = Array.from(document.querySelectorAll<HTMLInputElement>('input[data-answer-input]'));
+        const currentInput = lastFocusedInputRef.current;
+
+        if (currentInput && inputs.length > 0) {
+          const currentIndex = inputs.indexOf(currentInput);
+          if (currentIndex !== -1) {
+            const nextIndex = (currentIndex + 1) % inputs.length;
+            inputs[nextIndex]?.focus();
+            lastFocusedInputRef.current = inputs[nextIndex];
+          }
+        } else if (inputs.length > 0) {
+          // If no input is focused, focus the first one
+          inputs[0]?.focus();
+          lastFocusedInputRef.current = inputs[0];
+        }
+
+        setTimeout(() => {
+          isProcessingCommandRef.current = false;
+        }, 100);
+        return;
+      }
+
+      // Insert transcribed text into the currently focused input (only in ANSWER stage)
+      if (currentStage === "ANSWER" && lastFocusedInputRef.current) {
+        const targetInput = lastFocusedInputRef.current;
+        const start = targetInput.selectionStart || 0;
+        const end = targetInput.selectionEnd || 0;
+        const currentValue = targetInput.value;
+        const newValue = currentValue.slice(0, start) + transcript + currentValue.slice(end);
+
+        const partId = targetInput.dataset.partId;
+        if (partId) {
+          setAnswers(prev => ({ ...prev, [partId]: newValue }));
+
+          setTimeout(() => {
+            targetInput.focus();
+            const newCursorPos = start + transcript.length;
+            targetInput.setSelectionRange(newCursorPos, newCursorPos);
+          }, 0);
+        }
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      if (event.error === 'aborted') {
+        // Don't restart on aborted error
+        shouldRestartRef.current = false;
+        return;
+      }
+      if (event.error !== 'no-speech') {
+        toast.error(`Speech recognition error: ${event.error}`);
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      isRecognitionReadyRef.current = false;
+      const currentMicState = isMicrophoneOnRef.current;
+      const currentLanguage = languageRef.current;
+
+      // Only restart if we should and microphone is still on
+      if (shouldRestartRef.current && currentMicState && currentLanguage) {
+        setTimeout(() => {
+          startListening();
+        }, 100);
+      }
+    };
+
+    recognitionRef.current = recognition;
+    try {
+      recognition.start();
+    } catch (error) {
+      shouldRestartRef.current = false;
+    }
+  }, []);
+
+
+  const stopListening = useCallback(() => {
+    shouldRestartRef.current = false;
+    isRecognitionReadyRef.current = false;
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {
+        // Error stopping recognition
+      }
+      recognitionRef.current = null;
+    }
+    setIsListening(false);
+    setInterimTranscript("");
+  }, []);
+
+  // Start/stop listening based on microphone state
+  useEffect(() => {
+    if (isMicrophoneOn && language) {
+      // Only start if not already listening
+      if (!recognitionRef.current) {
+        startListening();
+      }
+    } else {
+      stopListening();
+    }
+
+    return () => {
+      // Cleanup on unmount only
+    };
+  }, [isMicrophoneOn, language, startListening, stopListening]);
+
+  // Auto-speak answer parts when entering RESULT stage (if headphones are on)
+  useEffect(() => {
+    if (stage === "RESULT" && isHeadphonesOn) {
+      console.log("Auto-triggering speech (RESULT stage loaded)");
+      speakAnswerParts();
+    }
+  }, [stage, isHeadphonesOn, speakAnswerParts]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -175,10 +448,8 @@ export default function Repeating() {
       if (keyEvent.ctrlKey && keyEvent.key === ";") {
         keyEvent.preventDefault();
         if (stage === "RESULT" && speakerButtonRef.current) {
-          console.log("Speaker triggered by Ctrl+;");
           speakerButtonRef.current.click();
         } else if (stage === "ANSWER" && microphoneButtonRef.current) {
-          console.log("Microphone triggered by Ctrl+;");
           microphoneButtonRef.current.click();
         }
       }
@@ -240,7 +511,6 @@ export default function Repeating() {
           // (they can still see the result)
         }
       } catch (error) {
-        console.error("Error checking answer:", error);
         toast.error("Failed to check answer");
       }
     } else {
@@ -254,7 +524,6 @@ export default function Repeating() {
           navigate(`/language/${languageId}`);
         }
       } catch (error) {
-        console.error("Error loading next word:", error);
         toast.error("Failed to load next word");
       }
     }
@@ -548,27 +817,106 @@ export default function Repeating() {
           )}
 
           {stage === "ANSWER" && (
-            <div className="flex gap-4">
-              <Button 
-                ref={microphoneButtonRef}
-                variant="outline" 
+            <div className="flex gap-4 items-center">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      ref={microphoneButtonRef}
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        setIsMicrophoneOn(!isMicrophoneOn);
+                      }}
+                      className={`${!isMicrophoneOn ? "opacity-50" : ""} ${isListening ? "ring-2 ring-red-500 animate-pulse" : ""} relative`}
+                    >
+                      <Mic className="h-5 w-5" />
+                      {!isMicrophoneOn && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-full h-0.5 bg-foreground rotate-45 transform scale-x-75"></div>
+                        </div>
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="space-y-1">
+                      <p className="font-semibold">Voice Commands:</p>
+                      <p className="text-sm">• Say "next" to check answer</p>
+                      <p className="text-sm">• Say "switch" to go to next input</p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              {isListening && (
+                <span className="text-sm text-red-500 animate-pulse">Listening...</span>
+              )}
+              <Button
+                variant="outline"
                 size="icon"
-                onClick={() => console.log("Microphone clicked manually")}
+                onClick={() => {
+                  setIsHeadphonesOn(!isHeadphonesOn);
+                }}
+                className={!isHeadphonesOn ? "opacity-50 relative" : ""}
               >
-                <Mic className="h-5 w-5" />
+                <Volume2 className="h-5 w-5" />
+                {!isHeadphonesOn && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-full h-0.5 bg-foreground rotate-45 transform scale-x-75"></div>
+                  </div>
+                )}
               </Button>
             </div>
           )}
 
           {stage === "RESULT" && (
             <div className="flex gap-4">
-              <Button 
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      ref={microphoneButtonRef}
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        setIsMicrophoneOn(!isMicrophoneOn);
+                      }}
+                      className={!isMicrophoneOn ? "opacity-50 relative" : ""}
+                    >
+                      <Mic className="h-5 w-5" />
+                      {!isMicrophoneOn && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-full h-0.5 bg-foreground rotate-45 transform scale-x-75"></div>
+                        </div>
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="space-y-1">
+                      <p className="font-semibold">Voice Command:</p>
+                      <p className="text-sm">• Say "next" to go to next word</p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <Button
                 ref={speakerButtonRef}
                 variant="outline" 
                 size="icon"
-                onClick={() => console.log("Speaker clicked manually")}
+                onClick={() => {
+                  setIsHeadphonesOn(!isHeadphonesOn);
+                  // If turning on, also play the speech
+                  if (!isHeadphonesOn) {
+                    setTimeout(() => speakAnswerParts(), 100);
+                  }
+                }}
+                className={!isHeadphonesOn ? "opacity-50 relative" : ""}
               >
                 <Volume2 className="h-5 w-5" />
+                {!isHeadphonesOn && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-full h-0.5 bg-foreground rotate-45 transform scale-x-75"></div>
+                  </div>
+                )}
               </Button>
             </div>
           )}
@@ -585,10 +933,20 @@ export default function Repeating() {
                 {renderWordParts()}
                 
                 <div className="flex justify-end">
-                  <Button onClick={handleCheck} size="lg">
+                  <Button ref={checkButtonRef} onClick={handleCheck} size="lg">
                     {stage === "ANSWER" ? "Check" : "Next"}
                   </Button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Interim speech recognition display */}
+          {interimTranscript && (
+            <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg shadow-lg z-50 animate-pulse">
+              <div className="flex items-center gap-2">
+                <Mic className="h-4 w-4" />
+                <span className="text-sm">{interimTranscript}</span>
               </div>
             </div>
           )}
