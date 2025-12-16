@@ -22,6 +22,81 @@ class AuthStateService {
   private initialized = false;
   private initPromise: Promise<ServiceAuthUser | null> | null = null;
   private listeners: AuthStateListener[] = [];
+  private refreshIntervalId: number | null = null;
+  private readonly REFRESH_INTERVAL = 5 * 60 * 1000; // Refresh every 5 minutes
+  private lastActivityTime: number = Date.now();
+
+  constructor() {
+    // Listen for page visibility changes
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
+    }
+
+    // Listen for user activity to update last activity time
+    if (typeof window !== 'undefined') {
+      ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(event => {
+        window.addEventListener(event, this.updateActivity.bind(this), { passive: true });
+      });
+    }
+  }
+
+  private updateActivity() {
+    this.lastActivityTime = Date.now();
+  }
+
+  private async handleVisibilityChange() {
+    if (document.visibilityState === 'visible' && this.user) {
+      // Page became visible, check if we should refresh the session
+      const timeSinceLastActivity = Date.now() - this.lastActivityTime;
+
+      // If more than 5 minutes since last activity, refresh the session
+      if (timeSinceLastActivity > this.REFRESH_INTERVAL) {
+        console.log('Page visible after inactivity, refreshing session...');
+        await this.refreshSession();
+      }
+    }
+  }
+
+  private startRefreshTimer() {
+    if (this.refreshIntervalId !== null) {
+      return; // Already running
+    }
+
+    this.refreshIntervalId = window.setInterval(async () => {
+      if (this.user && document.visibilityState === 'visible') {
+        console.log('Auto-refreshing session...');
+        await this.refreshSession();
+      }
+    }, this.REFRESH_INTERVAL);
+  }
+
+  private stopRefreshTimer() {
+    if (this.refreshIntervalId !== null) {
+      clearInterval(this.refreshIntervalId);
+      this.refreshIntervalId = null;
+    }
+  }
+
+  async refreshSession(): Promise<ServiceAuthUser | null> {
+    try {
+      const user = await authService.refreshSession();
+
+      if (user) {
+        this.user = user;
+        this.notifyListeners();
+        return user;
+      } else {
+        // Session expired or invalid
+        console.log('Session expired, logging out...');
+        this.reset();
+        return null;
+      }
+    } catch (error) {
+      console.error('Session refresh failed:', error);
+      // Don't reset on network errors, just return null
+      return null;
+    }
+  }
 
   async initialize(): Promise<ServiceAuthUser | null> {
     if (this.initialized) {
@@ -37,6 +112,12 @@ class AuthStateService {
     try {
       this.user = await this.initPromise;
       this.initialized = true;
+
+      // Start refresh timer if user is authenticated
+      if (this.user) {
+        this.startRefreshTimer();
+      }
+
       this.notifyListeners();
       return this.user;
     } catch (error) {
@@ -71,6 +152,14 @@ class AuthStateService {
   setUser(user: LibAuthUser | ServiceAuthUser | null | undefined): void {
     this.user = convertToServiceAuthUser(user);
     this.initialized = true;
+
+    // Start or stop refresh timer based on user state
+    if (this.user) {
+      this.startRefreshTimer();
+    } else {
+      this.stopRefreshTimer();
+    }
+
     this.notifyListeners();
   }
 
@@ -81,6 +170,7 @@ class AuthStateService {
     this.user = null;
     this.initialized = false;
     this.initPromise = null;
+    this.stopRefreshTimer();
     this.notifyListeners();
   }
 

@@ -98,6 +98,8 @@ export const en = {
     "auth.usernameMin": "Username must be at least %s characters",
     "auth.usernameMax": "Username must be less than %s characters",
     "auth.passwordsMismatch": "Passwords don't match",
+    "auth.sessionExpired": "Session Expired",
+    "auth.sessionExpiredDesc": "Your session has expired. Please log in again.",
 
     // Auth - Login page specific
     "auth.signInDescription": "Sign in to your LexiGeek account",

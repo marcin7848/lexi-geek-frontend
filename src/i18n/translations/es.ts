@@ -98,6 +98,8 @@ const es = {
     "auth.usernameMin": "El nombre de usuario debe tener al menos %s caracteres",
     "auth.usernameMax": "El nombre de usuario debe tener menos de %s caracteres",
     "auth.passwordsMismatch": "Las contraseñas no coinciden",
+    "auth.sessionExpired": "Sesión expirada",
+    "auth.sessionExpiredDesc": "Tu sesión ha expirado. Por favor, inicia sesión nuevamente.",
 
     // Auth - Login page specific
     "auth.signInDescription": "Inicia sesión en tu cuenta de LexiGeek",
