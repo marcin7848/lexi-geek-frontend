@@ -163,6 +163,7 @@ export const fr = {
     "autoTranslate.answer": "Réponse",
     "autoTranslate.textToTranslate": "Texte à Traduire",
     "autoTranslate.placeholder": "Insérez le texte pour la traduction automatique ici...",
+    "autoTranslate.characterCount": "Nombre de caractères",
     "autoTranslate.button": "Traduire Automatiquement",
     "autoTranslate.translating": "Traduction en cours...",
     "autoTranslate.success": "Traduction terminée avec succès",

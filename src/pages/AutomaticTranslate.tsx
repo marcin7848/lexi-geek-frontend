@@ -186,6 +186,9 @@ const AutomaticTranslate = () => {
                 placeholder={t("autoTranslate.placeholder")}
                 className="min-h-[300px] resize-y"
               />
+              <p className="text-sm text-muted-foreground">
+                {t("autoTranslate.characterCount")}: {text.length}
+              </p>
             </div>
 
             <Button onClick={handleAutoTranslate} disabled={isLoading}>

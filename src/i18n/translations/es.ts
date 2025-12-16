@@ -163,6 +163,7 @@ const es = {
     "autoTranslate.answer": "Respuesta",
     "autoTranslate.textToTranslate": "Texto para Traducir",
     "autoTranslate.placeholder": "Inserta el texto para traducción automática aquí...",
+    "autoTranslate.characterCount": "Número de caracteres",
     "autoTranslate.button": "Traducir Automáticamente",
     "autoTranslate.translating": "Traduciendo...",
     "autoTranslate.success": "Traducción completada exitosamente",

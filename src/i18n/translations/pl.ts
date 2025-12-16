@@ -163,6 +163,7 @@ export const pl = {
     "autoTranslate.answer": "Odpowiedź",
     "autoTranslate.textToTranslate": "Tekst do Tłumaczenia",
     "autoTranslate.placeholder": "Wstaw tekst do automatycznego tłumaczenia tutaj...",
+    "autoTranslate.characterCount": "Liczba znaków",
     "autoTranslate.button": "Auto Tłumacz",
     "autoTranslate.translating": "Tłumaczenie...",
     "autoTranslate.success": "Tłumaczenie zakończone pomyślnie",
