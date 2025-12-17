@@ -146,5 +146,16 @@ export const authService = {
       }
     }
     return null;
+  },
+
+  // Refresh/validate the session by calling /account
+  // Returns the current user if session is valid, null if expired
+  refreshSession: async (): Promise<AuthUser | null> => {
+    try {
+      return await authService.initializeFromAccount();
+    } catch (error) {
+      console.error('Session refresh failed:', error);
+      return null;
+    }
   }
 };

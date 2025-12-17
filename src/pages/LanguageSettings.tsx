@@ -103,12 +103,6 @@ export default function LanguageSettings() {
       newErrors.shortcut = t("addLanguage.errorShortcutShort");
     }
 
-    if (language.codeForTranslator && language.codeForTranslator.length < 2) {
-      newErrors.codeForTranslator = t("addLanguage.errorTranslatorShort");
-    } else if (language.codeForTranslator && language.codeForTranslator.length > 15) {
-      newErrors.codeForTranslator = t("addLanguage.errorTranslatorLong");
-    }
-
     if (language.codeForSpeech && language.codeForSpeech.length < 2) {
       newErrors.codeForSpeech = t("addLanguage.errorSpeechShort");
     } else if (language.codeForSpeech && language.codeForSpeech.length > 15) {
@@ -132,7 +126,6 @@ export default function LanguageSettings() {
         name: language.name,
         shortcut: language.shortcut,
         codeForSpeech: language.codeForSpeech,
-        codeForTranslator: language.codeForTranslator,
         isPublic: language.isPublic,
         specialLetters: language.specialLetters || "",
       };
@@ -227,18 +220,6 @@ export default function LanguageSettings() {
               <Label htmlFor="public" className="cursor-pointer">{t("addLanguage.public")}</Label>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="codeForTranslator">{t("addLanguage.codeForTranslator")}</Label>
-              <Input
-                id="codeForTranslator"
-                value={language.codeForTranslator}
-                onChange={(e) => setLanguage({ ...language, codeForTranslator: e.target.value })}
-                placeholder={t("addLanguage.codeForTranslatorPlaceholder")}
-              />
-              {errors.codeForTranslator && (
-                <p className="text-sm text-destructive">{errors.codeForTranslator}</p>
-              )}
-            </div>
 
             <div className="space-y-2">
               <Label htmlFor="codeForSpeech">{t("addLanguage.codeForSpeech")}</Label>

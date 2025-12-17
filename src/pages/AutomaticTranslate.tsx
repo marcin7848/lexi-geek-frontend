@@ -2,9 +2,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ArrowLeft, Info } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { useLanguage } from "@/i18n/LanguageProvider";
@@ -18,7 +20,9 @@ const AutomaticTranslate = () => {
   const { categoryId } = useParams();
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const [method, setMethod] = useState("GOOGLE_TRANSLATOR");
+  const [sourceLanguage, setSourceLanguage] = useState("");
+  const [targetLanguage, setTargetLanguage] = useState("");
+  const [sourcePart, setSourcePart] = useState<"QUESTION" | "ANSWER">("QUESTION");
   const [text, setText] = useState("");
   const [category, setCategory] = useState<Category | null>(null);
   const [languageId, setLanguageId] = useState<string | null>(null);
@@ -80,11 +84,18 @@ const AutomaticTranslate = () => {
       return;
     }
 
+    if (!sourceLanguage.trim() || !targetLanguage.trim()) {
+      toast.error(t("autoTranslate.errorMissingLanguages"));
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       await categoryService.automaticTranslation(languageId, categoryId, {
-        method,
+        sourceLanguage,
+        targetLanguage,
+        sourcePart,
         text,
       });
 
@@ -119,16 +130,51 @@ const AutomaticTranslate = () => {
           </div>
 
           <div className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="method">{t("autoTranslate.method")}</Label>
-              <Select value={method} onValueChange={setMethod}>
-                <SelectTrigger id="method">
-                  <SelectValue placeholder={t("autoTranslate.selectMethod")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="GOOGLE_TRANSLATOR">{t("autoTranslate.googleTranslator")}</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex gap-4">
+              <div className="flex-1 max-w-[200px] space-y-2">
+                <Label htmlFor="sourceLanguage">{t("autoTranslate.sourceLanguage")}</Label>
+                <Input
+                  id="sourceLanguage"
+                  value={sourceLanguage}
+                  onChange={(e) => setSourceLanguage(e.target.value)}
+                  placeholder={t("autoTranslate.sourceLanguagePlaceholder")}
+                />
+              </div>
+
+              <div className="flex-1 max-w-[200px] space-y-2">
+                <Label htmlFor="targetLanguage">{t("autoTranslate.targetLanguage")}</Label>
+                <Input
+                  id="targetLanguage"
+                  value={targetLanguage}
+                  onChange={(e) => setTargetLanguage(e.target.value)}
+                  placeholder={t("autoTranslate.targetLanguagePlaceholder")}
+                />
+              </div>
+
+              <div className="flex-1 max-w-[200px] space-y-2">
+                <div className="flex items-center gap-1">
+                  <Label htmlFor="sourcePart">{t("autoTranslate.sourcePart")}</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>{t("autoTranslate.sourcePartTooltip")}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <Select value={sourcePart} onValueChange={(value) => setSourcePart(value as "QUESTION" | "ANSWER")}>
+                  <SelectTrigger id="sourcePart">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="QUESTION">{t("autoTranslate.question")}</SelectItem>
+                    <SelectItem value="ANSWER">{t("autoTranslate.answer")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -140,6 +186,9 @@ const AutomaticTranslate = () => {
                 placeholder={t("autoTranslate.placeholder")}
                 className="min-h-[300px] resize-y"
               />
+              <p className="text-sm text-muted-foreground">
+                {t("autoTranslate.characterCount")}: {text.length}
+              </p>
             </div>
 
             <Button onClick={handleAutoTranslate} disabled={isLoading}>

@@ -157,7 +157,9 @@ export const categoryService = {
     languageUuid: string,
     categoryUuid: string,
     data: {
-      method: string;
+      sourceLanguage: string;
+      targetLanguage: string;
+      sourcePart: "QUESTION" | "ANSWER";
       text: string;
     }
   ): Promise<void> => {

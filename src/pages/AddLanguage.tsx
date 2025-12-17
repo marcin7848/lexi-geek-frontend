@@ -20,7 +20,6 @@ export default function AddLanguage() {
     name: "",
     shortcut: "",
     isPublic: true,
-    codeForTranslator: "",
     codeForSpeech: "",
     specialLetters: "",
   });
@@ -52,12 +51,6 @@ export default function AddLanguage() {
       newErrors.shortcut = t("addLanguage.errorShortcutShort");
     }
 
-    if (formData.codeForTranslator && formData.codeForTranslator.length < 2) {
-      newErrors.codeForTranslator = t("addLanguage.errorTranslatorShort");
-    } else if (formData.codeForTranslator && formData.codeForTranslator.length > 15) {
-      newErrors.codeForTranslator = t("addLanguage.errorTranslatorLong");
-    }
-
     if (formData.codeForSpeech && formData.codeForSpeech.length < 2) {
       newErrors.codeForSpeech = t("addLanguage.errorSpeechShort");
     } else if (formData.codeForSpeech && formData.codeForSpeech.length > 15) {
@@ -81,7 +74,6 @@ export default function AddLanguage() {
         name: formData.name,
         shortcut: formData.shortcut,
         codeForSpeech: formData.codeForSpeech,
-        codeForTranslator: formData.codeForTranslator,
         isPublic: formData.isPublic,
         specialLetters: formData.specialLetters,
       });
@@ -160,18 +152,6 @@ export default function AddLanguage() {
               <Label htmlFor="public" className="cursor-pointer">{t("addLanguage.public")}</Label>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="codeForTranslator">{t("addLanguage.codeForTranslator")}</Label>
-              <Input
-                id="codeForTranslator"
-                value={formData.codeForTranslator}
-                onChange={(e) => setFormData({ ...formData, codeForTranslator: e.target.value })}
-                placeholder={t("addLanguage.codeForTranslatorPlaceholder")}
-              />
-              {errors.codeForTranslator && (
-                <p className="text-sm text-destructive">{errors.codeForTranslator}</p>
-              )}
-            </div>
 
             <div className="space-y-2">
               <Label htmlFor="codeForSpeech">{t("addLanguage.codeForSpeech")}</Label>

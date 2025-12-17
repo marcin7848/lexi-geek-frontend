@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { LanguageProvider } from "@/i18n/LanguageProvider";
 import { StarsProvider } from "@/contexts/StarsContext";
+import { useAuthRefresh } from "@/hooks/use-auth-refresh";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -21,6 +22,29 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Inner component to use hooks
+const AppRoutes = () => {
+  useAuthRefresh();
+
+  return (
+    <Routes>
+      <Route path="/" element={<Index />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/groups/:groupId" element={<Groups />} />
+      <Route path="/add-language" element={<AddLanguage />} />
+      <Route path="/language/:languageId" element={<LanguageView />} />
+      <Route path="/language/:languageId/edit" element={<LanguageSettings />} />
+      <Route path="/language/:languageId/repeat" element={<Repeating />} />
+      <Route path="/category/:categoryId" element={<CategoryView />} />
+      <Route path="/category/:categoryId/auto-translate" element={<AutomaticTranslate />} />
+      <Route path="/category/:categoryId/public-words" element={<PublicWords />} />
+      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="dark">
@@ -30,21 +54,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <StarsProvider>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/groups/:groupId" element={<Groups />} />
-                <Route path="/add-language" element={<AddLanguage />} />
-                <Route path="/language/:languageId" element={<LanguageView />} />
-                <Route path="/language/:languageId/edit" element={<LanguageSettings />} />
-                <Route path="/language/:languageId/repeat" element={<Repeating />} />
-                <Route path="/category/:categoryId" element={<CategoryView />} />
-                <Route path="/category/:categoryId/auto-translate" element={<AutomaticTranslate />} />
-                <Route path="/category/:categoryId/public-words" element={<PublicWords />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <AppRoutes />
             </StarsProvider>
           </BrowserRouter>
         </TooltipProvider>
