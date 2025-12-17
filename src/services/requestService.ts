@@ -165,7 +165,18 @@ export class RequestService {
     }
 
     const apiHost = import.meta.env?.VITE_API_HOST || 'localhost';
-    const protocol = request.ssl ? 'https://' : 'http://';
+
+    // Auto-detect protocol: use HTTPS if page is loaded over HTTPS or if not localhost
+    let protocol: string;
+    if (request.ssl) {
+      protocol = 'https://';
+    } else if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+      protocol = 'https://';
+    } else if (apiHost !== 'localhost' && !apiHost.startsWith('127.0.0.1')) {
+      protocol = 'https://';
+    } else {
+      protocol = 'http://';
+    }
 
     const path = request.url.startsWith('/') ? request.url : `/${request.url}`;
     const url = new URL(`${protocol}${apiHost}/api${path}`);
